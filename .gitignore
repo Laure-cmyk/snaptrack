@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# VSCode & Cursor
+.vscode/
+.cursor/
+*.code-workspace
+
+# Environment
+.env
+.env.local
