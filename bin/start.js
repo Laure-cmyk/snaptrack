@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 
-import createDebugger from "debug";
-import http from "node:http";
+import createDebugger from 'debug';
+import http from 'node:http';
 
-import app from "../app.js";
+import app from '../app.js';
 
-const debug = createDebugger('snaptrack:server')
+const debug = createDebugger('snaptrack:server');
 
 // Get port from environment and store in Express
-const port = normalizePort(process.env.PORT || "3000");
-app.set("port", port);
+const port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
 
 // Create HTTP server
 const httpServer = http.createServer(app);
 
 // Listen on provided port, on all network interfaces
 httpServer.listen(port);
-httpServer.on("error", onHttpServerError);
-httpServer.on("listening", onHttpServerListening);
+httpServer.on('error', onHttpServerError);
+httpServer.on('listening', onHttpServerListening);
 
 // Normalize a port into a number, string, or false
 function normalizePort(val) {
@@ -37,18 +37,18 @@ function normalizePort(val) {
 }
 
 function onHttpServerError(error) {
-  if (error.syscall !== "listen") {
+  if (error.syscall !== 'listen') {
     throw error;
   }
 
-  const bind = typeof port === "string" ? `Pipe ${port}` : `Port ${port}`;
+  const bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
 
   // Handle specific listen errors with friendly messages
   switch (error.code) {
-    case "EACCES":
+    case 'EACCES':
       console.error(`${bind} requires elevated privileges`);
       process.exit(1);
-    case "EADDRINUSE":
+    case 'EADDRINUSE':
       console.error(`${bind} is already in use`);
       process.exit(1);
     default:
@@ -58,6 +58,6 @@ function onHttpServerError(error) {
 
 function onHttpServerListening() {
   const addr = httpServer.address();
-  const bind = typeof addr === "string" ? `pipe ${addr}` : `port ${addr.port}`;
+  const bind = typeof addr === 'string' ? `pipe ${addr}` : `port ${addr.port}`;
   debug(`Listening on ${bind}`);
 }
