@@ -1,0 +1,19 @@
+{
+  "name": "snaptrack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon",
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "debug": "^4.4.1",
+    "express": "^5.1.0",
+    "http-errors": "^2.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.19.3",
+    "morgan": "^1.10.1"
+  }
+}
