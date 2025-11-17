@@ -8,16 +8,19 @@
     "format:write": "prettier --config ./.prettierrc.yml --write .",
     "nodemon": "cross-env AUTH_TOKEN=secret DEBUG=demo:* nodemon",
     "dev": "nodemon",
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "build": "vite build"
   },
   "dependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
     "bcrypt": "^6.0.0",
     "debug": "^4.4.1",
     "express": "^5.1.0",
     "http-errors": "^2.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.3",
-    "morgan": "^1.10.1"
+    "morgan": "^1.10.1",
+    "vue": "^3.5.24"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",

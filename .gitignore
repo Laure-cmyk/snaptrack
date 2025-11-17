@@ -16,3 +16,6 @@ Thumbs.db
 #modules
 /node_modules
 
+#env
+.env
+.env.*

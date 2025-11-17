@@ -2,8 +2,8 @@ import express from 'express';
 import createError from 'http-errors';
 import logger from 'morgan';
 
-import indexRouter from './routes/index.js';
-import usersRouter from './routes/users.js';
+import indexRouter from '../back/routes/index.js';
+import usersRouter from '../back/routes/users.js';
 
 const app = express();
 
