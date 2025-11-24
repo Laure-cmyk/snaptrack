@@ -1,0 +1,11 @@
+{
+  "watch": ["back/**/*.js", ".env"],
+  "ext": "js,json",
+  "ignore": ["back/scripts/*", "node_modules/**"],
+  "delay": 1000,
+  "verbose": false,
+  "signal": "SIGTERM",
+  "execMap": {
+    "js": "node"
+  }
+}

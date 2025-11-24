@@ -5,6 +5,15 @@ import logger from 'morgan';
 
 import indexRouter from '../back/routes/index.js';
 import usersRouter from '../back/routes/users.js';
+import friendsRouter from '../back/routes/friends.js';
+import groupsRouter from '../back/routes/groups.js';
+import userGroupsRouter from '../back/routes/userGroups.js';
+import journeysRouter from '../back/routes/journeys.js';
+import userJourneysRouter from '../back/routes/userJourneys.js';
+import stepsRouter from '../back/routes/steps.js';
+import ratingsRouter from '../back/routes/ratings.js';
+import participationsRouter from '../back/routes/participations.js';
+import scoresRouter from '../back/routes/scores.js';
 
 const app = express();
 
@@ -12,8 +21,18 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Routes REST API
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/friends', friendsRouter);
+app.use('/groups', groupsRouter);
+app.use('/user-groups', userGroupsRouter);
+app.use('/journeys', journeysRouter);
+app.use('/user-journeys', userJourneysRouter);
+app.use('/steps', stepsRouter);
+app.use('/ratings', ratingsRouter);
+app.use('/participations', participationsRouter);
+app.use('/scores', scoresRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
