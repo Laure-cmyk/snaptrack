@@ -1,15 +1,20 @@
 #!/usr/bin/env node
 
+import 'dotenv/config';
 import createDebugger from 'debug';
 import http from 'node:http';
 
 import app from '../app.js';
+import connectDB from '../config/database.js';
 
 const debug = createDebugger('snaptrack:server');
 
 // Get port from environment and store in Express
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
+
+// Connect to MongoDB
+await connectDB();
 
 // Create HTTP server
 const httpServer = http.createServer(app);
@@ -18,6 +23,22 @@ const httpServer = http.createServer(app);
 httpServer.listen(port);
 httpServer.on('error', onHttpServerError);
 httpServer.on('listening', onHttpServerListening);
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  debug('SIGTERM signal received: closing HTTP server');
+  httpServer.close(() => {
+    debug('HTTP server closed');
+  });
+});
+
+process.on('SIGINT', () => {
+  debug('SIGINT signal received: closing HTTP server');
+  httpServer.close(() => {
+    debug('HTTP server closed');
+    process.exit(0);
+  });
+});
 
 // Normalize a port into a number, string, or false
 function normalizePort(val) {
