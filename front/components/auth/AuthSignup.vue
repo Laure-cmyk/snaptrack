@@ -1,3 +1,39 @@
+<script setup>
+import { ref } from 'vue'
+import { useFetchJson } from '@/composables/useFetchJson'
+
+const emit = defineEmits(['go-login', 'signup-success'])
+
+const username = ref('')
+const email = ref('')
+const password = ref('')
+const passwordConfirm = ref('')
+const errorMessage = ref('')
+
+async function signup() {
+    errorMessage.value = ''
+
+    if (!username.value || !email.value || !password.value || !passwordConfirm.value) {
+        errorMessage.value = 'Veuillez remplir tous les champs.'
+        return
+    }
+    if (password.value !== passwordConfirm.value) {
+        errorMessage.value = 'Les mots de passe ne correspondent pas.'
+        return
+    }
+
+    try {
+        // Ici tu peux appeler ton backend avec useFetchJson
+        // Exemple : await useFetchJson({ url: '/api/signup', method: 'POST', data: { username, email, password } })
+
+        // Simulation réussite
+        emit('signup-success', { username: username.value, email: email.value })
+    } catch (err) {
+        errorMessage.value = 'Erreur lors de la création du compte.'
+    }
+}
+</script>
+
 <template>
     <v-container class="fill-height pa-4 bg-white" fluid>
         <v-row align="center" justify="center" class="fill-height">
@@ -54,41 +90,6 @@
     </v-container>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { useFetchJson } from '@/composables/useFetchJson'
-
-const emit = defineEmits(['go-login', 'signup-success'])
-
-const username = ref('')
-const email = ref('')
-const password = ref('')
-const passwordConfirm = ref('')
-const errorMessage = ref('')
-
-async function signup() {
-    errorMessage.value = ''
-
-    if (!username.value || !email.value || !password.value || !passwordConfirm.value) {
-        errorMessage.value = 'Veuillez remplir tous les champs.'
-        return
-    }
-    if (password.value !== passwordConfirm.value) {
-        errorMessage.value = 'Les mots de passe ne correspondent pas.'
-        return
-    }
-
-    try {
-        // Ici tu peux appeler ton backend avec useFetchJson
-        // Exemple : await useFetchJson({ url: '/api/signup', method: 'POST', data: { username, email, password } })
-
-        // Simulation réussite
-        emit('signup-success', { username: username.value, email: email.value })
-    } catch (err) {
-        errorMessage.value = 'Erreur lors de la création du compte.'
-    }
-}
-</script>
 
 <style scoped>
 .fill-height {

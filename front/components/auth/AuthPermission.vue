@@ -1,27 +1,3 @@
-<template>
-  <div class="permissions">
-    <h1>Permissions nécessaires</h1>
-
-    <p>
-      Pour utiliser SnapTrack, nous avons besoin d’accéder à la caméra
-      et à ta localisation. Ces permissions sont nécessaires pour
-      capturer des lieux et vérifier les positions.
-    </p>
-
-    <v-alert
-      type="error"
-      v-if="errorMessage"
-      class="mb-4"
-    >
-      {{ errorMessage }}
-    </v-alert>
-
-    <v-btn color="primary" block @click="requestPermissions">
-      Continuer
-    </v-btn>
-  </div>
-</template>
-
 <script setup>
 import { ref } from 'vue'
 
@@ -48,6 +24,31 @@ async function requestPermissions() {
 
 const emit = defineEmits(['permissions-granted'])
 </script>
+
+<template>
+  <div class="permissions">
+    <h1>Permissions nécessaires</h1>
+
+    <p>
+      Pour utiliser SnapTrack, nous avons besoin d’accéder à la caméra
+      et à ta localisation. Ces permissions sont nécessaires pour
+      capturer des lieux et vérifier les positions.
+    </p>
+
+    <v-alert
+      type="error"
+      v-if="errorMessage"
+      class="mb-4"
+    >
+      {{ errorMessage }}
+    </v-alert>
+
+    <v-btn color="primary" block @click="requestPermissions">
+      Continuer
+    </v-btn>
+  </div>
+</template>
+
 
 <style scoped>
 .permissions {

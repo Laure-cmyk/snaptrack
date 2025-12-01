@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import introImage from '@/assets/intro-onboarding-1.jpg'
+import introImage from '@/assets/image-3.png'
 import BaseModal from '@/components/BaseModal.vue'
 
 const showLocationDialog = ref(false)

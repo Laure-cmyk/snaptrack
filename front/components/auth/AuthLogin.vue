@@ -1,3 +1,34 @@
+<script setup>
+import { ref } from 'vue'
+import { useFetchJson } from '@/composables/useFetchJson'
+
+const emit = defineEmits(['go-signup', 'login-success'])
+
+const email = ref('')
+const password = ref('')
+const errorMessage = ref('')
+
+async function login() {
+    errorMessage.value = ''
+
+    // Simuler appel API
+    if (!email.value || !password.value) {
+        errorMessage.value = 'Veuillez remplir tous les champs.'
+        return
+    }
+
+    try {
+        // Ici tu peux appeler ton backend avec useFetchJson
+        // Exemple : await useFetchJson({ url: '/api/login', method: 'POST', data: { email, password } })
+
+        // Simulation réussite
+        emit('login-success', { email: email.value })
+    } catch (err) {
+        errorMessage.value = 'Email ou mot de passe incorrect.'
+    }
+}
+</script>
+
 <template>
     <v-container class="fill-height pa-4 bg-white" fluid>
         <v-row align="center" justify="center" class="fill-height">
@@ -45,37 +76,6 @@
         </v-row>
     </v-container>
 </template>
-
-<script setup>
-import { ref } from 'vue'
-import { useFetchJson } from '@/composables/useFetchJson'
-
-const emit = defineEmits(['go-signup', 'login-success'])
-
-const email = ref('')
-const password = ref('')
-const errorMessage = ref('')
-
-async function login() {
-    errorMessage.value = ''
-
-    // Simuler appel API
-    if (!email.value || !password.value) {
-        errorMessage.value = 'Veuillez remplir tous les champs.'
-        return
-    }
-
-    try {
-        // Ici tu peux appeler ton backend avec useFetchJson
-        // Exemple : await useFetchJson({ url: '/api/login', method: 'POST', data: { email, password } })
-
-        // Simulation réussite
-        emit('login-success', { email: email.value })
-    } catch (err) {
-        errorMessage.value = 'Email ou mot de passe incorrect.'
-    }
-}
-</script>
 
 <style scoped>
 .fill-height {
