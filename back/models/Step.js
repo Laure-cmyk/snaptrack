@@ -2,9 +2,9 @@ import mongoose from 'mongoose';
 
 const stepSchema = new mongoose.Schema(
   {
-    userJourneyId: {
+    journeyId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'UserJourney',
+      ref: 'Journey',
       required: true
     },
     location: {
@@ -17,6 +17,15 @@ const stepSchema = new mongoose.Schema(
         type: [Number],
         required: true
       }
+    },
+    image: {
+      type: String,
+      default: null
+    },
+    riddle: {
+      type: String,
+      maxlength: 500,
+      default: ''
     },
     timestamp: {
       type: Date,
@@ -39,10 +48,6 @@ const stepSchema = new mongoose.Schema(
       type: String,
       maxlength: 500,
       default: ''
-    },
-    photo: {
-      type: String,
-      default: null
     }
   },
   {
@@ -51,7 +56,7 @@ const stepSchema = new mongoose.Schema(
 );
 
 stepSchema.index({ location: '2dsphere' });
-stepSchema.index({ userJourneyId: 1, timestamp: 1 });
+stepSchema.index({ journeyId: 1, timestamp: 1 });
 
 const Step = mongoose.model('Step', stepSchema);
 

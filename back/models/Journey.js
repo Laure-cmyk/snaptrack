@@ -2,66 +2,30 @@ import mongoose from 'mongoose';
 
 const journeySchema = new mongoose.Schema(
   {
-    title: {
+    name: {
       type: String,
       required: true,
       trim: true,
       maxlength: 200
     },
-    description: {
+    image: {
       type: String,
-      maxlength: 1000,
+      default: null
+    },
+    town: {
+      type: String,
       default: ''
     },
-    targetImage: {
+    description: {
       type: String,
-      required: true
-    },
-    targetLocation: {
-      type: {
-        type: String,
-        enum: ['Point'],
-        default: 'Point'
-      },
-      coordinates: {
-        type: [Number],
-        required: true
-      }
-    },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    groupId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Group',
-      default: null
-    },
-    difficulty: {
-      type: String,
-      enum: ['easy', 'medium', 'hard'],
-      default: 'medium'
-    },
-    isPublic: {
-      type: Boolean,
-      default: true
-    },
-    startDate: {
-      type: Date,
-      default: null
-    },
-    endDate: {
-      type: Date,
-      default: null
+      required: true,
+      maxlength: 1000
     }
   },
   {
     timestamps: true
   }
 );
-
-journeySchema.index({ targetLocation: '2dsphere' });
 
 const Journey = mongoose.model('Journey', journeySchema);
 

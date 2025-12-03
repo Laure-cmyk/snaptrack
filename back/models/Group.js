@@ -8,23 +8,10 @@ const groupSchema = new mongoose.Schema(
       trim: true,
       maxlength: 100
     },
-    description: {
-      type: String,
-      maxlength: 500,
-      default: ''
-    },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    isPrivate: {
-      type: Boolean,
-      default: false
-    },
-    groupImage: {
-      type: String,
-      default: null
+    size: {
+      type: Number,
+      default: 0,
+      min: 0
     }
   },
   {

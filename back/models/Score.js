@@ -2,47 +2,35 @@ import mongoose from 'mongoose';
 
 const scoreSchema = new mongoose.Schema(
   {
-    userJourneyId: {
+    participationId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'UserJourney',
+      ref: 'Participation',
       required: true,
       unique: true
     },
-    points: {
+    journeyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Journey',
+      required: true
+    },
+    score: {
       type: Number,
       default: 0,
       min: 0
     },
-    timeBonus: {
+    time: {
       type: Number,
       default: 0
     },
-    accuracyBonus: {
+    distance: {
       type: Number,
       default: 0
-    },
-    completionBonus: {
-      type: Number,
-      default: 0
-    },
-    totalScore: {
-      type: Number,
-      default: 0
-    },
-    rank: {
-      type: Number,
-      default: null
     }
   },
   {
     timestamps: true
   }
 );
-
-scoreSchema.pre('save', function (next) {
-  this.totalScore = this.points + this.timeBonus + this.accuracyBonus + this.completionBonus;
-  next();
-});
 
 const Score = mongoose.model('Score', scoreSchema);
 

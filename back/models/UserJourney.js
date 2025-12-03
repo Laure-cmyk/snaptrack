@@ -11,27 +11,6 @@ const userJourneySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Journey',
       required: true
-    },
-    status: {
-      type: String,
-      enum: ['not_started', 'in_progress', 'completed', 'abandoned'],
-      default: 'not_started'
-    },
-    startedAt: {
-      type: Date,
-      default: null
-    },
-    completedAt: {
-      type: Date,
-      default: null
-    },
-    totalDistance: {
-      type: Number,
-      default: 0
-    },
-    totalTime: {
-      type: Number,
-      default: 0
     }
   },
   {

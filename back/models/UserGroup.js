@@ -16,10 +16,6 @@ const userGroupSchema = new mongoose.Schema(
       type: String,
       enum: ['admin', 'member', 'moderator'],
       default: 'member'
-    },
-    joinedAt: {
-      type: Date,
-      default: Date.now
     }
   },
   {
