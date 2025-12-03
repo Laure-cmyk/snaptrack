@@ -17,11 +17,6 @@ const ratingSchema = new mongoose.Schema(
       required: true,
       min: 1,
       max: 5
-    },
-    comment: {
-      type: String,
-      maxlength: 1000,
-      default: ''
     }
   },
   {

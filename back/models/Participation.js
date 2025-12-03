@@ -14,16 +14,8 @@ const participationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['invited', 'accepted', 'declined', 'completed'],
-      default: 'invited'
-    },
-    invitedAt: {
-      type: Date,
-      default: Date.now
-    },
-    respondedAt: {
-      type: Date,
-      default: null
+      enum: ['open', 'running', 'completed'],
+      default: 'open'
     }
   },
   {

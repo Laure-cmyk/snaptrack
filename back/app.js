@@ -2,6 +2,12 @@
 import express from 'express';
 import createError from 'http-errors';
 import logger from 'morgan';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import indexRouter from '../back/routes/index.js';
 import usersRouter from '../back/routes/users.js';
@@ -17,9 +23,21 @@ import scoresRouter from '../back/routes/scores.js';
 
 const app = express();
 
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Serve static files from the dist directory in production
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../dist');
+  app.use(express.static(distPath));
+}
 
 // Routes REST API
 app.use('/', indexRouter);
@@ -33,6 +51,13 @@ app.use('/steps', stepsRouter);
 app.use('/ratings', ratingsRouter);
 app.use('/participations', participationsRouter);
 app.use('/scores', scoresRouter);
+
+// Serve index.html for any other routes in production (SPA support)
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+  });
+}
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
