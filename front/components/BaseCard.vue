@@ -23,8 +23,14 @@
             </div>
 
             <!-- Description -->
-            <div class="text-caption text-grey-darken-1">
+            <div class="text-caption text-grey-darken-1 mb-1">
                 {{ description }}
+            </div>
+
+            <!-- City -->
+            <div v-if="city" class="d-flex align-center text-caption text-grey">
+                <v-icon size="small" class="mr-1">mdi-map-marker</v-icon>
+                <span>{{ city }}</span>
             </div>
         </v-card-text>
     </v-card>
@@ -47,6 +53,10 @@ const props = defineProps({
     image: {
         type: String,
         default: null
+    },
+    city: {
+        type: String,
+        default: ''
     }
 })
 </script>
