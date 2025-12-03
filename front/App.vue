@@ -1,27 +1,17 @@
 <script setup>
-import { ref } from 'vue'
-import PageAuth from '@/components/pages/PageAuth.vue'
-import PageHome from '@/components/pages/PageHome.vue'
-
-const isAuthenticated = ref(false)
-const currentUser = ref(null)
-
-function handleLoginSuccess(user) {
-    currentUser.value = user
-    isAuthenticated.value = true
-}
-
-function handleLogout() {
-    currentUser.value = null
-    isAuthenticated.value = false
-}
+import { RouterView, RouterLink } from 'vue-router';
+/* import PageFriendlist from './pages/PageFriendlist.vue'; */
 </script>
 
 <template>
-    <v-app>
-        <PageAuth v-if="!isAuthenticated" @login-success="handleLoginSuccess" />
-        <PageHome v-else :user="currentUser" @logout="handleLogout" />
-    </v-app>
+  <v-app>
+    <nav>
+      <RouterLink to="/">Home</RouterLink>
+      <RouterLink to="/friendlist">Friends</RouterLink>
+      <RouterLink to="/createchallenge">Create</RouterLink>
+    </nav>
+    <RouterView />
+  </v-app>
 </template>
 
 <style scoped></style>
