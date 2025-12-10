@@ -1,54 +1,300 @@
 import express from 'express';
-import { Score } from '../models/index.js';
+import { Score, User } from '../models/index.js';
 
 const router = express.Router();
 
-// GET all scores
+/**
+ * 0. GET /scores
+ * -> liste de tous les scores
+ * Option : ?journeyId=... ou ?userId=...
+ *
+ * Exemples :
+ *   GET /api/scores
+ *   GET /api/scores?journeyId=6820...
+ *   GET /api/scores?userId=681f...
+ */
 router.get('/', async (req, res) => {
   try {
-    const scores = await Score.find().populate({
-      path: 'userJourneyId',
-      populate: [
-        { path: 'userId', select: 'username email' },
-        { path: 'journeyId', select: 'title' }
-      ]
-    });
+    const { journeyId, userId } = req.query;
+
+    const filter = {};
+    if (journeyId) filter.journeyId = journeyId;
+    if (userId) filter.userId = userId;
+
+    const scores = await Score.find(filter)
+      .populate('userId', 'username email')
+      .populate('journeyId', 'title');
+
     res.json(scores);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// GET score by ID
+/**
+ * 1. SUMMARY : GET /scores/summary
+ *
+ * Objectif :
+ * Récupérer les points / distances / temps obtenus par tous les utilisateurs,
+ * classés par catégorie, avec filtres possibles.
+ *
+ * Query params :
+ * - userId   -> filtrer sur un utilisateur
+ * - journeyId -> filtrer sur un parcours
+ * - category -> "score" | "distance" | "time" (optionnel)
+ * - from     -> date min (YYYY-MM-DD)
+ * - to       -> date max (YYYY-MM-DD)
+ */
+router.get('/summary', async (req, res) => {
+  try {
+    const { userId, journeyId, category, from, to } = req.query;
+
+    const match = {};
+
+    if (userId) {
+      match.userId = userId;
+    }
+
+    if (journeyId) {
+      match.journeyId = journeyId;
+    }
+
+    // Filtre sur la période (createdAt)
+    if (from || to) {
+      match.createdAt = {};
+      if (from) {
+        match.createdAt.$gte = new Date(from);
+      }
+      if (to) {
+        // pour inclure la journée entière
+        const endDate = new Date(to);
+        endDate.setHours(23, 59, 59, 999);
+        match.createdAt.$lte = endDate;
+      }
+    }
+
+    // Agrégation : regrouper par userId et sommer les 3 catégories
+    const aggregation = await Score.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: '$userId',
+          totalScore: { $sum: { $ifNull: ['$score', 0] } },
+          totalDistance: { $sum: { $ifNull: ['$distance', 0] } },
+          totalTime: { $sum: { $ifNull: ['$time', 0] } },
+        },
+      },
+    ]);
+
+    // Récupérer les infos des utilisateurs
+    const userIds = aggregation.map((item) => item._id);
+    const users = await User.find({ _id: { $in: userIds } }).select(
+      'username'
+    );
+    const userMap = new Map(
+      users.map((u) => [u._id.toString(), u])
+    );
+
+    // Construire la réponse finale
+    const summary = aggregation.map((item) => {
+      const userDoc = userMap.get(item._id.toString());
+
+      // Structure de base avec toutes les catégories
+      const categoriesAll = {
+        score: item.totalScore,
+        distance: item.totalDistance,
+        time: item.totalTime,
+      };
+
+      // Si ?category est fourni, on ne renvoie que cette clé
+      let categories;
+      if (category && ['score', 'distance', 'time'].includes(category)) {
+        categories = {
+          [category]: categoriesAll[category],
+        };
+      } else {
+        categories = categoriesAll;
+      }
+
+      return {
+        user: {
+          id: item._id,
+          username: userDoc ? userDoc.username : 'Unknown',
+        },
+        categories,
+      };
+    });
+
+    res.json({
+      message: 'Score summary generated',
+      summary,
+    });
+  } catch (error) {
+    console.error('Error in GET /scores/summary:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 2. TOTALS : GET /scores/totals
+ *
+ * Objectif :
+ * - Retourner les totaux globaux (tous utilisateurs)
+ * - ou les totaux d’un utilisateur spécifique si ?userId=...
+ *
+ * Query params :
+ * - userId (optionnel)
+ */
+router.get('/totals', async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    const match = {};
+    if (userId) {
+      match.userId = userId;
+    }
+
+    const aggregation = await Score.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: null,
+          totalScore: { $sum: { $ifNull: ['$score', 0] } },
+          totalDistance: { $sum: { $ifNull: ['$distance', 0] } },
+          totalTime: { $sum: { $ifNull: ['$time', 0] } },
+        },
+      },
+    ]);
+
+    let totals = {
+      score: 0,
+      distance: 0,
+      time: 0,
+    };
+
+    if (aggregation.length > 0) {
+      totals = {
+        score: aggregation[0].totalScore,
+        distance: aggregation[0].totalDistance,
+        time: aggregation[0].totalTime,
+      };
+    }
+
+    res.json({ totals });
+  } catch (error) {
+    console.error('Error in GET /scores/totals:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 3. (Optionnel) Leaderboard d’une journey
+ * GET /scores/journey/:journeyId
+ * -> tu peux garder ou supprimer selon ton besoin
+ */
+router.get('/journey/:journeyId', async (req, res) => {
+  try {
+    const { journeyId } = req.params;
+
+    const scores = await Score.find({ journeyId })
+      .populate('userId', 'username')
+      .sort({ score: -1 });
+
+    const result = scores.map((s) => ({
+      scoreId: s._id,
+      userId: s.userId._id,
+      username: s.userId.username,
+      journeyId: s.journeyId,
+      score: s.score,
+    }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 4. (Optionnel) Historique d’un utilisateur
+ * GET /scores/user/:userId
+ */
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const scores = await Score.find({ userId })
+      .populate('journeyId', 'title')
+      .sort({ createdAt: -1 });
+
+    const result = scores.map((s) => ({
+      scoreId: s._id,
+      journeyId: s.journeyId._id,
+      journeyTitle: s.journeyId.title,
+      score: s.score,
+      createdAt: s.createdAt,
+    }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 5. Ajouter / mettre à jour un score simple
+ * POST /scores
+ */
+router.post('/', async (req, res) => {
+  try {
+    const { userId, journeyId, score, distance, time } = req.body;
+
+    if (!userId || !journeyId) {
+      return res
+        .status(400)
+        .json({ error: 'userId et journeyId sont requis' });
+    }
+
+    // On autorise à ne remplir que certains champs (score/distance/time)
+    const data = { userId, journeyId };
+    if (typeof score === 'number') data.score = score;
+    if (typeof distance === 'number') data.distance = distance;
+    if (typeof time === 'number') data.time = time;
+
+    const newScore = await Score.create(data);
+
+    res.status(201).json({
+      message: 'Score created',
+      score: newScore,
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * 6. GET score by ID
+ * GET /scores/:id
+ */
 router.get('/:id', async (req, res) => {
   try {
-    const score = await Score.findById(req.params.id).populate({
-      path: 'userJourneyId',
-      populate: [
-        { path: 'userId', select: 'username email' },
-        { path: 'journeyId', select: 'title' }
-      ]
-    });
+    const score = await Score.findById(req.params.id)
+      .populate('userId', 'username email')
+      .populate('journeyId', 'title');
+
     if (!score) {
       return res.status(404).json({ error: 'Score not found' });
     }
+
     res.json(score);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// POST create new score
-router.post('/', async (req, res) => {
-  try {
-    const score = await Score.create(req.body);
-    res.status(201).json(score);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// PUT update score
+/**
+ * 7. PUT update score by ID
+ * PUT /scores/:id
+ */
 router.put('/:id', async (req, res) => {
   try {
     const score = await Score.findByIdAndUpdate(
@@ -56,16 +302,21 @@ router.put('/:id', async (req, res) => {
       req.body,
       { new: true, runValidators: true }
     );
+
     if (!score) {
       return res.status(404).json({ error: 'Score not found' });
     }
+
     res.json(score);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-// DELETE score
+/**
+ * 8. DELETE score
+ * DELETE /scores/:id
+ */
 router.delete('/:id', async (req, res) => {
   try {
     const score = await Score.findByIdAndDelete(req.params.id);

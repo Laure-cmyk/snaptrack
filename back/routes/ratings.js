@@ -15,59 +15,92 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET rating by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const rating = await Rating.findById(req.params.id)
-      .populate('userId', 'username email')
-      .populate('journeyId', 'title');
-    if (!rating) {
-      return res.status(404).json({ error: 'Rating not found' });
-    }
-    res.json(rating);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// POST create new rating
+/**
+ * 1. Create Rating
+ * POST /api/ratings
+ *
+ * Body JSON :
+ * {
+ *   "userId": "101",
+ *   "targetId": "701",
+ *   "value": 5,
+ *   "comment": "Super expérience !"
+ * }
+ */
 router.post('/', async (req, res) => {
   try {
-    const rating = await Rating.create(req.body);
-    res.status(201).json(rating);
+    const { userId, targetId, value, comment } = req.body;
+
+    // Vérifications simples
+    if (!userId || !targetId || typeof value !== 'number') {
+      return res.status(400).json({
+        error: 'userId, targetId et value (number) sont requis',
+      });
+    }
+
+    const rating = await Rating.create({
+      userId,
+      targetId,
+      value,
+      comment,
+    });
+
+    res.status(201).json({
+      message: 'Rating created',
+      rating: {
+        id: rating._id,
+        userId: rating.userId,
+        targetId: rating.targetId,
+        value: rating.value,
+        comment: rating.comment,
+        createdAt: rating.createdAt,
+      },
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-// PUT update rating
-router.put('/:id', async (req, res) => {
+/**
+ * 2. Read Ratings
+ * GET /api/ratings?targetId=701&userId=101 (userId optionnel)
+ *
+ * Objectif : récupérer tous les ratings pour un élément (targetId),
+ * éventuellement filtrés par userId.
+ */
+router.get('/', async (req, res) => {
   try {
-    const rating = await Rating.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (!rating) {
-      return res.status(404).json({ error: 'Rating not found' });
-    }
-    res.json(rating);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+    const { targetId, userId } = req.query;
 
-// DELETE rating
-router.delete('/:id', async (req, res) => {
-  try {
-    const rating = await Rating.findByIdAndDelete(req.params.id);
-    if (!rating) {
-      return res.status(404).json({ error: 'Rating not found' });
+    // On attend au minimum un targetId pour filtrer
+    const filter = {};
+    if (targetId) {
+      filter.targetId = targetId;
     }
-    res.json({ message: 'Rating deleted successfully' });
+    if (userId) {
+      filter.userId = userId;
+    }
+
+    const ratings = await Rating.find(filter)
+      .populate('userId', 'username') // pour récupérer le username
+      .sort({ createdAt: -1 });
+
+    // On formate la réponse comme dans ton exemple
+    const result = ratings.map((r) => ({
+      id: r._id,
+      userId: r.userId?._id ?? r.userId,
+      username: r.userId?.username ?? null,
+      value: r.value,
+      comment: r.comment,
+      createdAt: r.createdAt,
+    }));
+
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+
 
 export default router;

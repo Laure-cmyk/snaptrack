@@ -1,26 +1,60 @@
 import express from 'express';
-import { Journey } from '../models/index.js';
+import { Journey, Step, Rating } from '../models/index.js';
 
 const router = express.Router();
 
-// GET all journeys
+/**
+ * ============================================================
+ *  LIST JOURNEYS
+ *  GET /api/journeys
+ *  Avec filtres : search, limit, offset, sort
+ * ============================================================
+ */
 router.get('/', async (req, res) => {
   try {
-    const journeys = await Journey.find()
-      .populate('createdBy', 'username email')
-      .populate('groupId', 'name');
-    res.json(journeys);
+    const { search, limit = 50, offset = 0, sort } = req.query;
+
+    const filter = {};
+
+    // Filtre par nom (search)
+    if (search) {
+      filter.name = { $regex: search, $options: 'i' }; // insensitive
+    }
+
+    // Tri
+    let sortQuery = {};
+    if (sort === 'alphabetical') sortQuery = { name: 1 };
+    else if (sort === 'recent') sortQuery = { createdAt: -1 };
+    else sortQuery = {}; // default no sort
+
+    // Query principale
+    const journeys = await Journey.find(filter)
+      .select('name image time description')
+      .limit(Number(limit))
+      .skip(Number(offset))
+      .sort(sortQuery);
+
+    // Total pour pagination
+    const total = await Journey.countDocuments(filter);
+
+    res.json({
+      message: 'Journeys fetched',
+      total,
+      journeys,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// GET journey by ID
+/**
+ * ============================================================
+ *  GET JOURNEY BY ID
+ * ============================================================
+ */
 router.get('/:id', async (req, res) => {
   try {
-    const journey = await Journey.findById(req.params.id)
-      .populate('createdBy', 'username email')
-      .populate('groupId', 'name');
+    const journey = await Journey.findById(req.params.id);
     if (!journey) {
       return res.status(404).json({ error: 'Journey not found' });
     }
@@ -30,7 +64,11 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST create new journey
+/**
+ * ============================================================
+ *  CREATE JOURNEY
+ * ============================================================
+ */
 router.post('/', async (req, res) => {
   try {
     const journey = await Journey.create(req.body);
@@ -40,7 +78,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT update journey
+/**
+ * ============================================================
+ *  UPDATE JOURNEY
+ * ============================================================
+ */
 router.put('/:id', async (req, res) => {
   try {
     const journey = await Journey.findByIdAndUpdate(
@@ -57,7 +99,11 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE journey
+/**
+ * ============================================================
+ *  DELETE JOURNEY
+ * ============================================================
+ */
 router.delete('/:id', async (req, res) => {
   try {
     const journey = await Journey.findByIdAndDelete(req.params.id);
@@ -65,6 +111,79 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Journey not found' });
     }
     res.json({ message: 'Journey deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ============================================================
+ *  COUNT STEPS OF JOURNEY
+ *  GET /api/journeys/:journeyId/steps/count
+ * ============================================================
+ */
+router.get('/:journeyId/steps/count', async (req, res) => {
+  try {
+    const { journeyId } = req.params;
+
+    // Vérifier si la journey existe
+    const journey = await Journey.findById(journeyId);
+    if (!journey) {
+      return res.status(404).json({ error: 'Journey not found' });
+    }
+
+    // Compter les steps
+    const totalSteps = await Step.countDocuments({ journeyId });
+
+    res.json({
+      message: 'Step amount fetched',
+      journeyId,
+      totalSteps,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ============================================================
+ *  GET RATING OF A JOURNEY
+ *  GET /api/journeys/:journeyId/rating
+ * ============================================================
+ */
+router.get('/:journeyId/rating', async (req, res) => {
+  try {
+    const { journeyId } = req.params;
+
+    // Vérifier si la journey existe
+    const journey = await Journey.findById(journeyId);
+    if (!journey) {
+      return res.status(404).json({ error: 'Journey not found' });
+    }
+
+    // Récupérer tous les ratings
+    const ratings = await Rating.find({ journeyId });
+
+    if (ratings.length === 0) {
+      return res.json({
+        message: 'No ratings for this journey',
+        journeyId,
+        averageRating: null,
+        totalRatings: 0,
+      });
+    }
+
+    // Calculer la moyenne
+    const totalRatings = ratings.length;
+    const averageRating =
+      ratings.reduce((acc, r) => acc + r.rating, 0) / totalRatings;
+
+    res.json({
+      message: 'Journey rating fetched',
+      journeyId,
+      averageRating: Number(averageRating.toFixed(2)),
+      totalRatings,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
