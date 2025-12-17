@@ -4,16 +4,12 @@ import { reactive, watchEffect } from 'vue';
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
-  addLabel: { type: String, default: 'Ajouter' },
+  addLabel: { type: String, default: 'Accepter' },
   pendingLabel: { type: String, default: 'En attente' },
   addedLabel: { type: String, default: 'Amis' },
+  declineLabel: { type: String, default: 'Refuser' },
   showButton: { type: Boolean, default: true }
 });
-/* const {
-data:
-loading:
-error: 
-} = useFetchJson(); */
 
 const emit = defineEmits(['action']);
 
@@ -22,11 +18,19 @@ const stateMap = reactive({});
 watchEffect(() => {
   props.items.forEach((item, index) => {
     const key = item?.id ?? index;
-    if (stateMap[key] === undefined) stateMap[key] = props.addLabel;
+    if (stateMap[key] === undefined) {
+      stateMap[key] =
+        item.type === 'friend' || item.type === 'group' ? props.addedLabel : props.addLabel;
+    }
+  });
+  Object.keys(stateMap).forEach(key => {
+    if (!props.items.find(item => (item?.id ?? null).toString() === key)) {
+      delete stateMap[key];
+    }
   });
 });
 
-async function handleClick(item, index) {
+async function handleAccept(item, index) {
   const key = item?.id ?? index;
   if (stateMap[key] === props.pendingLabel) return;
   if (stateMap[key] === props.addedLabel) return;
@@ -42,13 +46,22 @@ async function handleClick(item, index) {
     emit('action', { item, index, result: 'error', error: err });
   }
 }
-/* const STATUS_ADD = 'Add';
-const requestState = ref(STATUS_ADD);
-// change ref() for api responses
-// or give STATUS_ADD to fetchJson
-const handleClick = () => {
-  // logic
-}; */
+
+async function handleDecline(item, index) {
+  const key = item?.id ?? index;
+  if (stateMap[key] === props.pendingLabel) return;
+  if (stateMap[key] === props.addedLabel) return;
+
+  /*  stateMap[key] = props.pendingLabel; */
+
+  try {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    emit('action', { item, index, result: 'declined' });
+  } catch (err) {
+    stateMap[key] = props.addLabel;
+    emit('action', { item, index, result: 'error', error: err });
+  }
+}
 </script>
 
 <template>
@@ -59,13 +72,22 @@ const handleClick = () => {
       :title="item?.name ?? item?.title ?? 'User ' + (index + 1)"
     >
       <template v-slot:append>
-        <v-btn
-          v-if="showButton"
-          size="small"
-          variant="outlined"
-          :disabled="stateMap[item?.id ?? index] === pendingLabel"
-          @click="() => handleClick(item, index)"
+        <template
+          v-if="showButton && item.type === 'invite' && stateMap[item?.id ?? index] === addLabel"
         >
+          <v-btn size="small" variant="outlined" @click="() => handleAccept(item, index)">
+            {{ stateMap[item?.id ?? index] }}
+          </v-btn>
+          <v-btn
+            size="small"
+            variant="outlined"
+            color="error"
+            @click="() => handleDecline(item, index)"
+          >
+            {{ declineLabel }}
+          </v-btn>
+        </template>
+        <v-btn v-else-if="showButton && item.type" size="small" variant="outlined" disabled>
           {{ stateMap[item?.id ?? index] }}
         </v-btn>
       </template>
@@ -73,15 +95,3 @@ const handleClick = () => {
     </v-list-item>
   </v-list>
 </template>
-
-<!-- <template>
-  <v-list lines="two">
-    <v-list-item v-for="n in 3" :key="n" :title="'Username ' + n">
-      <template v-slot:append>
-        <v-btn size="small" variant="outlined" @click="handleClick">{{ requestState }}</v-btn>
-      </template>
-      <v-divider></v-divider>
-    </v-list-item>
-  </v-list>
-</template>
- -->
