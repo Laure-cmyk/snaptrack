@@ -41,11 +41,10 @@ import { ref, computed } from 'vue'
 import BaseCard from '@/components/BaseCard.vue'
 import TheSearchBar from '@/components/TheSearchBar.vue'
 
-const props = defineProps({
-    user: {
-        type: Object,
-        default: null
-    }
+// Get user from localStorage
+const user = computed(() => {
+    const userData = localStorage.getItem('user')
+    return userData ? JSON.parse(userData) : null
 })
 
 const searchQuery = ref('')

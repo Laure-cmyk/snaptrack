@@ -456,6 +456,7 @@ async function seedDatabase() {
     const scores = await Score.create([
       // Scores for completed participations
       {
+        userId: participations[0].userId,
         participationId: participations[0]._id,
         journeyId: journeys[0]._id,
         score: 850,
@@ -463,6 +464,7 @@ async function seedDatabase() {
         distance: 2.5
       },
       {
+        userId: participations[1].userId,
         participationId: participations[1]._id,
         journeyId: journeys[0]._id,
         score: 920,
@@ -470,6 +472,7 @@ async function seedDatabase() {
         distance: 2.5
       },
       {
+        userId: participations[3].userId,
         participationId: participations[3]._id,
         journeyId: journeys[1]._id,
         score: 750,
@@ -477,6 +480,7 @@ async function seedDatabase() {
         distance: 15.8
       },
       {
+        userId: participations[4].userId,
         participationId: participations[4]._id,
         journeyId: journeys[1]._id,
         score: 1050,
@@ -484,6 +488,7 @@ async function seedDatabase() {
         distance: 15.8
       },
       {
+        userId: participations[6].userId,
         participationId: participations[6]._id,
         journeyId: journeys[2]._id,
         score: 920,
@@ -491,6 +496,7 @@ async function seedDatabase() {
         distance: 5.3
       },
       {
+        userId: participations[7].userId,
         participationId: participations[7]._id,
         journeyId: journeys[2]._id,
         score: 880,
@@ -498,6 +504,7 @@ async function seedDatabase() {
         distance: 5.3
       },
       {
+        userId: participations[9].userId,
         participationId: participations[9]._id,
         journeyId: journeys[3]._id,
         score: 795,
@@ -505,6 +512,7 @@ async function seedDatabase() {
         distance: 4.2
       },
       {
+        userId: participations[12].userId,
         participationId: participations[12]._id,
         journeyId: journeys[3]._id,
         score: 750,

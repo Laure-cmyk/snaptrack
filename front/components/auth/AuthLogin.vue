@@ -7,27 +7,48 @@ const emit = defineEmits(['go-signup', 'login-success'])
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const isLoading = ref(false)
 
 async function login() {
     errorMessage.value = ''
 
-    // Simuler appel API
+    // Validation
     if (!email.value || !password.value) {
         errorMessage.value = 'Veuillez remplir tous les champs.'
         return
     }
 
+    isLoading.value = true
+
     try {
-        // Ici tu peux appeler ton backend avec useFetchJson
-        // Exemple : await useFetchJson({ url: '/api/login', method: 'POST', data: { email, password } })
+        // Call actual backend login endpoint
+        const { data, error, execute } = useFetchJson({
+            url: '/users/login',
+            method: 'POST',
+            data: {
+                email: email.value,
+                password: password.value
+            },
+            immediate: false
+        })
 
-        // Simulation réussite - Sauvegarder le token JWT
-        const mockToken = 'mock-jwt-token-' + Date.now()
-        localStorage.setItem('jwt', mockToken)
+        await execute()
 
-        emit('login-success', { email: email.value })
+        if (error.value) {
+            errorMessage.value = error.value.data?.error || 'Email ou mot de passe incorrect.'
+            return
+        }
+
+        // Save the JWT token
+        localStorage.setItem('jwt', data.value.token)
+        localStorage.setItem('user', JSON.stringify(data.value.user))
+
+        emit('login-success', { email: email.value, user: data.value.user })
     } catch (err) {
-        errorMessage.value = 'Email ou mot de passe incorrect.'
+        errorMessage.value = err.data?.error || err.message || 'Email ou mot de passe incorrect.'
+        console.error('Login error:', err)
+    } finally {
+        isLoading.value = false
     }
 }
 </script>
@@ -65,7 +86,7 @@ async function login() {
                     <!-- Login Button -->
                     <v-card-actions class="px-0 pt-2">
                         <v-btn block color="indigo-darken-1" size="x-large" rounded="lg" elevation="2" variant="flat"
-                            @click="login">
+                            @click="login" :loading="isLoading" :disabled="isLoading">
                             Se connecter
                         </v-btn>
                     </v-card-actions>

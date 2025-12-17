@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { useFetchJson } from '@/composables/useFetchJson'
 
 const emit = defineEmits(['go-login', 'signup-success'])
 
@@ -8,6 +9,7 @@ const email = ref('')
 const password = ref('')
 const passwordConfirm = ref('')
 const errorMessage = ref('')
+const isLoading = ref(false)
 
 async function signup() {
     errorMessage.value = ''
@@ -21,14 +23,35 @@ async function signup() {
         return
     }
 
-    try {
-        // Ici tu peux appeler ton backend avec useFetchJson
-        // Exemple : await useFetchJson({ url: '/api/signup', method: 'POST', data: { username, email, password } })
+    isLoading.value = true
 
-        // Simulation réussite
-        emit('signup-success', { username: username.value, email: email.value })
+    try {
+        // Call actual backend signup endpoint
+        const { data, error, execute } = useFetchJson({
+            url: '/users',
+            method: 'POST',
+            data: {
+                username: username.value,
+                email: email.value,
+                password: password.value
+            },
+            immediate: false
+        })
+
+        await execute()
+
+        if (error.value) {
+            errorMessage.value = error.value.data?.error || 'Erreur lors de la création du compte.'
+            return
+        }
+
+        // Save the user info and redirect to login
+        emit('signup-success', { username: username.value, email: email.value, user: data.value })
     } catch (err) {
-        errorMessage.value = 'Erreur lors de la création du compte.'
+        errorMessage.value = err.data?.error || err.message || 'Erreur lors de la création du compte.'
+        console.error('Signup error:', err)
+    } finally {
+        isLoading.value = false
     }
 }
 </script>
@@ -74,7 +97,7 @@ async function signup() {
                     <!-- Signup Button -->
                     <v-card-actions class="px-0 pt-2">
                         <v-btn block color="indigo-darken-1" size="x-large" rounded="lg" elevation="2" variant="flat"
-                            @click="signup">
+                            @click="signup" :loading="isLoading" :disabled="isLoading">
                             Créer mon compte
                         </v-btn>
                     </v-card-actions>
