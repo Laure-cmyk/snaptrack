@@ -23,13 +23,12 @@ router.get('/', async (req, res) => {
  * {
  *   "userId": "101",
  *   "targetId": "701",
- *   "value": 5,
- *   "comment": "Super expérience !"
+ *   "value": 5
  * }
  */
 router.post('/', async (req, res) => {
   try {
-    const { userId, targetId, value, comment } = req.body;
+    const { userId, targetId, value } = req.body;
 
     // Vérifications simples
     if (!userId || !targetId || typeof value !== 'number') {
@@ -42,7 +41,6 @@ router.post('/', async (req, res) => {
       userId,
       targetId,
       value,
-      comment,
     });
 
     res.status(201).json({
@@ -52,7 +50,6 @@ router.post('/', async (req, res) => {
         userId: rating.userId,
         targetId: rating.targetId,
         value: rating.value,
-        comment: rating.comment,
         createdAt: rating.createdAt,
       },
     });
@@ -91,7 +88,6 @@ router.get('/', async (req, res) => {
       userId: r.userId?._id ?? r.userId,
       username: r.userId?.username ?? null,
       value: r.value,
-      comment: r.comment,
       createdAt: r.createdAt,
     }));
 
