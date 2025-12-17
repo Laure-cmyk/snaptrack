@@ -12,6 +12,11 @@ const groupSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0
+    },
+    // AJOUT DE CE CHAMP
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User' // Cela fait le lien avec votre collection 'users'
     }
   },
   {
