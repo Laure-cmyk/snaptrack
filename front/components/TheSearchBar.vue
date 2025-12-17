@@ -19,4 +19,12 @@ defineEmits(['update:modelValue'])
 .search-bar {
     background-color: white;
 }
+
+.search-bar :deep(.v-field) {
+    background-color: white;
+}
+
+.search-bar :deep(.v-field__outline) {
+    color: #4f4f4fe6;
+}
 </style>

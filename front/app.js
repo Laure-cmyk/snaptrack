@@ -13,16 +13,32 @@ import App from './App.vue';
 
 /* 
 Routes need to always follow the template:
-{ path: '/pathName', component: () => import('./pages/PageIWantToAddToRoutes.vue')
+{ path: '/pathName', component: () => import('./pages/PageIWantToAddToRoutes.vue') }
  */
 const routes = [
-  { path: '/', component: () => import('./pages/PageHome.vue') },
-  { path: '/friendlist', component: () => import('./pages/PageFriendlist.vue') }
+  { path: '/', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
+  { path: '/friendlist', component: () => import('./pages/PageFriendlist.vue'), meta: { requiresAuth: true } },
+  { path: '/createchallenge', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
+  { path: '/profil', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
+  { path: '/authentification', component: () => import('./pages/PageAuth.vue') }
 ];
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+});
+
+// Navigation guard pour l'authentification
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('jwt');
+
+  if (to.meta.requiresAuth && !token) {
+    next('/authentification');
+  } else if (to.path === '/authentification' && token) {
+    next('/');
+  } else {
+    next();
+  }
 });
 
 const vuetify = createVuetify({

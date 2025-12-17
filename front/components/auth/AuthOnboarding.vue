@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import introImage from '@/assets/image-3.png'
+import introImage from '@/assets/image_introduction.jpg'
 import BaseModal from '@/components/BaseModal.vue'
 
 const showLocationDialog = ref(false)
@@ -59,48 +59,40 @@ function declineCamera() {
 </script>
 
 <template>
-    <v-container class="fill-height pa-4 bg-white" fluid>
-        <v-row align="center" justify="center" class="fill-height">
-            <v-col cols="12" sm="10" md="6" lg="4">
-                <v-card elevation="0" class="pa-6 text-center">
-                    <!-- Logo Title -->
-                    <div class="mb-8 mt-4">
-                        <h1 class="text-h3 font-weight-bold" style="color: black;">
-                            SnapTrack
-                        </h1>
-                    </div>
+    <v-container class="fill-height pa-0 position-relative" fluid>
+        <!-- Image de fond plein écran -->
+        <v-img :src="introImage" cover class="full-screen-image" alt="Introduction SnapTrack"></v-img>
 
-                    <!-- Image -->
-                    <v-img :src="introImage" height="380" cover class="rounded-lg mb-6"
-                        alt="Découverte urbaine"></v-img>
+        <!-- Carte de contenu par-dessus -->
+        <div class="content-card">
+            <v-card elevation="8" class="pa-8 text-center">
+                <!-- Title -->
+                <v-card-title class="text-h5 font-weight-bold text-center px-0 mb-3 title-wrap">
+                    Une photo, un lieu à trouver
+                </v-card-title>
 
-                    <!-- Title -->
-                    <v-card-title class="text-h5 font-weight-bold text-center px-0 mb-2">
-                        Jeu de découverte
-                    </v-card-title>
+                <!-- Description -->
+                <v-card-text class="text-body-1 text-center text-grey-darken-1 px-2 mb-8">
+                    Explore des parcours photos et mets ton sens de l'observation à l'épreuve.
+                    Sauras-tu retrouver les lieux cachés autour de toi ?
+                </v-card-text>
 
-                    <!-- Description -->
-                    <v-card-text class="text-body-1 text-center text-grey-darken-1 px-2 mb-6">
-                        Découvrez de nouveaux lieux tout en jouant. Défiez vos amis !
-                    </v-card-text>
-
-                    <!-- Button -->
-                    <v-card-actions class="px-0 pt-2">
-                        <v-btn block color="indigo-darken-1" size="x-large" rounded="lg" elevation="2" variant="flat"
-                            @click="openModal">
-                            Continuer
-                        </v-btn>
-                    </v-card-actions>
-                </v-card>
-            </v-col>
-        </v-row>
+                <!-- Button -->
+                <v-card-actions class="px-0 pt-2">
+                    <v-btn block color="indigo-darken-1" size="x-large" rounded="lg" elevation="2" variant="flat"
+                        @click="openModal">
+                        Continuer
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </div>
 
         <!-- Modal Localisation -->
         <BaseModal v-model="showLocationDialog" title="Autoriser l'accès à la localisation" confirm-text="Autoriser"
             cancel-text="Décliner" @confirm="requestLocationPermission" @cancel="declineLocation">
-            Votre navigateur doit permettre l'accès à la localisation pour pouvoir utiliser l'application.
+            Vous devez autoriser l'accès à la localisation pour pouvoir utiliser l'application.
             <v-alert v-if="locationError" type="error" variant="tonal" class="mt-4 text-center">
-                <div class="text-center">{{ locationError }}</div>
+                {{ locationError }}
             </v-alert>
         </BaseModal>
 
@@ -109,7 +101,7 @@ function declineCamera() {
             cancel-text="Décliner" @confirm="requestCameraPermission" @cancel="declineCamera">
             Vous devez autoriser l'accès à la caméra pour pouvoir utiliser l'application.
             <v-alert v-if="cameraError" type="error" variant="tonal" class="mt-4 text-center">
-                <div class="text-center">{{ cameraError }}</div>
+                {{ cameraError }}
             </v-alert>
         </BaseModal>
     </v-container>
@@ -118,5 +110,40 @@ function declineCamera() {
 <style scoped>
 .fill-height {
     min-height: 100vh;
+    position: relative;
+}
+
+.full-screen-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.content-card {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: 0;
+    height: 40%;
+}
+
+.content-card .v-card {
+    background-color: white;
+    border-radius: 32px 32px 0 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.title-wrap {
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.3;
 }
 </style>
