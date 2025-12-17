@@ -33,12 +33,6 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve static files from the dist directory in production
-if (process.env.NODE_ENV === 'production') {
-  const distPath = path.join(__dirname, '../dist');
-  app.use(express.static(distPath));
-}
-
 // Routes REST API
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
@@ -52,8 +46,10 @@ app.use('/ratings', ratingsRouter);
 app.use('/participations', participationsRouter);
 app.use('/scores', scoresRouter);
 
-// Serve index.html for any other routes in production (SPA support)
+// Serve static files and index.html in production
 if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../dist')));
+  
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });

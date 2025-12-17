@@ -21,5 +21,8 @@ export default defineConfig({
       '/participations': 'http://localhost:3000',
       '/scores': 'http://localhost:3000'
     }
+  },
+  build: {
+    outDir: 'dist'
   }
 });

@@ -1,0 +1,831 @@
+{
+  "users": [
+    {
+      "_id": "6942a976a481e1ad38601920",
+      "username": "alice",
+      "email": "alice@example.com",
+      "password": "$2b$10$/PS6XWPX2c1pIZCT8gO0.eSCm.DKOwI/G6ox9.BKILz6JRao/vuza",
+      "profilePicture": "https://api.dicebear.com/9.x/pixel-art/svg?seed=alice",
+      "bio": "Adventure seeker and photographer",
+      "createdAt": "2025-12-17T13:00:38.904Z",
+      "updatedAt": "2025-12-17T13:00:38.904Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a976a481e1ad38601923",
+      "username": "diana",
+      "email": "diana@example.com",
+      "password": "$2b$10$G7IfNBKp6y.smoGIwF986u05.BgXOwpYVZoFrmkkUAmQCpUgdW6h.",
+      "profilePicture": "https://api.dicebear.com/9.x/pixel-art/svg?seed=diana.svg",
+      "bio": "Urban explorer",
+      "createdAt": "2025-12-17T13:00:38.904Z",
+      "updatedAt": "2025-12-17T13:00:38.904Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a976a481e1ad38601924",
+      "username": "eve",
+      "email": "eve@example.com",
+      "password": "$2b$10$8Nw3A2rsy/frY95zjN5KIePEVnYVtgRWoqhaoi4pElgtg4LT8YEX.",
+      "profilePicture": "https://api.dicebear.com/9.x/pixel-art/svg?seed=eve.svg",
+      "bio": "Travel and photo enthusiast",
+      "createdAt": "2025-12-17T13:00:38.905Z",
+      "updatedAt": "2025-12-17T13:00:38.905Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a976a481e1ad38601921",
+      "username": "bob",
+      "email": "bob@example.com",
+      "password": "$2b$10$8eo2hyFxltSDPAQ5upKYXe5KE.T4C7Db1yUP1xL3k.IFxc7o5J9Da",
+      "profilePicture": "https://api.dicebear.com/9.x/pixel-art/svg?seed=bob.svg",
+      "bio": "Passionate explorer from Geneva",
+      "createdAt": "2025-12-17T13:00:38.904Z",
+      "updatedAt": "2025-12-17T13:00:38.904Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a976a481e1ad38601922",
+      "username": "charlie",
+      "email": "charlie@example.com",
+      "password": "$2b$10$UG2oLuqDfqJYcX16SWhRVezvDGjsnDhP3dypSOjalcd01FR4OWJbm",
+      "profilePicture": "https://api.dicebear.com/9.x/pixel-art/svg?seed=charlie.svg",
+      "bio": "Nature lover and hiking enthusiast",
+      "createdAt": "2025-12-17T13:00:38.904Z",
+      "updatedAt": "2025-12-17T13:00:38.904Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942ae011b649adedbddc569",
+      "username": "test123",
+      "email": "test123@gmail.com",
+      "password": "$2b$10$9FLUQxLBoN8TFF2ZXFwhcOXGbgYMJU636fBXH966Zv02K.7PjmaYq",
+      "profilePicture": null,
+      "bio": "",
+      "createdAt": "2025-12-17T13:20:01.610Z",
+      "updatedAt": "2025-12-17T13:20:01.610Z",
+      "__v": 0
+    }
+  ],
+  "friends": [
+    {
+      "_id": "6942a977a481e1ad38601934",
+      "userId": "6942a976a481e1ad38601920",
+      "friendId": "6942a976a481e1ad38601922",
+      "status": "accepted",
+      "requestedAt": "2025-10-15T00:00:00.000Z",
+      "acceptedAt": "2025-10-16T00:00:00.000Z",
+      "createdAt": "2025-12-17T13:00:39.056Z",
+      "updatedAt": "2025-12-17T13:00:39.056Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601937",
+      "userId": "6942a976a481e1ad38601923",
+      "friendId": "6942a976a481e1ad38601924",
+      "status": "accepted",
+      "requestedAt": "2025-11-10T00:00:00.000Z",
+      "acceptedAt": "2025-11-11T00:00:00.000Z",
+      "createdAt": "2025-12-17T13:00:39.056Z",
+      "updatedAt": "2025-12-17T13:00:39.056Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601935",
+      "userId": "6942a976a481e1ad38601921",
+      "friendId": "6942a976a481e1ad38601923",
+      "status": "pending",
+      "acceptedAt": null,
+      "requestedAt": "2025-12-17T13:00:39.054Z",
+      "createdAt": "2025-12-17T13:00:39.056Z",
+      "updatedAt": "2025-12-17T13:00:39.056Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601933",
+      "userId": "6942a976a481e1ad38601920",
+      "friendId": "6942a976a481e1ad38601921",
+      "status": "accepted",
+      "requestedAt": "2025-11-01T00:00:00.000Z",
+      "acceptedAt": "2025-11-02T00:00:00.000Z",
+      "createdAt": "2025-12-17T13:00:39.056Z",
+      "updatedAt": "2025-12-17T13:00:39.056Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601936",
+      "userId": "6942a976a481e1ad38601923",
+      "friendId": "6942a976a481e1ad38601920",
+      "status": "accepted",
+      "requestedAt": "2025-11-20T00:00:00.000Z",
+      "acceptedAt": "2025-11-21T00:00:00.000Z",
+      "createdAt": "2025-12-17T13:00:39.056Z",
+      "updatedAt": "2025-12-17T13:00:39.056Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601938",
+      "userId": "6942a976a481e1ad38601924",
+      "friendId": "6942a976a481e1ad38601920",
+      "status": "blocked",
+      "requestedAt": "2025-09-05T00:00:00.000Z",
+      "acceptedAt": null,
+      "createdAt": "2025-12-17T13:00:39.056Z",
+      "updatedAt": "2025-12-17T13:00:39.056Z",
+      "__v": 0
+    }
+  ],
+  "groups": [
+    {
+      "_id": "6942a977a481e1ad3860193f",
+      "name": "City Explorers",
+      "size": 12,
+      "createdAt": "2025-12-17T13:00:39.060Z",
+      "updatedAt": "2025-12-17T13:00:39.060Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601941",
+      "name": "Lake District Friends",
+      "size": 5,
+      "createdAt": "2025-12-17T13:00:39.060Z",
+      "updatedAt": "2025-12-17T13:00:39.060Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601940",
+      "name": "Mountain Hikers",
+      "size": 4,
+      "createdAt": "2025-12-17T13:00:39.060Z",
+      "updatedAt": "2025-12-17T13:00:39.060Z",
+      "__v": 0
+    }
+  ],
+  "userGroups": [
+    {
+      "_id": "6942a977a481e1ad38601945",
+      "userId": "6942a976a481e1ad38601920",
+      "groupId": "6942a977a481e1ad3860193f",
+      "role": "admin",
+      "createdAt": "2025-12-17T13:00:39.062Z",
+      "updatedAt": "2025-12-17T13:00:39.062Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601946",
+      "userId": "6942a976a481e1ad38601921",
+      "groupId": "6942a977a481e1ad3860193f",
+      "role": "member",
+      "createdAt": "2025-12-17T13:00:39.062Z",
+      "updatedAt": "2025-12-17T13:00:39.062Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601948",
+      "userId": "6942a976a481e1ad38601922",
+      "groupId": "6942a977a481e1ad38601940",
+      "role": "admin",
+      "createdAt": "2025-12-17T13:00:39.062Z",
+      "updatedAt": "2025-12-17T13:00:39.062Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601949",
+      "userId": "6942a976a481e1ad38601923",
+      "groupId": "6942a977a481e1ad38601940",
+      "role": "member",
+      "createdAt": "2025-12-17T13:00:39.062Z",
+      "updatedAt": "2025-12-17T13:00:39.062Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601947",
+      "userId": "6942a976a481e1ad38601922",
+      "groupId": "6942a977a481e1ad3860193f",
+      "role": "member",
+      "createdAt": "2025-12-17T13:00:39.062Z",
+      "updatedAt": "2025-12-17T13:00:39.062Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad3860194b",
+      "userId": "6942a976a481e1ad38601924",
+      "groupId": "6942a977a481e1ad38601941",
+      "role": "member",
+      "createdAt": "2025-12-17T13:00:39.062Z",
+      "updatedAt": "2025-12-17T13:00:39.062Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad3860194a",
+      "userId": "6942a976a481e1ad38601921",
+      "groupId": "6942a977a481e1ad38601941",
+      "role": "admin",
+      "createdAt": "2025-12-17T13:00:39.062Z",
+      "updatedAt": "2025-12-17T13:00:39.062Z",
+      "__v": 0
+    }
+  ],
+  "journeys": [
+    {
+      "_id": "6942a977a481e1ad38601953",
+      "name": "Find the Hidden Fountain",
+      "image": "https://images.unsplash.com/photo-1552561895-697cd0d59b58",
+      "town": "Geneva",
+      "description": "A beautiful Renaissance fountain hidden in the old town of Geneva",
+      "createdAt": "2025-12-17T13:00:39.065Z",
+      "updatedAt": "2025-12-17T13:00:39.065Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601956",
+      "name": "Lausanne Street Art Tour",
+      "image": "https://static.lausanne-tourisme.ch/image/upload/w_1936,f_auto,q_auto/6yLenM0MZJ1YD3n1Gog3woVeV5M6vFA6ROnJ6qgj",
+      "town": "Lausanne",
+      "description": "Discover amazing street art and murals in Vieille Ville",
+      "createdAt": "2025-12-17T13:00:39.065Z",
+      "updatedAt": "2025-12-17T13:00:39.065Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601954",
+      "name": "Mont-Blanc Challenge",
+      "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+      "town": "Chamonix",
+      "description": "Hike to the top of Mont-Blanc, the highest peak in the Alps",
+      "createdAt": "2025-12-17T13:00:39.065Z",
+      "updatedAt": "2025-12-17T13:00:39.065Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601955",
+      "name": "Lake Geneva Sunset Walk",
+      "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+      "town": "Geneva",
+      "description": "Peaceful walk along the shores of Lake Geneva at sunset",
+      "createdAt": "2025-12-17T13:00:39.065Z",
+      "updatedAt": "2025-12-17T13:00:39.065Z",
+      "__v": 0
+    }
+  ],
+  "steps": [
+    {
+      "_id": "6942a977a481e1ad3860195b",
+      "journeyId": "6942a977a481e1ad38601953",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          6.634878,
+          46.520841
+        ]
+      },
+      "image": "https://images.unsplash.com/photo-1552561895-697cd0d59b58",
+      "riddle": "Look for the old water fountain in the heart of the old town",
+      "accuracy": null,
+      "altitude": null,
+      "speed": null,
+      "note": "",
+      "timestamp": "2025-12-17T13:00:39.068Z",
+      "createdAt": "2025-12-17T13:00:39.071Z",
+      "updatedAt": "2025-12-17T13:00:39.071Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad3860195e",
+      "journeyId": "6942a977a481e1ad38601954",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          6.8651,
+          45.833
+        ]
+      },
+      "image": "https://images.unsplash.com/photo-1519904981063-b0cf448d479e",
+      "riddle": "Reach the first shelter at 2000m altitude",
+      "accuracy": null,
+      "altitude": null,
+      "speed": null,
+      "note": "",
+      "timestamp": "2025-12-17T13:00:39.069Z",
+      "createdAt": "2025-12-17T13:00:39.071Z",
+      "updatedAt": "2025-12-17T13:00:39.071Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad3860195c",
+      "journeyId": "6942a977a481e1ad38601953",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          6.6352,
+          46.5206
+        ]
+      },
+      "image": "https://images.unsplash.com/photo-1469022563149-aa64e87c54a6",
+      "riddle": "Find the Renaissance architecture near the cathedral",
+      "accuracy": null,
+      "altitude": null,
+      "speed": null,
+      "note": "",
+      "timestamp": "2025-12-17T13:00:39.069Z",
+      "createdAt": "2025-12-17T13:00:39.071Z",
+      "updatedAt": "2025-12-17T13:00:39.071Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad3860195f",
+      "journeyId": "6942a977a481e1ad38601954",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          6.8655,
+          45.8334
+        ]
+      },
+      "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+      "riddle": "Stand at the summit and enjoy the panoramic views",
+      "accuracy": null,
+      "altitude": null,
+      "speed": null,
+      "note": "",
+      "timestamp": "2025-12-17T13:00:39.069Z",
+      "createdAt": "2025-12-17T13:00:39.071Z",
+      "updatedAt": "2025-12-17T13:00:39.071Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601960",
+      "journeyId": "6942a977a481e1ad38601955",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          6.640941,
+          46.443359
+        ]
+      },
+      "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+      "riddle": "Begin your walk at the lake shore promenade",
+      "accuracy": null,
+      "altitude": null,
+      "speed": null,
+      "note": "",
+      "timestamp": "2025-12-17T13:00:39.069Z",
+      "createdAt": "2025-12-17T13:00:39.071Z",
+      "updatedAt": "2025-12-17T13:00:39.071Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601963",
+      "journeyId": "6942a977a481e1ad38601956",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          6.1435,
+          46.2047
+        ]
+      },
+      "image": "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b",
+      "riddle": "Discover the street art beneath the historic buildings",
+      "accuracy": null,
+      "altitude": null,
+      "speed": null,
+      "note": "",
+      "timestamp": "2025-12-17T13:00:39.070Z",
+      "createdAt": "2025-12-17T13:00:39.071Z",
+      "updatedAt": "2025-12-17T13:00:39.071Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601961",
+      "journeyId": "6942a977a481e1ad38601955",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          6.642,
+          46.442
+        ]
+      },
+      "image": "https://images.unsplash.com/photo-1469022563149-aa64e87c54a6",
+      "riddle": "Watch the sunset over the Jura mountains",
+      "accuracy": null,
+      "altitude": null,
+      "speed": null,
+      "note": "",
+      "timestamp": "2025-12-17T13:00:39.069Z",
+      "createdAt": "2025-12-17T13:00:39.071Z",
+      "updatedAt": "2025-12-17T13:00:39.071Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601964",
+      "journeyId": "6942a977a481e1ad38601956",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          6.1439,
+          46.205
+        ]
+      },
+      "image": "https://images.unsplash.com/photo-1579783902614-e3fb5141b0cb",
+      "riddle": "Capture the essence of urban creativity",
+      "accuracy": null,
+      "altitude": null,
+      "speed": null,
+      "note": "",
+      "timestamp": "2025-12-17T13:00:39.070Z",
+      "createdAt": "2025-12-17T13:00:39.071Z",
+      "updatedAt": "2025-12-17T13:00:39.071Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601962",
+      "journeyId": "6942a977a481e1ad38601956",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          6.143208,
+          46.204391
+        ]
+      },
+      "image": "https://static.lausanne-tourisme.ch/image/upload/w_1936,f_auto,q_auto/6yLenM0MZJ1YD3n1Gog3woVeV5M6vFA6ROnJ6qgj",
+      "riddle": "Find the colorful mural in the old town",
+      "accuracy": null,
+      "altitude": null,
+      "speed": null,
+      "note": "",
+      "timestamp": "2025-12-17T13:00:39.070Z",
+      "createdAt": "2025-12-17T13:00:39.071Z",
+      "updatedAt": "2025-12-17T13:00:39.071Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad3860195d",
+      "journeyId": "6942a977a481e1ad38601954",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          6.864791,
+          45.832408
+        ]
+      },
+      "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+      "riddle": "Start your climb at the base of Mont-Blanc",
+      "accuracy": null,
+      "altitude": null,
+      "speed": null,
+      "note": "",
+      "timestamp": "2025-12-17T13:00:39.069Z",
+      "createdAt": "2025-12-17T13:00:39.071Z",
+      "updatedAt": "2025-12-17T13:00:39.071Z",
+      "__v": 0
+    }
+  ],
+  "userJourneys": [
+    {
+      "_id": "6942a977a481e1ad3860196f",
+      "userId": "6942a976a481e1ad38601920",
+      "journeyId": "6942a977a481e1ad38601953",
+      "createdAt": "2025-12-17T13:00:39.077Z",
+      "updatedAt": "2025-12-17T13:00:39.077Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601970",
+      "userId": "6942a976a481e1ad38601921",
+      "journeyId": "6942a977a481e1ad38601953",
+      "createdAt": "2025-12-17T13:00:39.077Z",
+      "updatedAt": "2025-12-17T13:00:39.077Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601972",
+      "userId": "6942a976a481e1ad38601923",
+      "journeyId": "6942a977a481e1ad38601954",
+      "createdAt": "2025-12-17T13:00:39.077Z",
+      "updatedAt": "2025-12-17T13:00:39.077Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601973",
+      "userId": "6942a976a481e1ad38601921",
+      "journeyId": "6942a977a481e1ad38601955",
+      "createdAt": "2025-12-17T13:00:39.078Z",
+      "updatedAt": "2025-12-17T13:00:39.078Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601971",
+      "userId": "6942a976a481e1ad38601922",
+      "journeyId": "6942a977a481e1ad38601954",
+      "createdAt": "2025-12-17T13:00:39.077Z",
+      "updatedAt": "2025-12-17T13:00:39.077Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601974",
+      "userId": "6942a976a481e1ad38601924",
+      "journeyId": "6942a977a481e1ad38601955",
+      "createdAt": "2025-12-17T13:00:39.078Z",
+      "updatedAt": "2025-12-17T13:00:39.078Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601975",
+      "userId": "6942a976a481e1ad38601920",
+      "journeyId": "6942a977a481e1ad38601956",
+      "createdAt": "2025-12-17T13:00:39.078Z",
+      "updatedAt": "2025-12-17T13:00:39.078Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601976",
+      "userId": "6942a976a481e1ad38601923",
+      "journeyId": "6942a977a481e1ad38601956",
+      "createdAt": "2025-12-17T13:00:39.078Z",
+      "updatedAt": "2025-12-17T13:00:39.078Z",
+      "__v": 0
+    }
+  ],
+  "ratings": [
+    {
+      "_id": "6942a977a481e1ad38601981",
+      "userId": "6942a976a481e1ad38601922",
+      "journeyId": "6942a977a481e1ad38601953",
+      "rating": 3,
+      "createdAt": "2025-12-17T13:00:39.082Z",
+      "updatedAt": "2025-12-17T13:00:39.082Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad3860197f",
+      "userId": "6942a976a481e1ad38601920",
+      "journeyId": "6942a977a481e1ad38601953",
+      "rating": 5,
+      "createdAt": "2025-12-17T13:00:39.082Z",
+      "updatedAt": "2025-12-17T13:00:39.082Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601980",
+      "userId": "6942a976a481e1ad38601921",
+      "journeyId": "6942a977a481e1ad38601953",
+      "rating": 4,
+      "createdAt": "2025-12-17T13:00:39.082Z",
+      "updatedAt": "2025-12-17T13:00:39.082Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601982",
+      "userId": "6942a976a481e1ad38601921",
+      "journeyId": "6942a977a481e1ad38601955",
+      "rating": 5,
+      "createdAt": "2025-12-17T13:00:39.082Z",
+      "updatedAt": "2025-12-17T13:00:39.082Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601983",
+      "userId": "6942a976a481e1ad38601920",
+      "journeyId": "6942a977a481e1ad38601956",
+      "rating": 4,
+      "createdAt": "2025-12-17T13:00:39.082Z",
+      "updatedAt": "2025-12-17T13:00:39.082Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601984",
+      "userId": "6942a976a481e1ad38601923",
+      "journeyId": "6942a977a481e1ad38601956",
+      "rating": 5,
+      "createdAt": "2025-12-17T13:00:39.082Z",
+      "updatedAt": "2025-12-17T13:00:39.082Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601985",
+      "userId": "6942a976a481e1ad38601924",
+      "journeyId": "6942a977a481e1ad38601955",
+      "rating": 4,
+      "createdAt": "2025-12-17T13:00:39.082Z",
+      "updatedAt": "2025-12-17T13:00:39.082Z",
+      "__v": 0
+    }
+  ],
+  "participations": [
+    {
+      "_id": "6942a977a481e1ad3860198e",
+      "journeyId": "6942a977a481e1ad38601953",
+      "userId": "6942a976a481e1ad38601921",
+      "status": "completed",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad3860198d",
+      "journeyId": "6942a977a481e1ad38601953",
+      "userId": "6942a976a481e1ad38601920",
+      "status": "completed",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad3860198f",
+      "journeyId": "6942a977a481e1ad38601953",
+      "userId": "6942a976a481e1ad38601924",
+      "status": "running",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601990",
+      "journeyId": "6942a977a481e1ad38601954",
+      "userId": "6942a976a481e1ad38601922",
+      "status": "completed",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601991",
+      "journeyId": "6942a977a481e1ad38601954",
+      "userId": "6942a976a481e1ad38601923",
+      "status": "completed",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601992",
+      "journeyId": "6942a977a481e1ad38601954",
+      "userId": "6942a976a481e1ad38601920",
+      "status": "running",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601994",
+      "journeyId": "6942a977a481e1ad38601955",
+      "userId": "6942a976a481e1ad38601924",
+      "status": "running",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601993",
+      "journeyId": "6942a977a481e1ad38601955",
+      "userId": "6942a976a481e1ad38601921",
+      "status": "completed",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601995",
+      "journeyId": "6942a977a481e1ad38601955",
+      "userId": "6942a976a481e1ad38601922",
+      "status": "open",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601996",
+      "journeyId": "6942a977a481e1ad38601956",
+      "userId": "6942a976a481e1ad38601923",
+      "status": "completed",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601999",
+      "journeyId": "6942a977a481e1ad38601956",
+      "userId": "6942a976a481e1ad38601922",
+      "status": "completed",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601997",
+      "journeyId": "6942a977a481e1ad38601956",
+      "userId": "6942a976a481e1ad38601920",
+      "status": "running",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad38601998",
+      "journeyId": "6942a977a481e1ad38601956",
+      "userId": "6942a976a481e1ad38601921",
+      "status": "open",
+      "createdAt": "2025-12-17T13:00:39.085Z",
+      "updatedAt": "2025-12-17T13:00:39.085Z",
+      "__v": 0
+    }
+  ],
+  "scores": [
+    {
+      "_id": "6942a977a481e1ad386019a7",
+      "userId": "6942a976a481e1ad38601920",
+      "participationId": "6942a977a481e1ad3860198d",
+      "journeyId": "6942a977a481e1ad38601953",
+      "score": 850,
+      "time": 45,
+      "distance": 2.5,
+      "createdAt": "2025-12-17T13:00:39.092Z",
+      "updatedAt": "2025-12-17T13:00:39.092Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad386019a8",
+      "userId": "6942a976a481e1ad38601921",
+      "participationId": "6942a977a481e1ad3860198e",
+      "journeyId": "6942a977a481e1ad38601953",
+      "score": 920,
+      "time": 38,
+      "distance": 2.5,
+      "createdAt": "2025-12-17T13:00:39.092Z",
+      "updatedAt": "2025-12-17T13:00:39.092Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad386019a9",
+      "userId": "6942a976a481e1ad38601922",
+      "participationId": "6942a977a481e1ad38601990",
+      "journeyId": "6942a977a481e1ad38601954",
+      "score": 750,
+      "time": 720,
+      "distance": 15.8,
+      "createdAt": "2025-12-17T13:00:39.092Z",
+      "updatedAt": "2025-12-17T13:00:39.092Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad386019ab",
+      "userId": "6942a976a481e1ad38601921",
+      "participationId": "6942a977a481e1ad38601993",
+      "journeyId": "6942a977a481e1ad38601955",
+      "score": 920,
+      "time": 105,
+      "distance": 5.3,
+      "createdAt": "2025-12-17T13:00:39.092Z",
+      "updatedAt": "2025-12-17T13:00:39.092Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad386019aa",
+      "userId": "6942a976a481e1ad38601923",
+      "participationId": "6942a977a481e1ad38601991",
+      "journeyId": "6942a977a481e1ad38601954",
+      "score": 1050,
+      "time": 650,
+      "distance": 15.8,
+      "createdAt": "2025-12-17T13:00:39.092Z",
+      "updatedAt": "2025-12-17T13:00:39.092Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad386019ac",
+      "userId": "6942a976a481e1ad38601924",
+      "participationId": "6942a977a481e1ad38601994",
+      "journeyId": "6942a977a481e1ad38601955",
+      "score": 880,
+      "time": 115,
+      "distance": 5.3,
+      "createdAt": "2025-12-17T13:00:39.092Z",
+      "updatedAt": "2025-12-17T13:00:39.092Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad386019ad",
+      "userId": "6942a976a481e1ad38601923",
+      "participationId": "6942a977a481e1ad38601996",
+      "journeyId": "6942a977a481e1ad38601956",
+      "score": 795,
+      "time": 140,
+      "distance": 4.2,
+      "createdAt": "2025-12-17T13:00:39.092Z",
+      "updatedAt": "2025-12-17T13:00:39.092Z",
+      "__v": 0
+    },
+    {
+      "_id": "6942a977a481e1ad386019ae",
+      "userId": "6942a976a481e1ad38601922",
+      "participationId": "6942a977a481e1ad38601999",
+      "journeyId": "6942a977a481e1ad38601956",
+      "score": 750,
+      "time": 155,
+      "distance": 4.2,
+      "createdAt": "2025-12-17T13:00:39.092Z",
+      "updatedAt": "2025-12-17T13:00:39.092Z",
+      "__v": 0
+    }
+  ]
+}

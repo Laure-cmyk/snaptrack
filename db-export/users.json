@@ -1,0 +1,68 @@
+[
+  {
+    "_id": "6942a976a481e1ad38601920",
+    "username": "alice",
+    "email": "alice@example.com",
+    "password": "$2b$10$/PS6XWPX2c1pIZCT8gO0.eSCm.DKOwI/G6ox9.BKILz6JRao/vuza",
+    "profilePicture": "https://api.dicebear.com/9.x/pixel-art/svg?seed=alice",
+    "bio": "Adventure seeker and photographer",
+    "createdAt": "2025-12-17T13:00:38.904Z",
+    "updatedAt": "2025-12-17T13:00:38.904Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a976a481e1ad38601923",
+    "username": "diana",
+    "email": "diana@example.com",
+    "password": "$2b$10$G7IfNBKp6y.smoGIwF986u05.BgXOwpYVZoFrmkkUAmQCpUgdW6h.",
+    "profilePicture": "https://api.dicebear.com/9.x/pixel-art/svg?seed=diana.svg",
+    "bio": "Urban explorer",
+    "createdAt": "2025-12-17T13:00:38.904Z",
+    "updatedAt": "2025-12-17T13:00:38.904Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a976a481e1ad38601924",
+    "username": "eve",
+    "email": "eve@example.com",
+    "password": "$2b$10$8Nw3A2rsy/frY95zjN5KIePEVnYVtgRWoqhaoi4pElgtg4LT8YEX.",
+    "profilePicture": "https://api.dicebear.com/9.x/pixel-art/svg?seed=eve.svg",
+    "bio": "Travel and photo enthusiast",
+    "createdAt": "2025-12-17T13:00:38.905Z",
+    "updatedAt": "2025-12-17T13:00:38.905Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a976a481e1ad38601921",
+    "username": "bob",
+    "email": "bob@example.com",
+    "password": "$2b$10$8eo2hyFxltSDPAQ5upKYXe5KE.T4C7Db1yUP1xL3k.IFxc7o5J9Da",
+    "profilePicture": "https://api.dicebear.com/9.x/pixel-art/svg?seed=bob.svg",
+    "bio": "Passionate explorer from Geneva",
+    "createdAt": "2025-12-17T13:00:38.904Z",
+    "updatedAt": "2025-12-17T13:00:38.904Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a976a481e1ad38601922",
+    "username": "charlie",
+    "email": "charlie@example.com",
+    "password": "$2b$10$UG2oLuqDfqJYcX16SWhRVezvDGjsnDhP3dypSOjalcd01FR4OWJbm",
+    "profilePicture": "https://api.dicebear.com/9.x/pixel-art/svg?seed=charlie.svg",
+    "bio": "Nature lover and hiking enthusiast",
+    "createdAt": "2025-12-17T13:00:38.904Z",
+    "updatedAt": "2025-12-17T13:00:38.904Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942ae011b649adedbddc569",
+    "username": "test123",
+    "email": "test123@gmail.com",
+    "password": "$2b$10$9FLUQxLBoN8TFF2ZXFwhcOXGbgYMJU636fBXH966Zv02K.7PjmaYq",
+    "profilePicture": null,
+    "bio": "",
+    "createdAt": "2025-12-17T13:20:01.610Z",
+    "updatedAt": "2025-12-17T13:20:01.610Z",
+    "__v": 0
+  }
+]

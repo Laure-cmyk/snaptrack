@@ -1,0 +1,119 @@
+[
+  {
+    "_id": "6942a977a481e1ad3860198e",
+    "journeyId": "6942a977a481e1ad38601953",
+    "userId": "6942a976a481e1ad38601921",
+    "status": "completed",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad3860198d",
+    "journeyId": "6942a977a481e1ad38601953",
+    "userId": "6942a976a481e1ad38601920",
+    "status": "completed",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad3860198f",
+    "journeyId": "6942a977a481e1ad38601953",
+    "userId": "6942a976a481e1ad38601924",
+    "status": "running",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601990",
+    "journeyId": "6942a977a481e1ad38601954",
+    "userId": "6942a976a481e1ad38601922",
+    "status": "completed",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601991",
+    "journeyId": "6942a977a481e1ad38601954",
+    "userId": "6942a976a481e1ad38601923",
+    "status": "completed",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601992",
+    "journeyId": "6942a977a481e1ad38601954",
+    "userId": "6942a976a481e1ad38601920",
+    "status": "running",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601994",
+    "journeyId": "6942a977a481e1ad38601955",
+    "userId": "6942a976a481e1ad38601924",
+    "status": "running",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601993",
+    "journeyId": "6942a977a481e1ad38601955",
+    "userId": "6942a976a481e1ad38601921",
+    "status": "completed",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601995",
+    "journeyId": "6942a977a481e1ad38601955",
+    "userId": "6942a976a481e1ad38601922",
+    "status": "open",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601996",
+    "journeyId": "6942a977a481e1ad38601956",
+    "userId": "6942a976a481e1ad38601923",
+    "status": "completed",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601999",
+    "journeyId": "6942a977a481e1ad38601956",
+    "userId": "6942a976a481e1ad38601922",
+    "status": "completed",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601997",
+    "journeyId": "6942a977a481e1ad38601956",
+    "userId": "6942a976a481e1ad38601920",
+    "status": "running",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601998",
+    "journeyId": "6942a977a481e1ad38601956",
+    "userId": "6942a976a481e1ad38601921",
+    "status": "open",
+    "createdAt": "2025-12-17T13:00:39.085Z",
+    "updatedAt": "2025-12-17T13:00:39.085Z",
+    "__v": 0
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "_id": "6942a977a481e1ad38601953",
+    "name": "Find the Hidden Fountain",
+    "image": "https://images.unsplash.com/photo-1552561895-697cd0d59b58",
+    "town": "Geneva",
+    "description": "A beautiful Renaissance fountain hidden in the old town of Geneva",
+    "createdAt": "2025-12-17T13:00:39.065Z",
+    "updatedAt": "2025-12-17T13:00:39.065Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601956",
+    "name": "Lausanne Street Art Tour",
+    "image": "https://static.lausanne-tourisme.ch/image/upload/w_1936,f_auto,q_auto/6yLenM0MZJ1YD3n1Gog3woVeV5M6vFA6ROnJ6qgj",
+    "town": "Lausanne",
+    "description": "Discover amazing street art and murals in Vieille Ville",
+    "createdAt": "2025-12-17T13:00:39.065Z",
+    "updatedAt": "2025-12-17T13:00:39.065Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601954",
+    "name": "Mont-Blanc Challenge",
+    "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+    "town": "Chamonix",
+    "description": "Hike to the top of Mont-Blanc, the highest peak in the Alps",
+    "createdAt": "2025-12-17T13:00:39.065Z",
+    "updatedAt": "2025-12-17T13:00:39.065Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601955",
+    "name": "Lake Geneva Sunset Walk",
+    "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+    "town": "Geneva",
+    "description": "Peaceful walk along the shores of Lake Geneva at sunset",
+    "createdAt": "2025-12-17T13:00:39.065Z",
+    "updatedAt": "2025-12-17T13:00:39.065Z",
+    "__v": 0
+  }
+]

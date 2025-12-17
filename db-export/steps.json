@@ -1,0 +1,212 @@
+[
+  {
+    "_id": "6942a977a481e1ad3860195b",
+    "journeyId": "6942a977a481e1ad38601953",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        6.634878,
+        46.520841
+      ]
+    },
+    "image": "https://images.unsplash.com/photo-1552561895-697cd0d59b58",
+    "riddle": "Look for the old water fountain in the heart of the old town",
+    "accuracy": null,
+    "altitude": null,
+    "speed": null,
+    "note": "",
+    "timestamp": "2025-12-17T13:00:39.068Z",
+    "createdAt": "2025-12-17T13:00:39.071Z",
+    "updatedAt": "2025-12-17T13:00:39.071Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad3860195e",
+    "journeyId": "6942a977a481e1ad38601954",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        6.8651,
+        45.833
+      ]
+    },
+    "image": "https://images.unsplash.com/photo-1519904981063-b0cf448d479e",
+    "riddle": "Reach the first shelter at 2000m altitude",
+    "accuracy": null,
+    "altitude": null,
+    "speed": null,
+    "note": "",
+    "timestamp": "2025-12-17T13:00:39.069Z",
+    "createdAt": "2025-12-17T13:00:39.071Z",
+    "updatedAt": "2025-12-17T13:00:39.071Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad3860195c",
+    "journeyId": "6942a977a481e1ad38601953",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        6.6352,
+        46.5206
+      ]
+    },
+    "image": "https://images.unsplash.com/photo-1469022563149-aa64e87c54a6",
+    "riddle": "Find the Renaissance architecture near the cathedral",
+    "accuracy": null,
+    "altitude": null,
+    "speed": null,
+    "note": "",
+    "timestamp": "2025-12-17T13:00:39.069Z",
+    "createdAt": "2025-12-17T13:00:39.071Z",
+    "updatedAt": "2025-12-17T13:00:39.071Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad3860195f",
+    "journeyId": "6942a977a481e1ad38601954",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        6.8655,
+        45.8334
+      ]
+    },
+    "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+    "riddle": "Stand at the summit and enjoy the panoramic views",
+    "accuracy": null,
+    "altitude": null,
+    "speed": null,
+    "note": "",
+    "timestamp": "2025-12-17T13:00:39.069Z",
+    "createdAt": "2025-12-17T13:00:39.071Z",
+    "updatedAt": "2025-12-17T13:00:39.071Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601960",
+    "journeyId": "6942a977a481e1ad38601955",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        6.640941,
+        46.443359
+      ]
+    },
+    "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+    "riddle": "Begin your walk at the lake shore promenade",
+    "accuracy": null,
+    "altitude": null,
+    "speed": null,
+    "note": "",
+    "timestamp": "2025-12-17T13:00:39.069Z",
+    "createdAt": "2025-12-17T13:00:39.071Z",
+    "updatedAt": "2025-12-17T13:00:39.071Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601963",
+    "journeyId": "6942a977a481e1ad38601956",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        6.1435,
+        46.2047
+      ]
+    },
+    "image": "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b",
+    "riddle": "Discover the street art beneath the historic buildings",
+    "accuracy": null,
+    "altitude": null,
+    "speed": null,
+    "note": "",
+    "timestamp": "2025-12-17T13:00:39.070Z",
+    "createdAt": "2025-12-17T13:00:39.071Z",
+    "updatedAt": "2025-12-17T13:00:39.071Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601961",
+    "journeyId": "6942a977a481e1ad38601955",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        6.642,
+        46.442
+      ]
+    },
+    "image": "https://images.unsplash.com/photo-1469022563149-aa64e87c54a6",
+    "riddle": "Watch the sunset over the Jura mountains",
+    "accuracy": null,
+    "altitude": null,
+    "speed": null,
+    "note": "",
+    "timestamp": "2025-12-17T13:00:39.069Z",
+    "createdAt": "2025-12-17T13:00:39.071Z",
+    "updatedAt": "2025-12-17T13:00:39.071Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601964",
+    "journeyId": "6942a977a481e1ad38601956",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        6.1439,
+        46.205
+      ]
+    },
+    "image": "https://images.unsplash.com/photo-1579783902614-e3fb5141b0cb",
+    "riddle": "Capture the essence of urban creativity",
+    "accuracy": null,
+    "altitude": null,
+    "speed": null,
+    "note": "",
+    "timestamp": "2025-12-17T13:00:39.070Z",
+    "createdAt": "2025-12-17T13:00:39.071Z",
+    "updatedAt": "2025-12-17T13:00:39.071Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad38601962",
+    "journeyId": "6942a977a481e1ad38601956",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        6.143208,
+        46.204391
+      ]
+    },
+    "image": "https://static.lausanne-tourisme.ch/image/upload/w_1936,f_auto,q_auto/6yLenM0MZJ1YD3n1Gog3woVeV5M6vFA6ROnJ6qgj",
+    "riddle": "Find the colorful mural in the old town",
+    "accuracy": null,
+    "altitude": null,
+    "speed": null,
+    "note": "",
+    "timestamp": "2025-12-17T13:00:39.070Z",
+    "createdAt": "2025-12-17T13:00:39.071Z",
+    "updatedAt": "2025-12-17T13:00:39.071Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad3860195d",
+    "journeyId": "6942a977a481e1ad38601954",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        6.864791,
+        45.832408
+      ]
+    },
+    "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+    "riddle": "Start your climb at the base of Mont-Blanc",
+    "accuracy": null,
+    "altitude": null,
+    "speed": null,
+    "note": "",
+    "timestamp": "2025-12-17T13:00:39.069Z",
+    "createdAt": "2025-12-17T13:00:39.071Z",
+    "updatedAt": "2025-12-17T13:00:39.071Z",
+    "__v": 0
+  }
+]

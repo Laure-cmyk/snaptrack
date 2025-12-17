@@ -1,0 +1,98 @@
+[
+  {
+    "_id": "6942a977a481e1ad386019a7",
+    "userId": "6942a976a481e1ad38601920",
+    "participationId": "6942a977a481e1ad3860198d",
+    "journeyId": "6942a977a481e1ad38601953",
+    "score": 850,
+    "time": 45,
+    "distance": 2.5,
+    "createdAt": "2025-12-17T13:00:39.092Z",
+    "updatedAt": "2025-12-17T13:00:39.092Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad386019a8",
+    "userId": "6942a976a481e1ad38601921",
+    "participationId": "6942a977a481e1ad3860198e",
+    "journeyId": "6942a977a481e1ad38601953",
+    "score": 920,
+    "time": 38,
+    "distance": 2.5,
+    "createdAt": "2025-12-17T13:00:39.092Z",
+    "updatedAt": "2025-12-17T13:00:39.092Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad386019a9",
+    "userId": "6942a976a481e1ad38601922",
+    "participationId": "6942a977a481e1ad38601990",
+    "journeyId": "6942a977a481e1ad38601954",
+    "score": 750,
+    "time": 720,
+    "distance": 15.8,
+    "createdAt": "2025-12-17T13:00:39.092Z",
+    "updatedAt": "2025-12-17T13:00:39.092Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad386019ab",
+    "userId": "6942a976a481e1ad38601921",
+    "participationId": "6942a977a481e1ad38601993",
+    "journeyId": "6942a977a481e1ad38601955",
+    "score": 920,
+    "time": 105,
+    "distance": 5.3,
+    "createdAt": "2025-12-17T13:00:39.092Z",
+    "updatedAt": "2025-12-17T13:00:39.092Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad386019aa",
+    "userId": "6942a976a481e1ad38601923",
+    "participationId": "6942a977a481e1ad38601991",
+    "journeyId": "6942a977a481e1ad38601954",
+    "score": 1050,
+    "time": 650,
+    "distance": 15.8,
+    "createdAt": "2025-12-17T13:00:39.092Z",
+    "updatedAt": "2025-12-17T13:00:39.092Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad386019ac",
+    "userId": "6942a976a481e1ad38601924",
+    "participationId": "6942a977a481e1ad38601994",
+    "journeyId": "6942a977a481e1ad38601955",
+    "score": 880,
+    "time": 115,
+    "distance": 5.3,
+    "createdAt": "2025-12-17T13:00:39.092Z",
+    "updatedAt": "2025-12-17T13:00:39.092Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad386019ad",
+    "userId": "6942a976a481e1ad38601923",
+    "participationId": "6942a977a481e1ad38601996",
+    "journeyId": "6942a977a481e1ad38601956",
+    "score": 795,
+    "time": 140,
+    "distance": 4.2,
+    "createdAt": "2025-12-17T13:00:39.092Z",
+    "updatedAt": "2025-12-17T13:00:39.092Z",
+    "__v": 0
+  },
+  {
+    "_id": "6942a977a481e1ad386019ae",
+    "userId": "6942a976a481e1ad38601922",
+    "participationId": "6942a977a481e1ad38601999",
+    "journeyId": "6942a977a481e1ad38601956",
+    "score": 750,
+    "time": 155,
+    "distance": 4.2,
+    "createdAt": "2025-12-17T13:00:39.092Z",
+    "updatedAt": "2025-12-17T13:00:39.092Z",
+    "__v": 0
+  }
+]
