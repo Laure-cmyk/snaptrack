@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
-import TheListSocials from '../components/TheListSocials.vue';
-import TheGroup from '../components/TheGroup.vue';
+import TheListSocials from '../components/socials/TheListSocials.vue';
+import TheGroup from '../components/socials/TheGroup.vue';
 
 /* TO IMPLEMENT ONCE FRONT BRANCHES ARE MERGED :
 Modal to confirm negative action

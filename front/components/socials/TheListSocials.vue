@@ -1,7 +1,7 @@
 <script setup>
 /* import { usefetchJson } from '../composables/useFetchJson'; */
 import { reactive, watchEffect } from 'vue';
-import { getDeleteLabel, getDeleteResult } from '../utils/negativeAction';
+import { getDeleteLabel, getDeleteResult } from '../../utils/negativeAction';
 
 const props = defineProps({
   items: { type: Array, default: () => [] },

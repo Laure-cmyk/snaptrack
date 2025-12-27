@@ -21,6 +21,7 @@ const routes = [
   { path: '/createchallenge', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
   { path: '/profil', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
   { path: '/authentification', component: () => import('./pages/PageAuth.vue') }
+  { path: '/socials', component: () => import('./pages/PageSocials.vue') }
 ];
 
 const router = createRouter({
