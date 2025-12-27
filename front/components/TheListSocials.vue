@@ -1,14 +1,14 @@
 <script setup>
 /* import { usefetchJson } from '../composables/useFetchJson'; */
 import { reactive, watchEffect } from 'vue';
+import { getDeleteLabel, getDeleteResult } from '../utils/negativeAction';
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
   addLabel: { type: String, default: 'Accepter' },
   pendingLabel: { type: String, default: 'En attente' },
   addedLabel: { type: String, default: 'Amis' },
-  declineLabel: { type: String, default: 'Refuser' },
-  removeLabel: { type: String, default: 'Supprimer' },
+  deleteLabel: { type: String, default: 'Refuser' },
   showButton: { type: Boolean, default: true }
 });
 
@@ -48,33 +48,18 @@ async function handleAccept(item, index) {
   }
 }
 
-async function handleDecline(item, index) {
+async function handleDelete(item, index) {
   const key = item?.id ?? index;
   if (stateMap[key] === props.pendingLabel) return;
-  if (stateMap[key] === props.addedLabel) return;
 
   stateMap[key] = props.pendingLabel;
 
   try {
     await new Promise(resolve => setTimeout(resolve, 200));
-    emit('action', { item, index, result: 'declined' });
+    const result = getDeleteResult(item);
+    emit('action', { item, index, result });
   } catch (err) {
-    stateMap[key] = props.addLabel;
-    emit('action', { item, index, result: 'error', error: err });
-  }
-}
-
-async function handleRemove(item, index) {
-  const key = item?.id ?? index;
-  if (stateMap[key] === props.pendingLabel) return;
-
-  stateMap[key] = props.addedLabel;
-
-  try {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    emit('action', { item, index, result: 'removed' });
-  } catch (err) {
-    stateMap[key] = props.addedLabel;
+    stateMap[key] = item.type === 'invite' ? props.addLabel : props.addedLabel;
     emit('action', { item, index, result: 'error', error: err });
   }
 }
@@ -98,16 +83,16 @@ function handleClick(item) {
         <template
           v-if="showButton && item.type === 'invite' && stateMap[item?.id ?? index] === addLabel"
         >
-          <v-btn size="small" variant="outlined" @click="() => handleAccept(item, index)">
+          <v-btn size="small" variant="outlined" @click.stop="() => handleAccept(item, index)">
             {{ stateMap[item?.id ?? index] }}
           </v-btn>
           <v-btn
             size="small"
             variant="outlined"
             color="error"
-            @click="() => handleDecline(item, index)"
+            @click.stop="() => handleDelete(item, index)"
           >
-            {{ declineLabel }}
+            {{ getDeleteLabel(item) }}
           </v-btn>
         </template>
         <v-btn
@@ -126,9 +111,9 @@ function handleClick(item) {
           color="error"
           variant="text"
           :disabled="stateMap[item?.id ?? index] === pendingLabel"
-          @click.stop="() => handleRemove(item, index)"
+          @click.stop="() => handleDelete(item, index)"
         >
-          {{ removeLabel }}
+          {{ getDeleteLabel(item) }}
         </v-btn>
       </template>
       <v-divider v-if="index < items.length - 1" />

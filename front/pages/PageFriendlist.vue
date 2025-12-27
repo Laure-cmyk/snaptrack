@@ -3,6 +3,12 @@ import { ref } from 'vue';
 import TheListSocials from '../components/TheListSocials.vue';
 import TheGroup from '../components/TheGroup.vue';
 
+/* TO IMPLEMENT ONCE FRONT BRANCHES ARE MERGED :
+Modal to confirm negative action
+Search Bar
+Bottom Nav
+ */
+
 const tab = ref('friends');
 const selectedGroupId = ref(null);
 
@@ -62,6 +68,19 @@ async function onAction(payload) {
     } catch (err) {
       console.error('Erreur');
     }
+  } else if (result === 'left' && item.type === 'group') {
+    try {
+      /* API */
+      const groupIndex = groups.value.findIndex(i => i.id === item.id);
+      if (groupIndex !== -1) {
+        groups.value.splice(groupIndex, 1);
+      }
+      if ((selectedGroupId.value = item.id)) {
+        selectedGroupId.value = null;
+      }
+    } catch (err) {
+      console.error('Erreur');
+    }
   }
 }
 
@@ -70,6 +89,16 @@ function handleGroupClick(group) {
 }
 
 function handleCloseGroup() {
+  selectedGroupId.value = null;
+}
+
+function handleLeaveGroup(groupData) {
+  /* API */
+  const groupIndex = groups.value.findIndex(g => g.id === groupData.id);
+  if (groupIndex !== -1) {
+    groups.value.splice(groupIndex, 1);
+  }
+  // Close the group view and return to list
   selectedGroupId.value = null;
 }
 </script>
@@ -107,7 +136,12 @@ function handleCloseGroup() {
 
       <v-tabs-window-item value="groups">
         <v-card flat>
-          <TheGroup v-if="selectedGroupId" :group-id="selectedGroupId" @close="handleCloseGroup" />
+          <TheGroup
+            v-if="selectedGroupId"
+            :group-id="selectedGroupId"
+            @close="handleCloseGroup"
+            @leave="handleLeaveGroup"
+          />
           <TheListSocials
             v-else
             :items="[...groupInvite, ...groups]"
