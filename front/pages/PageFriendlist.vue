@@ -30,7 +30,7 @@ async function onAction(payload) {
       const inviteList = isGroupInvite ? groupInvite : friendInvite;
       const targetList = isGroupInvite ? groups : friends;
       const targetType = isGroupInvite ? 'group' : 'friend';
-      // API
+      /* API */
       const inviteIndex = inviteList.value.findIndex(i => i.id === item.id);
       if (inviteIndex !== -1) {
         const movedItem = inviteList.value.splice(inviteIndex, 1)[0];
@@ -42,12 +42,22 @@ async function onAction(payload) {
     }
   } else if (result === 'declined' && item.type === 'invite') {
     try {
+      /* API */
       const isGroupInvite = item.category === 'group';
       const inviteList = isGroupInvite ? groupInvite : friendInvite;
-      // API
       const inviteIndex = inviteList.value.findIndex(i => i.id === item.id);
       if (inviteIndex !== -1) {
         inviteList.value.splice(inviteIndex, 1);
+      }
+    } catch (err) {
+      console.error('Erreur');
+    }
+  } else if (result === 'removed' && item.type === 'friend') {
+    try {
+      /* API */
+      const friendIndex = friends.value.findIndex(i => i.id === item.id);
+      if (friendIndex !== -1) {
+        friends.value.splice(friendIndex, 1);
       }
     } catch (err) {
       console.error('Erreur');
