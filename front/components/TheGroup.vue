@@ -1,28 +1,48 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
+import { getDeleteLabel, getDeleteResult } from '../utils/negativeAction';
 
 const props = defineProps({
   groupId: { type: String, required: true }
 });
 
+const isLeaving = ref(false);
+
 const group = ref({
   id: props.groupId,
   name: '',
+  type: 'group',
   members: []
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'leave']);
 
 async function loadGroup() {
   /* API */
   group.value = {
     id: props.groupId,
     name: props.groupId === 'g1' ? 'Study Group' : 'Project Team',
+    type: 'group',
     members: [
       { id: 1, name: 'Alice' },
       { id: 2, name: 'Bob' }
     ]
   };
+}
+
+async function handleLeave() {
+  if (isLeaving.value) return;
+
+  isLeaving.value = true;
+
+  try {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    /* API */
+    emit('leave', group.value);
+  } catch (err) {
+    console.error('Erreur');
+    isLeaving.value = false;
+  }
 }
 
 onMounted(async () => {
@@ -54,6 +74,17 @@ watch(
         </v-list-item>
       </v-list>
     </v-card-text>
+    <v-card-actions class="justify-end">
+      <v-btn
+        color="error"
+        variant="outlined"
+        :disabled="isLeaving"
+        :loading="isLeaving"
+        @click="handleLeave"
+      >
+        {{ getDeleteLabel(group) }}
+      </v-btn>
+    </v-card-actions>
   </v-card>
 </template>
 <style></style>
