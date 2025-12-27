@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import { getDeleteLabel, getDeleteResult } from '../utils/negativeAction';
+import { getDeleteLabel, getDeleteResult } from '../../utils/negativeAction';
 
 const props = defineProps({
   groupId: { type: String, required: true }

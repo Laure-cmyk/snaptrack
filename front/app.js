@@ -17,7 +17,7 @@ Routes need to always follow the template:
  */
 const routes = [
   { path: '/', component: () => import('./pages/PageHome.vue') },
-  { path: '/friendlist', component: () => import('./pages/PageFriendlist.vue') }
+  { path: '/socials', component: () => import('./pages/PageSocials.vue') }
 ];
 
 const router = createRouter({
