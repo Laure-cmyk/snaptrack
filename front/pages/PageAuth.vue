@@ -1,13 +1,3 @@
-<template>
-    <v-container class="fill-height pa-0" fluid>
-        <AuthOnboarding v-if="step === 'onboarding'" @continue="step = 'login'" />
-
-        <AuthLogin v-if="step === 'login'" @go-signup="step = 'signup'" @login-success="goHome" />
-
-        <AuthSignup v-if="step === 'signup'" @go-login="step = 'login'" @signup-success="handleSignupSuccess" />
-    </v-container>
-</template>
-
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -31,6 +21,17 @@ function goHome(user) {
     router.push('/')
 }
 </script>
+
+<template>
+    <v-container class="fill-height pa-0" fluid>
+        <AuthOnboarding v-if="step === 'onboarding'" @continue="step = 'login'" />
+
+        <AuthLogin v-if="step === 'login'" @go-signup="step = 'signup'" @login-success="goHome" />
+
+        <AuthSignup v-if="step === 'signup'" @go-login="step = 'login'" @signup-success="handleSignupSuccess" />
+    </v-container>
+</template>
+
 
 <style scoped>
 .fill-height {

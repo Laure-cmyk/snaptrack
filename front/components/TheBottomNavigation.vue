@@ -1,3 +1,6 @@
+<script setup>
+</script>
+
 <template>
     <v-bottom-navigation color="indigo-darken-1" grow fixed>
         <v-btn to="/" value="accueil">
@@ -10,7 +13,7 @@
             <span>Amis</span>
         </v-btn>
 
-        <v-btn to="/createchallenge" value="creer">
+        <v-btn to="/create-challenge" value="creer">
             <v-icon>mdi-plus-circle</v-icon>
             <span>Créer</span>
         </v-btn>
@@ -22,8 +25,6 @@
     </v-bottom-navigation>
 </template>
 
-<script setup>
-</script>
 
 <style>
 .v-bottom-navigation {
