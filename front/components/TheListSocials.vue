@@ -8,10 +8,11 @@ const props = defineProps({
   pendingLabel: { type: String, default: 'En attente' },
   addedLabel: { type: String, default: 'Amis' },
   declineLabel: { type: String, default: 'Refuser' },
+  /*   deleteLabel: { type: String, default: 'Supprimer' }, */
   showButton: { type: Boolean, default: true }
 });
 
-const emit = defineEmits(['action']);
+const emit = defineEmits(['action', 'click']);
 
 const stateMap = reactive({});
 
@@ -40,7 +41,7 @@ async function handleAccept(item, index) {
   try {
     await new Promise(resolve => setTimeout(resolve, 200));
     stateMap[key] = props.addedLabel;
-    emit('action', { item, index, results: 'success' });
+    emit('action', { item, index, result: 'success' });
   } catch (err) {
     stateMap[key] = props.addLabel;
     emit('action', { item, index, result: 'error', error: err });
@@ -52,7 +53,7 @@ async function handleDecline(item, index) {
   if (stateMap[key] === props.pendingLabel) return;
   if (stateMap[key] === props.addedLabel) return;
 
-  /*  stateMap[key] = props.pendingLabel; */
+  stateMap[key] = props.pendingLabel;
 
   try {
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -62,6 +63,12 @@ async function handleDecline(item, index) {
     emit('action', { item, index, result: 'error', error: err });
   }
 }
+
+function handleClick(item) {
+  if (item.type === 'group') {
+    emit('click', item);
+  }
+}
 </script>
 
 <template>
@@ -69,6 +76,7 @@ async function handleDecline(item, index) {
     <v-list-item
       v-for="(item, index) in items"
       :key="item?.id ?? index"
+      @click="() => handleClick(item)"
       :title="item?.name ?? item?.title ?? 'User ' + (index + 1)"
     >
       <template v-slot:append>
@@ -87,7 +95,14 @@ async function handleDecline(item, index) {
             {{ declineLabel }}
           </v-btn>
         </template>
-        <v-btn v-else-if="showButton && item.type" size="small" variant="outlined" disabled>
+        <v-btn
+          v-else-if="
+            showButton && item.type === 'invite' && stateMap[item?.id ?? index] !== addLabel
+          "
+          size="small"
+          variant="outlined"
+          disabled
+        >
           {{ stateMap[item?.id ?? index] }}
         </v-btn>
       </template>

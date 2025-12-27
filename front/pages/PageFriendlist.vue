@@ -1,8 +1,10 @@
 <script setup>
 import { ref } from 'vue';
 import TheListSocials from '../components/TheListSocials.vue';
+import TheGroup from '../components/TheGroup.vue';
 
 const tab = ref('friends');
+const selectedGroupId = ref(null);
 
 const friends = ref([
   { id: 1, name: 'Alice', type: 'friend' },
@@ -25,7 +27,7 @@ async function onAction(payload) {
   if (result === 'success' && item.type === 'invite') {
     try {
       const isGroupInvite = item.category === 'group';
-      const inviteList = isGroupInvite ? groupInvite : friendList;
+      const inviteList = isGroupInvite ? groupInvite : friendInvite;
       const targetList = isGroupInvite ? groups : friends;
       const targetType = isGroupInvite ? 'group' : 'friend';
       // API
@@ -41,7 +43,7 @@ async function onAction(payload) {
   } else if (result === 'declined' && item.type === 'invite') {
     try {
       const isGroupInvite = item.category === 'group';
-      const inviteList = isGroupInvite ? groupInvite : inviteList;
+      const inviteList = isGroupInvite ? groupInvite : friendInvite;
       // API
       const inviteIndex = inviteList.value.findIndex(i => i.id === item.id);
       if (inviteIndex !== -1) {
@@ -52,16 +54,38 @@ async function onAction(payload) {
     }
   }
 }
+
+function handleGroupClick(group) {
+  selectedGroupId.value = group.id;
+}
+
+function handleCloseGroup() {
+  selectedGroupId.value = null;
+}
 </script>
 <template>
   <v-card>
     <v-tabs v-model="tab" direction="horizontal">
-      <v-badge inline location="top-right" color="error" :content="friendInvite.length">
-        <v-tab prepend-icon="mdi-account" text="Amis" value="friends"></v-tab
-      ></v-badge>
-      <v-badge inline location="top-right" color="error" :content="groupInvite.length">
-        <v-tab prepend-icon="mdi-lock" text="Groupes" value="groups"></v-tab
-      ></v-badge>
+      <v-badge
+        v-if="friendInvite.length > 0"
+        inline
+        location="top-right"
+        color="error"
+        :content="friendInvite.length"
+      >
+        <v-tab prepend-icon="mdi-account" text="Amis" value="friends"></v-tab>
+      </v-badge>
+      <v-tab v-else prepend-icon="mdi-account" text="Amis" value="friends"></v-tab>
+      <v-badge
+        v-if="groupInvite.length > 0"
+        inline
+        location="top-right"
+        color="error"
+        :content="groupInvite.length"
+      >
+        <v-tab prepend-icon="mdi-lock" text="Groupes" value="groups"></v-tab>
+      </v-badge>
+      <v-tab v-else prepend-icon="mdi-lock" text="Groupes" value="groups"></v-tab>
     </v-tabs>
 
     <v-tabs-window v-model="tab">
@@ -73,7 +97,13 @@ async function onAction(payload) {
 
       <v-tabs-window-item value="groups">
         <v-card flat>
-          <TheListSocials :items="[...groupInvite, ...groups]" @action="onAction" />
+          <TheGroup v-if="selectedGroupId" :group-id="selectedGroupId" @close="handleCloseGroup" />
+          <TheListSocials
+            v-else
+            :items="[...groupInvite, ...groups]"
+            @action="onAction"
+            @click="handleGroupClick"
+          />
         </v-card>
       </v-tabs-window-item>
     </v-tabs-window>
