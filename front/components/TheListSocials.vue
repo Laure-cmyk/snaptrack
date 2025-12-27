@@ -8,7 +8,7 @@ const props = defineProps({
   pendingLabel: { type: String, default: 'En attente' },
   addedLabel: { type: String, default: 'Amis' },
   declineLabel: { type: String, default: 'Refuser' },
-  /*   deleteLabel: { type: String, default: 'Supprimer' }, */
+  removeLabel: { type: String, default: 'Supprimer' },
   showButton: { type: Boolean, default: true }
 });
 
@@ -64,6 +64,21 @@ async function handleDecline(item, index) {
   }
 }
 
+async function handleRemove(item, index) {
+  const key = item?.id ?? index;
+  if (stateMap[key] === props.pendingLabel) return;
+
+  stateMap[key] = props.addedLabel;
+
+  try {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    emit('action', { item, index, result: 'removed' });
+  } catch (err) {
+    stateMap[key] = props.addedLabel;
+    emit('action', { item, index, result: 'error', error: err });
+  }
+}
+
 function handleClick(item) {
   if (item.type === 'group') {
     emit('click', item);
@@ -104,6 +119,16 @@ function handleClick(item) {
           disabled
         >
           {{ stateMap[item?.id ?? index] }}
+        </v-btn>
+        <v-btn
+          v-else-if="showButton && item.type === 'friend'"
+          size="small"
+          color="error"
+          variant="text"
+          :disabled="stateMap[item?.id ?? index] === pendingLabel"
+          @click.stop="() => handleRemove(item, index)"
+        >
+          {{ removeLabel }}
         </v-btn>
       </template>
       <v-divider v-if="index < items.length - 1" />
