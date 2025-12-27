@@ -18,7 +18,7 @@ Routes need to always follow the template:
 const routes = [
   { path: '/', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
   { path: '/friendlist', component: () => import('./pages/PageFriendlist.vue'), meta: { requiresAuth: true } },
-  { path: '/createchallenge', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
+  { path: '/create-challenge', component: () => import('./pages/PageCreateChallenge.vue'), meta: { requiresAuth: true } },
   { path: '/profil', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
   { path: '/authentification', component: () => import('./pages/PageAuth.vue') }
   { path: '/socials', component: () => import('./pages/PageSocials.vue') }

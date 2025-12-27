@@ -1,9 +1,3 @@
-<template>
-    <v-text-field :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)"
-        placeholder="Chercher un parcours" variant="outlined" density="comfortable" prepend-inner-icon="mdi-magnify"
-        rounded="lg" hide-details class="search-bar" />
-</template>
-
 <script setup>
 const props = defineProps({
     modelValue: {
@@ -14,6 +8,13 @@ const props = defineProps({
 
 defineEmits(['update:modelValue'])
 </script>
+
+<template>
+    <v-text-field :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)"
+        placeholder="Chercher un parcours" variant="outlined" density="comfortable" prepend-inner-icon="mdi-magnify"
+        rounded="lg" hide-details class="search-bar" />
+</template>
+
 
 <style scoped>
 .search-bar {
