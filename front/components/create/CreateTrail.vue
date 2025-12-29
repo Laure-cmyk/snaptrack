@@ -4,41 +4,41 @@ import { compressImage } from '@/utils/imageCompression'
 
 // Props & Emits
 const props = defineProps({
-    parcours: { type: Object, required: true },
+    trail: { type: Object, required: true },
     loading: { type: Boolean, default: false },
     errorMessage: { type: String, default: '' },
     successMessage: { type: String, default: '' }
 })
 
-const emit = defineEmits(['update:parcours', 'add-location', 'save', 'cancel'])
+const emit = defineEmits(['update:trail', 'add-location', 'save', 'cancel'])
 
-// Refs
+// Refs (local state)
 const form = ref(null)
 const valid = ref(false)
 const photoInput = ref(null)
-const localParcours = ref({ ...props.parcours })
+const localTrail = ref({ ...props.trail })
 const editLocationDialog = ref(false)
 const editingLocationIndex = ref(null)
 const editingLocationDescription = ref('')
 
-// Computed
-const isEditing = computed(() => !localParcours.value.isNew)
+// Determine if we are editing an existing trail
+const isEditing = computed(() => !localTrail.value.isNew)
 const canSave = computed(() =>
     valid.value &&
-    localParcours.value.title &&
-    localParcours.value.description &&
-    localParcours.value.city &&
-    localParcours.value.locations.length > 0
+    localTrail.value.title &&
+    localTrail.value.description &&
+    localTrail.value.city &&
+    localTrail.value.locations.length > 0
 )
 
-// Rules
+// Form Validation Rules
 const rules = {
     required: value => !!value || 'Ce champ est requis'
 }
 
-// Watch
-watch(() => props.parcours, (newVal) => {
-    localParcours.value = { ...newVal }
+// Watch for prop changes to update localTrail
+watch(() => props.trail, (newVal) => {
+    localTrail.value = { ...newVal }
 }, { deep: true })
 
 // Photo functions
@@ -52,7 +52,7 @@ async function handlePhotoUpload(event) {
 
     try {
         const compressedImage = await compressImage(file, 800, 800, 0.7)
-        localParcours.value.image = compressedImage
+        localTrail.value.image = compressedImage
         emitUpdate()
     } catch (err) {
         console.error('Erreur compression image:', err)
@@ -60,20 +60,20 @@ async function handlePhotoUpload(event) {
 }
 
 function removePhoto() {
-    localParcours.value.image = null
+    localTrail.value.image = null
     emitUpdate()
 }
 
 // Location edit functions
 function openEditLocationDialog(index) {
     editingLocationIndex.value = index
-    editingLocationDescription.value = localParcours.value.locations[index].description
+    editingLocationDescription.value = localTrail.value.locations[index].description
     editLocationDialog.value = true
 }
 
 function saveLocationEdit() {
     if (editingLocationIndex.value !== null && editingLocationDescription.value.trim()) {
-        localParcours.value.locations[editingLocationIndex.value].description = editingLocationDescription.value.trim()
+        localTrail.value.locations[editingLocationIndex.value].description = editingLocationDescription.value.trim()
         emitUpdate()
     }
     closeEditDialog()
@@ -81,7 +81,7 @@ function saveLocationEdit() {
 
 function confirmDeleteLocation() {
     if (editingLocationIndex.value !== null) {
-        localParcours.value.locations.splice(editingLocationIndex.value, 1)
+        localTrail.value.locations.splice(editingLocationIndex.value, 1)
         emitUpdate()
     }
     closeEditDialog()
@@ -94,7 +94,7 @@ function closeEditDialog() {
 }
 
 function emitUpdate() {
-    emit('update:parcours', localParcours.value)
+    emit('update:trail', localTrail.value)
 }
 </script>
 
@@ -106,7 +106,7 @@ function emitUpdate() {
             <input ref="photoInput" type="file" accept="image/*" style="display: none" @change="handlePhotoUpload" />
 
             <!-- Photo Field -->
-            <div v-if="!localParcours.image" class="photo-field bg-grey-lighten-3 d-flex align-center justify-center"
+            <div v-if="!localTrail.image" class="photo-field bg-grey-lighten-3 d-flex align-center justify-center"
                 @click="triggerPhotoUpload"
                 style="cursor: pointer; min-height: 120px; border-radius: 8px; border: 1px solid #E0E0E0;">
                 <div class="text-center">
@@ -117,7 +117,7 @@ function emitUpdate() {
 
             <!-- Preview with Delete -->
             <div v-else class="position-relative">
-                <v-img :src="localParcours.image" height="200" cover style="border-radius: 8px;" />
+                <v-img :src="localTrail.image" height="200" cover style="border-radius: 8px;" />
                 <v-btn icon size="small" class="position-absolute"
                     style="top: 12px; right: 12px; background-color: rgba(0, 0, 0, 0.5);" @click="removePhoto">
                     <v-icon color="white" size="small">mdi-close</v-icon>
@@ -125,29 +125,28 @@ function emitUpdate() {
             </div>
         </div>
 
-        <!-- Parcours Title -->
+        <!-- Trail Title -->
         <div class="text-subtitle-1 font-weight-bold mb-2">Titre du parcours</div>
-        <v-text-field v-model="localParcours.title" placeholder="Donnez un titre accrocheur" variant="outlined"
+        <v-text-field v-model="localTrail.title" placeholder="Donnez un titre accrocheur" variant="outlined"
             density="comfortable" :rules="[rules.required]" class="mb-2" bg-color="grey-lighten-3"
             @update:model-value="emitUpdate" />
 
-        <!-- Parcours Description -->
+        <!-- Trail Description -->
         <div class="text-subtitle-1 font-weight-bold mb-2">Description</div>
-        <v-textarea v-model="localParcours.description" placeholder="Décrivez votre parcours en quelques mots"
+        <v-textarea v-model="localTrail.description" placeholder="Décrivez votre parcours en quelques mots"
             variant="outlined" rows="3" :rules="[rules.required]" class="mb-2" bg-color="grey-lighten-3"
             @update:model-value="emitUpdate" />
 
         <!-- City -->
         <div class="text-subtitle-1 font-weight-bold mb-2">Ville</div>
-        <v-text-field v-model="localParcours.city" placeholder="Nom de la ville" variant="outlined"
-            density="comfortable" :rules="[rules.required]" class="mb-4" bg-color="grey-lighten-3"
-            @update:model-value="emitUpdate" />
+        <v-text-field v-model="localTrail.city" placeholder="Nom de la ville" variant="outlined" density="comfortable"
+            :rules="[rules.required]" class="mb-4" bg-color="grey-lighten-3" @update:model-value="emitUpdate" />
 
         <!-- Locations Section -->
         <div class="text-subtitle-1 font-weight-bold mb-2">Lieux du parcours</div>
 
         <!-- Empty State -->
-        <div v-if="localParcours.locations.length === 0" class="text-center py-6 mb-6 bg-grey-lighten-3"
+        <div v-if="localTrail.locations.length === 0" class="text-center py-6 mb-6 bg-grey-lighten-3"
             style="border-radius: 8px; border: 1px solid #E0E0E0;">
             <v-icon size="48" color="grey">mdi-map-marker-off</v-icon>
             <div class="text-body-2 text-grey mt-2">Aucun lieu ajouté</div>
@@ -155,8 +154,8 @@ function emitUpdate() {
 
         <!-- Locations List -->
         <v-list v-else class="mb-6 pa-0" style="border-radius: 8px;">
-            <v-list-item v-for="(location, index) in localParcours.locations" :key="location.id"
-                class="px-4 py-3 bg-white" style="border-radius: 8px; border: 1px solid #E0E0E0; cursor: pointer;"
+            <v-list-item v-for="(location, index) in localTrail.locations" :key="location.id" class="px-4 py-3 bg-white"
+                style="border-radius: 8px; border: 1px solid #E0E0E0; cursor: pointer;"
                 @click="openEditLocationDialog(index)">
                 <template v-slot:prepend>
                     <v-avatar size="60" style="border-radius: 8px;" class="mr-3">
@@ -197,7 +196,7 @@ function emitUpdate() {
                 {{ isEditing ? 'Modifier' : 'Créer le parcours' }}
             </v-btn>
 
-            <v-btn v-if="!localParcours.isNew" block color="grey-darken-1" size="large" rounded="lg" variant="text"
+            <v-btn v-if="!localTrail.isNew" block color="grey-darken-1" size="large" rounded="lg" variant="text"
                 @click="$emit('cancel')">
                 Annuler
             </v-btn>

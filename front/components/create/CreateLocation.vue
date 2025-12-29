@@ -11,8 +11,7 @@ const props = defineProps({
 
 const emit = defineEmits(['save', 'cancel', 'error'])
 
-// Refs
-const form = ref(null)
+//REFS (local state)
 const valid = ref(false)
 const photoInput = ref(null)
 const loadingGPS = ref(false)
@@ -28,7 +27,7 @@ const localLocation = ref({
     coordinates: null
 })
 
-// Computed
+// Enables the save button only when all required data is present and valid.
 const canSave = computed(() =>
     valid.value &&
     localLocation.value.description &&
@@ -36,7 +35,7 @@ const canSave = computed(() =>
     localLocation.value.coordinates
 )
 
-// Rules
+// Form Validation Rules
 const rules = {
     required: value => !!value || 'Ce champ est requis'
 }

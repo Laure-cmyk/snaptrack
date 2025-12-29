@@ -1,48 +1,49 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import BaseHeader from '@/components/BaseHeader.vue'
 import CreateList from '@/components/create/CreateList.vue'
 import CreateTrail from '@/components/create/CreateTrail.vue'
 import CreateLocation from '@/components/create/CreateLocation.vue'
 
 // State
-const currentView = ref(null) // 'list' | 'parcours' | 'location'
-const myParcours = ref([])
-const currentParcours = ref(null)
+const currentView = ref(null) // 'list' | 'trail' | 'location'
+const myTrails = ref([])
+const currentTrail = ref(null)
 const submitting = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const deleteDialog = ref(false)
-const parcoursToDelete = ref(null)
+const trailToDelete = ref(null)
 
-// Computed
+// Dynamic header title based on the current view
 const headerTitle = computed(() => {
     const titles = {
         list: 'Mes parcours',
         location: 'Ajouter un lieu',
-        parcours: currentParcours.value?.isNew ? 'Créer un parcours' : 'Modifier le parcours'
+        trail: currentTrail.value?.isNew ? 'Créer un parcours' : 'Modifier le parcours'
     }
     return titles[currentView.value] || 'Mes parcours'
 })
 
-// Lifecycle
-onMounted(loadMyParcours)
+// Load persisted data when the page is mounted.
+onMounted(loadMyTrails)
 
 // Data management
-function loadMyParcours() {
-    const stored = localStorage.getItem('myParcours')
+function loadMyTrails() {
+    const stored = localStorage.getItem('myTrails')
     if (stored) {
-        myParcours.value = JSON.parse(stored)
+        myTrails.value = JSON.parse(stored)
     }
 
-    currentView.value = myParcours.value.length === 0 ? null : 'list'
-    if (myParcours.value.length === 0) {
-        createNewParcours()
+    currentView.value = myTrails.value.length === 0 ? null : 'list'
+    if (myTrails.value.length === 0) {
+        createNewTrail()
     }
 }
 
 function saveToLocalStorage() {
     try {
-        localStorage.setItem('myParcours', JSON.stringify(myParcours.value))
+        localStorage.setItem('myTrails', JSON.stringify(myTrails.value))
         return true
     } catch (err) {
         if (err.name === 'QuotaExceededError') {
@@ -53,9 +54,9 @@ function saveToLocalStorage() {
     }
 }
 
-// Parcours actions
-function createNewParcours() {
-    currentParcours.value = {
+// Trail actions
+function createNewTrail() {
+    currentTrail.value = {
         id: Date.now(),
         title: '',
         description: '',
@@ -65,48 +66,48 @@ function createNewParcours() {
         createdAt: new Date().toISOString(),
         isNew: true
     }
-    currentView.value = 'parcours'
+    currentView.value = 'trail'
 }
 
-function editParcours(parcours) {
-    currentParcours.value = { ...parcours }
-    currentView.value = 'parcours'
+function editTrail(trail) {
+    currentTrail.value = { ...trail }
+    currentView.value = 'trail'
 }
 
-function confirmDelete(parcours) {
-    parcoursToDelete.value = parcours
+function confirmDelete(trail) {
+    trailToDelete.value = trail
     deleteDialog.value = true
 }
 
-function deleteParcours() {
-    if (!parcoursToDelete.value) return
+function deleteTrail() {
+    if (!trailToDelete.value) return
 
-    myParcours.value = myParcours.value.filter(p => p.id !== parcoursToDelete.value.id)
-    localStorage.setItem('myParcours', JSON.stringify(myParcours.value))
+    myTrails.value = myTrails.value.filter(t => t.id !== trailToDelete.value.id)
+    localStorage.setItem('myTrails', JSON.stringify(myTrails.value))
     deleteDialog.value = false
-    parcoursToDelete.value = null
+    trailToDelete.value = null
 }
 
-async function saveParcours() {
+async function saveTrail() {
     resetMessages()
     submitting.value = true
 
     try {
-        const isNew = currentParcours.value.isNew
+        const isNew = currentTrail.value.isNew
 
         if (isNew) {
-            currentParcours.value.isNew = false
-            myParcours.value.push(currentParcours.value)
+            currentTrail.value.isNew = false
+            myTrails.value.push(currentTrail.value)
         } else {
-            const index = myParcours.value.findIndex(p => p.id === currentParcours.value.id)
+            const index = myTrails.value.findIndex(t => t.id === currentTrail.value.id)
             if (index !== -1) {
-                myParcours.value[index] = currentParcours.value
+                myTrails.value[index] = currentTrail.value
             }
         }
 
         const saved = saveToLocalStorage()
         if (!saved) {
-            if (isNew) myParcours.value.pop() // Rollback si échec
+            if (isNew) myTrails.value.pop() // Rollback si échec
             return
         }
 
@@ -114,7 +115,7 @@ async function saveParcours() {
         setTimeout(() => {
             currentView.value = 'list'
             resetMessages()
-            currentParcours.value = null
+            currentTrail.value = null
         }, 1000)
     } catch (err) {
         console.error('Erreur sauvegarde:', err)
@@ -130,7 +131,7 @@ function switchToLocationForm() {
 }
 
 function cancelLocationForm() {
-    currentView.value = 'parcours'
+    currentView.value = 'trail'
     resetMessages()
 }
 
@@ -140,11 +141,11 @@ async function saveLocation(location) {
 
     try {
         location.id = Date.now()
-        currentParcours.value.locations.push(location)
+        currentTrail.value.locations.push(location)
         successMessage.value = 'Lieu ajouté avec succès !'
 
         setTimeout(() => {
-            currentView.value = 'parcours'
+            currentView.value = 'trail'
             successMessage.value = ''
         }, 1000)
     } catch (err) {
@@ -163,9 +164,9 @@ function handleLocationError(error) {
 function handleBack() {
     if (currentView.value === 'location') {
         cancelLocationForm()
-    } else if (currentView.value === 'parcours') {
+    } else if (currentView.value === 'trail') {
         currentView.value = 'list'
-        currentParcours.value = null
+        currentTrail.value = null
     }
     resetMessages()
 }
@@ -179,29 +180,19 @@ function resetMessages() {
 <template>
     <!-- Main Content -->
     <v-main class="bg-grey-lighten-4 main-content">
-        <!-- Header Section -->
-        <div class="header-section" style="position: sticky; top: 0; z-index: 10;">
-            <div class="pa-6 pt-10 d-flex align-center justify-center position-relative">
-                <v-btn v-if="currentView !== 'list'" icon variant="text" @click="handleBack" class="position-absolute"
-                    style="left: 24px;">
-                    <v-icon color="white">mdi-close</v-icon>
-                </v-btn>
-                <div class="text-center">
-                    <div class="text-h5 font-weight-bold text-white">{{ headerTitle }}</div>
-                </div>
-            </div>
-        </div>
+        <!-- Header avec BaseHeader -->
+        <BaseHeader :title="headerTitle" :show-back="currentView !== 'list'" @back="handleBack" />
 
         <!-- Content Container -->
         <v-container fluid class="px-0 pb-24 pt-6">
-            <!-- Liste des parcours -->
-            <CreateList v-if="currentView === 'list'" :parcours="myParcours" @create-new="createNewParcours"
-                @edit="editParcours" @delete="confirmDelete" />
+            <!-- Liste des trails -->
+            <CreateList v-if="currentView === 'list'" :trails="myTrails" @create-new="createNewTrail" @edit="editTrail"
+                @delete="confirmDelete" />
 
-            <!-- Formulaire de parcours -->
-            <CreateTrail v-else-if="currentView === 'parcours'" v-model:parcours="currentParcours" :loading="submitting"
+            <!-- Formulaire de trail -->
+            <CreateTrail v-else-if="currentView === 'trail'" v-model:trail="currentTrail" :loading="submitting"
                 :error-message="errorMessage" :success-message="successMessage" @add-location="switchToLocationForm"
-                @save="saveParcours" @cancel="currentView = 'list'" />
+                @save="saveTrail" @cancel="currentView = 'list'" />
 
             <!-- Formulaire de lieu -->
             <CreateLocation v-else-if="currentView === 'location'" :loading="submitting" :error-message="errorMessage"
@@ -216,11 +207,11 @@ function resetMessages() {
                     Supprimer le parcours ?
                 </v-card-title>
                 <v-card-text class="text-center text-body-1 px-6 py-4">
-                    Cette action est irréversible. Le parcours "{{ parcoursToDelete?.title }}" et tous ses lieux seront
+                    Cette action est irréversible. Le parcours "{{ trailToDelete?.title }}" et tous ses lieux seront
                     supprimés.
                 </v-card-text>
                 <v-card-actions class="pa-4 pt-2 flex-column ga-3">
-                    <v-btn block color="red-darken-1" size="large" rounded="lg" variant="flat" @click="deleteParcours">
+                    <v-btn block color="red-darken-1" size="large" rounded="lg" variant="flat" @click="deleteTrail">
                         Supprimer
                     </v-btn>
                     <v-btn block color="grey-darken-1" size="large" rounded="lg" variant="text"
@@ -233,14 +224,8 @@ function resetMessages() {
     </v-main>
 </template>
 
-
 <style scoped>
 .main-content {
     padding-bottom: 80px;
-}
-
-.header-section {
-    background: linear-gradient(135deg, #3948ab 0%, #3948ab 100%);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 </style>
