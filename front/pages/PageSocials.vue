@@ -2,15 +2,18 @@
 import { ref } from 'vue';
 import TheListSocials from '../components/socials/TheListSocials.vue';
 import TheGroup from '../components/socials/TheGroup.vue';
+import CreateGroup from '../components/socials/CreateGroup.vue';
 
 /* TO IMPLEMENT ONCE FRONT BRANCHES ARE MERGED :
 Modal to confirm negative action
 Search Bar
+--> Also needs to be implemented in CreateGroup.vue and TheGroup.vue
 Bottom Nav
  */
 
 const tab = ref('friends');
 const selectedGroupId = ref(null);
+const isCreatingGroup = ref(false);
 
 const friends = ref([
   { id: 1, name: 'Alice', type: 'friend' },
@@ -101,9 +104,40 @@ function handleLeaveGroup(groupData) {
   // Close the group view and return to list
   selectedGroupId.value = null;
 }
+
+function openCreateGroup() {
+  isCreatingGroup.value = true;
+}
+
+function closeCreateGroup() {
+  isCreatingGroup.value = false;
+}
+
+async function handleCreateGroup(groupData) {
+  try {
+    /* API */
+    const newGroup = {
+      id: 'g' + (groups.value.length + 3),
+      name: groupData.name,
+      type: 'group',
+      memberIds: groupData.memberIds
+    };
+    groups.value.push(newGroup);
+    isCreatingGroup.value = false;
+    tab.value = 'groups';
+  } catch (err) {
+    console.error('Erreur');
+  }
+}
 </script>
 <template>
-  <v-card>
+  <CreateGroup
+    v-if="isCreatingGroup"
+    :friends="friends"
+    @close="closeCreateGroup"
+    @create="handleCreateGroup"
+  />
+  <v-card v-else>
     <v-tabs v-model="tab" direction="horizontal">
       <v-badge
         v-if="friendInvite.length > 0"
@@ -142,12 +176,18 @@ function handleLeaveGroup(groupData) {
             @close="handleCloseGroup"
             @leave="handleLeaveGroup"
           />
-          <TheListSocials
-            v-else
-            :items="[...groupInvite, ...groups]"
-            @action="onAction"
-            @click="handleGroupClick"
-          />
+          <div v-else>
+            <v-card-actions class="justify-end pa-4">
+              <v-btn color="primary" variant="elevated" rounded="xl" @click="openCreateGroup">
+                +
+              </v-btn>
+            </v-card-actions>
+            <TheListSocials
+              :items="[...groupInvite, ...groups]"
+              @action="onAction"
+              @click="handleGroupClick"
+            />
+          </div>
         </v-card>
       </v-tabs-window-item>
     </v-tabs-window>
