@@ -1,5 +1,5 @@
 <script setup>
-import { RouterView } from 'vue-router';
+import { RouterView, RouterLink } from 'vue-router';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import TheBottomNavigation from './components/TheBottomNavigation.vue';
