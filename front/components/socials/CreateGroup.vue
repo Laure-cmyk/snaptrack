@@ -1,8 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
 
-/*  */
-
 const props = defineProps({
   friends: { type: Array, default: () => [] }
 });
