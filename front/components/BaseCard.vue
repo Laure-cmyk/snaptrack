@@ -1,5 +1,5 @@
 <template>
-    <v-card rounded="lg" elevation="2" class="base-card">
+    <v-card rounded="lg" elevation="2" class="base-card" style="cursor: pointer;" @click="$emit('click')">
         <!-- Image Section -->
         <v-img :src="image" height="220" cover class="bg-grey-lighten-2">
             <div v-if="!image" class="d-flex align-center justify-center fill-height">
@@ -37,6 +37,8 @@
 </template>
 
 <script setup>
+defineEmits(['click'])
+
 const props = defineProps({
     title: {
         type: String,

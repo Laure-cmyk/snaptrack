@@ -22,7 +22,7 @@
             <v-row v-if="filteredCourses.length > 0">
                 <v-col cols="12" v-for="course in filteredCourses" :key="course.id">
                     <BaseCard :title="course.title" :description="course.description" :rating="course.rating"
-                        :image="course.image" :city="course.city" />
+                        :image="course.image" :city="course.city" @click="goToTrail(course.id)" />
                 </v-col>
             </v-row>
             <v-row v-else>
@@ -38,8 +38,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import BaseCard from '@/components/BaseCard.vue'
 import TheSearchBar from '@/components/TheSearchBar.vue'
+
+const router = useRouter()
 
 const props = defineProps({
     user: {
@@ -90,6 +93,10 @@ const filteredCourses = computed(() => {
         course.city.toLowerCase().includes(query)
     )
 })
+
+function goToTrail(courseId) {
+    router.push({ name: 'trail', params: { id: courseId } })
+}
 </script>
 
 <style scoped>

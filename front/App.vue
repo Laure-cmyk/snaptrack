@@ -6,14 +6,20 @@ import TheBottomNavigation from './components/TheBottomNavigation.vue';
 
 const route = useRoute();
 
-// Afficher la navigation seulement si on n'est pas sur la page d'auth
-const showNavigation = computed(() => route.path !== '/authentification');
+// Afficher la navigation seulement si on n'est pas sur certaines pages
+const showNavigation = computed(() => {
+  const hiddenPaths = ['/authentification']
+  const hiddenPathPatterns = ['/trail/', '/challenge/']
+
+  return !hiddenPaths.includes(route.path) &&
+    !hiddenPathPatterns.some(pattern => route.path.includes(pattern))
+});
 </script>
 
 <template>
 
   <v-app>
-<!--     <nav>
+    <!--     <nav>
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/friendlist">Friends</RouterLink>
     </nav> -->
