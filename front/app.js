@@ -20,7 +20,10 @@ const routes = [
   { path: '/create-challenge', component: () => import('./pages/PageCreateChallenge.vue'), meta: { requiresAuth: true } },
   { path: '/profil', component: () => import('./pages/PageProfile.vue'), meta: { requiresAuth: true } },
   { path: '/authentification', component: () => import('./pages/PageAuth.vue') },
-  { path: '/socials', component: () => import('./pages/PageSocials.vue') }
+  { path: '/socials', component: () => import('./pages/PageSocials.vue') },
+  { path: '/trail/:id', name: 'trail', component: () => import('./pages/PageTrail.vue'), meta: { requiresAuth: true } },
+  { path: '/challenge/play/:id', name: 'challenge-play', component: () => import('./pages/PageChallengePlay.vue'), meta: { requiresAuth: true } },
+  { path: '/challenge/live/:id', name: 'challenge-live', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
 ];
 
 const router = createRouter({
