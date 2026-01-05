@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import BaseCard from '@/components/BaseCard.vue'
 import TheSearchBar from '@/components/TheSearchBar.vue'
+import { useFetchJson } from '@/composables/useFetchJson'
 
 // Get user from localStorage
 const user = computed(() => {
@@ -11,45 +12,37 @@ const user = computed(() => {
 
 const searchQuery = ref('')
 
-const courses = ref([
-    {
-        id: 1,
-        title: 'Parcours des Toilettes',
-        description: '1000 lieux à découvrir',
-        rating: 4.0,
-        image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
-        city: 'Yverdon-les-Bains'
-    },
-    {
-        id: 2,
-        title: 'Exploration urbaine',
-        description: 'Découvrez la ville autrement',
-        rating: 4.5,
-        image: 'https://images.unsplash.com/photo-1511593358241-7eea1f3c84e5?w=800&q=80',
-        city: 'Lausanne'
-    },
-    {
-        id: 3,
-        title: 'Exploration urbaine',
-        description: 'Découvrez la ville autrement',
-        rating: 4.5,
-        image: 'https://images.unsplash.com/photo-1511593358241-7eea1f3c84e5?w=800&q=80',
-        city: 'Genève'
-    }
-])
+// Fetch journeys from backend
+const { data: journeysData, loading, error, execute: fetchJourneys } = useFetchJson({
+    url: '/journeys',
+    immediate: true
+})
 
-// Filtrer les parcours selon la recherche
+// Map backend data to card format
+const courses = computed(() => {
+    if (!journeysData.value?.journeys) return []
+    return journeysData.value.journeys.map(journey => ({
+        id: journey._id,
+        title: journey.name,
+        description: journey.description,
+        rating: journey.averageRating || 0,
+        image: journey.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+        city: journey.town || ''
+    }))
+})
+
+// Debounce search and refetch with search parameter
+let searchTimeout = null
+watch(searchQuery, (newQuery) => {
+    clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(() => {
+        fetchJourneys({ search: newQuery })
+    }, 300)
+})
+
+// Filtrer les parcours selon la recherche (client-side fallback)
 const filteredCourses = computed(() => {
-    if (!searchQuery.value) {
-        return courses.value
-    }
-
-    const query = searchQuery.value.toLowerCase()
-    return courses.value.filter(course =>
-        course.title.toLowerCase().includes(query) ||
-        course.description.toLowerCase().includes(query) ||
-        course.city.toLowerCase().includes(query)
-    )
+    return courses.value
 })
 </script>
 
@@ -74,12 +67,30 @@ const filteredCourses = computed(() => {
 
         <!-- Course Cards -->
         <v-container fluid class="px-6 pb-24 pt-14">
-            <v-row v-if="filteredCourses.length > 0">
+            <!-- Loading State -->
+            <v-row v-if="loading" justify="center" class="py-8">
+                <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+            </v-row>
+
+            <!-- Error State -->
+            <v-row v-else-if="error">
+                <v-col cols="12" class="text-center py-8">
+                    <v-icon size="64" color="error">mdi-alert-circle</v-icon>
+                    <div class="text-h6 text-error mt-4">Erreur de chargement</div>
+                    <div class="text-body-2 text-grey">{{ error }}</div>
+                    <v-btn color="primary" class="mt-4" @click="fetchJourneys()">Réessayer</v-btn>
+                </v-col>
+            </v-row>
+
+            <!-- Results -->
+            <v-row v-else-if="filteredCourses.length > 0">
                 <v-col cols="12" v-for="course in filteredCourses" :key="course.id">
                     <BaseCard :title="course.title" :description="course.description" :rating="course.rating"
                         :image="course.image" :city="course.city" :show-rating="true" />
                 </v-col>
             </v-row>
+
+            <!-- Empty State -->
             <v-row v-else>
                 <v-col cols="12" class="text-center py-8">
                     <v-icon size="64" color="grey">mdi-magnify</v-icon>

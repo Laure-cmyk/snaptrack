@@ -78,6 +78,87 @@ router.get('/members/:groupId', async (req, res) => {
 });
 
 /**
+ * 1b. List pending group invitations for a user
+ * GET /user-groups/pending/:userId
+ *
+ * Objectif : renvoyer les invitations de groupe en attente pour un utilisateur
+ */
+router.get('/pending/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const pendingInvites = await UserGroup.find({
+      userId,
+      status: 'pending',
+    }).populate('groupId', 'name');
+
+    const result = pendingInvites
+      .filter((ug) => ug.groupId)
+      .map((ug) => ({
+        inviteId: ug._id,
+        groupId: ug.groupId._id,
+        groupName: ug.groupId.name,
+        status: ug.status,
+      }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 1c. Accept group invitation
+ * POST /user-groups/:id/accept
+ */
+router.post('/:id/accept', async (req, res) => {
+  try {
+    const userGroup = await UserGroup.findByIdAndUpdate(
+      req.params.id,
+      { status: 'member' },
+      { new: true }
+    ).populate('groupId', 'name');
+
+    if (!userGroup) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    res.json({
+      message: 'Group invitation accepted',
+      userGroup: {
+        id: userGroup._id,
+        groupId: userGroup.groupId._id,
+        groupName: userGroup.groupId.name,
+        status: userGroup.status,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * 1d. Refuse group invitation
+ * POST /user-groups/:id/refuse
+ */
+router.post('/:id/refuse', async (req, res) => {
+  try {
+    const userGroup = await UserGroup.findByIdAndDelete(req.params.id);
+
+    if (!userGroup) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    res.json({
+      message: 'Group invitation refused',
+      id: req.params.id,
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
  * 2. GET user-group by ID
  * GET /user-groups/:id
  */

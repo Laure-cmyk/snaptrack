@@ -1,15 +1,54 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
-import { compressImage } from '@/utils/imageCompression'
+import { useFetchJson } from '@/composables/useFetchJson'
 import avatarDefault from '@/assets/avatar.jpeg'
+
+// Get current user from localStorage
+const storedUser = computed(() => {
+    const userData = localStorage.getItem('user')
+    return userData ? JSON.parse(userData) : null
+})
+
+const userId = computed(() => storedUser.value?.id || storedUser.value?._id)
 
 // State
 const user = ref({
-    pseudo: 'JohnDoe',
-    email: 'john.doe@example.com',
-    profileImage: null
+    username: '',
+    email: '',
+    profilePicture: null
+})
+
+const loading = ref(true)
+const uploadingPhoto = ref(false)
+
+// Fetch user data from DB
+const { data: userData, execute: fetchUser } = useFetchJson({
+    url: computed(() => `/users/${userId.value}`),
+    immediate: false
+})
+
+onMounted(async () => {
+    if (userId.value) {
+        loading.value = true
+        try {
+            await fetchUser()
+            if (userData.value) {
+                user.value = {
+                    username: userData.value.username,
+                    email: userData.value.email,
+                    profilePicture: userData.value.profilePicture
+                }
+            }
+        } catch (err) {
+            console.error('Erreur lors du chargement du profil:', err)
+        } finally {
+            loading.value = false
+        }
+    } else {
+        loading.value = false
+    }
 })
 
 const photoInput = ref(null)
@@ -42,16 +81,54 @@ async function handlePhotoUpload(event) {
     const file = event.target.files[0]
     if (!file) return
 
+    uploadingPhoto.value = true
     try {
-        const compressedImage = await compressImage(file, 400, 400, 0.8)
-        user.value.profileImage = compressedImage
+        // Upload to Cloudinary via backend
+        const formData = new FormData()
+        formData.append('image', file)
+
+        const response = await fetch(`/users/${userId.value}/upload-profile`, {
+            method: 'POST',
+            body: formData
+        })
+
+        if (!response.ok) {
+            throw new Error('Upload failed')
+        }
+
+        const result = await response.json()
+        user.value.profilePicture = result.profilePicture
+
+        // Update localStorage with new profile picture
+        const storedData = JSON.parse(localStorage.getItem('user') || '{}')
+        storedData.profilePicture = result.profilePicture
+        localStorage.setItem('user', JSON.stringify(storedData))
     } catch (err) {
-        console.error('Erreur compression image:', err)
+        console.error('Erreur upload image:', err)
+    } finally {
+        uploadingPhoto.value = false
     }
 }
 
-function removePhoto() {
-    user.value.profileImage = null
+async function removePhoto() {
+    try {
+        const response = await fetch(`/users/${userId.value}/profile-picture`, {
+            method: 'DELETE'
+        })
+
+        if (!response.ok) {
+            throw new Error('Delete failed')
+        }
+
+        user.value.profilePicture = null
+
+        // Update localStorage
+        const storedData = JSON.parse(localStorage.getItem('user') || '{}')
+        storedData.profilePicture = null
+        localStorage.setItem('user', JSON.stringify(storedData))
+    } catch (err) {
+        console.error('Erreur suppression image:', err)
+    }
 }
 
 // Password functions
@@ -61,8 +138,20 @@ async function changePassword() {
     submittingPassword.value = true
 
     try {
-        // TODO: Appel API
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        const response = await fetch(`/users/${userId.value}/password`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                currentPassword: passwordForm.value.currentPassword,
+                newPassword: passwordForm.value.newPassword
+            })
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Erreur lors du changement de mot de passe')
+        }
 
         passwordSuccess.value = 'Mot de passe modifié avec succès !'
         setTimeout(() => {
@@ -72,7 +161,7 @@ async function changePassword() {
             expansionPanel.value = [] // Fermer le panel
         }, 2000)
     } catch (err) {
-        passwordError.value = 'Erreur lors du changement de mot de passe.'
+        passwordError.value = err.message || 'Erreur lors du changement de mot de passe.'
     } finally {
         submittingPassword.value = false
     }
@@ -81,16 +170,29 @@ async function changePassword() {
 // Account actions
 function logout() {
     localStorage.removeItem('jwt')
+    localStorage.removeItem('user')
     logoutDialog.value = false
     window.location.href = '/authentification'
 }
 
-function deleteAccount() {
-    localStorage.removeItem('jwt')
-    localStorage.removeItem('myTrails')
-    localStorage.removeItem('user')
-    deleteAccountDialog.value = false
-    window.location.href = '/authentification'
+async function deleteAccount() {
+    try {
+        const response = await fetch(`/users/${userId.value}`, {
+            method: 'DELETE'
+        })
+
+        if (!response.ok) {
+            throw new Error('Delete account failed')
+        }
+
+        localStorage.removeItem('jwt')
+        localStorage.removeItem('myTrails')
+        localStorage.removeItem('user')
+        deleteAccountDialog.value = false
+        window.location.href = '/authentification'
+    } catch (err) {
+        console.error('Erreur lors de la suppression du compte:', err)
+    }
 }
 </script>
 
@@ -99,8 +201,13 @@ function deleteAccount() {
         <!-- Header -->
         <BaseHeader title="Profil" :show-back="false" />
 
+        <!-- Loading State -->
+        <v-container v-if="loading" fluid class="d-flex justify-center align-center py-16">
+            <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+        </v-container>
+
         <!-- Content -->
-        <v-container fluid class="px-6 py-8 pb-24">
+        <v-container v-else fluid class="px-6 py-8 pb-24">
             <!-- Photo de profil -->
             <div class="text-center mb-8">
                 <input ref="photoInput" type="file" accept="image/*" style="display: none"
@@ -109,18 +216,19 @@ function deleteAccount() {
                 <div class="position-relative d-inline-block">
                     <!-- Avatar -->
                     <v-avatar size="120" class="mb-4" style="cursor: pointer;" @click="triggerPhotoUpload">
-                        <v-img :src="user.profileImage || avatarDefault" cover />
+                        <v-progress-circular v-if="uploadingPhoto" indeterminate color="white" size="40"></v-progress-circular>
+                        <v-img v-else :src="user.profilePicture || avatarDefault" cover />
                     </v-avatar>
 
                     <!-- Edit button -->
                     <v-btn icon size="small" color="indigo-darken-1" class="position-absolute"
-                        style="bottom: 16px; right: 0;" @click="triggerPhotoUpload">
+                        style="bottom: 16px; right: 0;" @click="triggerPhotoUpload" :loading="uploadingPhoto">
                         <v-icon size="small">mdi-camera</v-icon>
                     </v-btn>
                 </div>
 
                 <!-- Remove photo button -->
-                <div v-if="user.profileImage" class="mt-2">
+                <div v-if="user.profilePicture" class="mt-2">
                     <v-btn size="small" variant="text" color="grey-darken-1" @click="removePhoto">
                         Supprimer la photo
                     </v-btn>
@@ -134,7 +242,7 @@ function deleteAccount() {
                     <!-- Pseudo -->
                     <div class="mb-4">
                         <div class="text-caption text-grey-darken-1 mb-1">Pseudo</div>
-                        <div class="text-body-1 font-weight-medium">{{ user.pseudo }}</div>
+                        <div class="text-body-1 font-weight-medium">{{ user.username }}</div>
                     </div>
 
                     <!-- Email -->

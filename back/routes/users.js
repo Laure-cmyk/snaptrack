@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
+import { upload, cloudinary } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -107,6 +108,91 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT change password
+router.put('/:id/password', async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current and new password are required' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Verify current password
+    const isPasswordValid = await user.comparePassword(currentPassword);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    // Update password (will be hashed by pre-save hook)
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE remove profile picture
+router.delete('/:id/profile-picture', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Delete image from Cloudinary if exists
+    if (user.profilePicture) {
+      const oldPublicId = user.profilePicture.split('/').slice(-1)[0].split('.')[0];
+      await cloudinary.uploader.destroy(`snaptrack/${oldPublicId}`);
+    }
+
+    user.profilePicture = null;
+    await user.save();
+
+    res.json({ message: 'Profile picture removed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST upload profile picture
+router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Delete old image from Cloudinary if exists
+    if (user.profilePicture) {
+      // Extract public_id from URL if needed
+      const oldPublicId = user.profilePicture.split('/').slice(-1)[0].split('.')[0];
+      await cloudinary.uploader.destroy(`snaptrack/${oldPublicId}`);
+    }
+
+    // Update user with new Cloudinary URL
+    user.profilePicture = req.file.path; // Cloudinary URL
+    await user.save();
+
+    res.json({
+      message: 'Profile picture uploaded successfully',
+      profilePicture: user.profilePicture
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

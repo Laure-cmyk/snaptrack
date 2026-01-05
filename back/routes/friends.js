@@ -178,8 +178,35 @@ router.get('/:userId', async (req, res) => {
   }
 });
 
-/**
- * 6. List Unfriend (personnes qui ne sont pas encore mes amis)
+/** * 5b. List pending friend requests (invitations reçues)
+ * GET /friends/:userId/pending
+ *
+ * Règle : trouver toutes les relations où userId est friendId
+ * (= demandes reçues) et status = "pending".
+ */
+router.get('/:userId/pending', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const pendingRequests = await Friends.find({
+      status: 'pending',
+      friendId: userId, // demandes reçues (l'utilisateur est la cible)
+    }).populate('userId', 'username');
+
+    const result = pendingRequests.map((f) => ({
+      friendshipId: f._id,
+      senderId: f.userId._id,
+      senderName: f.userId.username,
+      status: f.status,
+    }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/** * 6. List Unfriend (personnes qui ne sont pas encore mes amis)
  * GET /friends/unfriends/:userId
  *
  * Règle : tous les utilisateurs pour lesquels il n’existe

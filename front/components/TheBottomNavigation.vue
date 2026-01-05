@@ -8,7 +8,7 @@
             <span>Accueil</span>
         </v-btn>
 
-        <v-btn to="/friendlist" value="amis">
+        <v-btn to="/socials" value="amis">
             <v-icon>mdi-account-group</v-icon>
             <span>Amis</span>
         </v-btn>

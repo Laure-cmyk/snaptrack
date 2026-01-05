@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import TheListSocials from '../components/socials/TheListSocials.vue';
 import TheGroup from '../components/socials/TheGroup.vue';
 import CreateGroup from '../components/socials/CreateGroup.vue';
+import { useFetchJson } from '@/composables/useFetchJson';
 
 /* TO IMPLEMENT ONCE FRONT BRANCHES ARE MERGED :
 Modal to confirm negative action
@@ -15,20 +16,117 @@ const tab = ref('friends');
 const selectedGroupId = ref(null);
 const isCreatingGroup = ref(false);
 
-const friends = ref([
-  { id: 1, name: 'Alice', type: 'friend' },
-  { id: 2, name: 'Bob', type: 'friend' },
-  { id: 3, name: 'Eve', type: 'friend' }
-]);
+// Get current user from localStorage
+const currentUser = computed(() => {
+  const userData = localStorage.getItem('user');
+  return userData ? JSON.parse(userData) : null;
+});
 
-const friendInvite = ref([{ id: 4, name: 'Jean-luc', type: 'invite', category: 'friend' }]);
+const userId = computed(() => currentUser.value?.id || currentUser.value?._id);
 
-const groupInvite = ref([{ id: 'g3', name: 'ToilettesRun', type: 'invite', category: 'group' }]);
+// Reactive data
+const friends = ref([]);
+const friendInvite = ref([]);
+const groupInvite = ref([]);
+const groups = ref([]);
+const loading = ref(false);
 
-const groups = ref([
-  { id: 'g1', name: 'Study Group', type: 'group' },
-  { id: 'g2', name: 'Project Team', type: 'group' }
-]);
+// Fetch friends list
+const { data: friendsData, execute: fetchFriends } = useFetchJson({
+  url: computed(() => `/friends/${userId.value}`),
+  immediate: false
+});
+
+// Fetch pending friend requests
+const { data: pendingFriendsData, execute: fetchPendingFriends } = useFetchJson({
+  url: computed(() => `/friends/${userId.value}/pending`),
+  immediate: false
+});
+
+// Fetch user groups
+const { data: groupsData, execute: fetchGroups } = useFetchJson({
+  url: computed(() => `/groups/user/${userId.value}`),
+  immediate: false
+});
+
+// Fetch pending group invites
+const { data: pendingGroupsData, execute: fetchPendingGroups } = useFetchJson({
+  url: computed(() => `/user-groups/pending/${userId.value}`),
+  immediate: false
+});
+
+// Load all data on mount
+onMounted(async () => {
+  if (!userId.value) return;
+  
+  loading.value = true;
+  try {
+    await Promise.all([
+      fetchFriends(),
+      fetchPendingFriends(),
+      fetchGroups(),
+      fetchPendingGroups()
+    ]);
+    
+    // Map friends data
+    if (friendsData.value) {
+      friends.value = friendsData.value.map(f => ({
+        id: f.friendshipId,
+        odId: f.friendId,
+        name: f.friendName,
+        type: 'friend'
+      }));
+    }
+    
+    // Map pending friend requests
+    if (pendingFriendsData.value) {
+      friendInvite.value = pendingFriendsData.value.map(f => ({
+        id: f.friendshipId,
+        odId: f.senderId,
+        name: f.senderName,
+        type: 'invite',
+        category: 'friend'
+      }));
+    }
+    
+    // Map groups data
+    if (groupsData.value) {
+      groups.value = groupsData.value.map(g => ({
+        id: g._id,
+        name: g.name,
+        type: 'group'
+      }));
+    }
+    
+    // Map pending group invites
+    if (pendingGroupsData.value) {
+      groupInvite.value = pendingGroupsData.value.map(g => ({
+        id: g.inviteId,
+        odId: g.groupId,
+        name: g.groupName,
+        type: 'invite',
+        category: 'group'
+      }));
+    }
+  } catch (err) {
+    console.error('Erreur lors du chargement des données:', err);
+  } finally {
+    loading.value = false;
+  }
+});
+
+// API helper
+async function apiCall(url, method = 'POST', body = null) {
+  const options = {
+    method,
+    headers: { 'Content-Type': 'application/json' }
+  };
+  if (body) options.body = JSON.stringify(body);
+  
+  const response = await fetch(url, options);
+  if (!response.ok) throw new Error('API call failed');
+  return response.json();
+}
 
 async function onAction(payload) {
   console.log('Received action:', payload);
@@ -39,50 +137,69 @@ async function onAction(payload) {
       const inviteList = isGroupInvite ? groupInvite : friendInvite;
       const targetList = isGroupInvite ? groups : friends;
       const targetType = isGroupInvite ? 'group' : 'friend';
-      /* API */
+      
+      // API: Accept invite
+      if (isGroupInvite) {
+        await apiCall(`/user-groups/${item.id}/accept`);
+      } else {
+        await apiCall(`/friends/requests/${item.id}/accept`);
+      }
+      
       const inviteIndex = inviteList.value.findIndex(i => i.id === item.id);
       if (inviteIndex !== -1) {
         const movedItem = inviteList.value.splice(inviteIndex, 1)[0];
         movedItem.type = targetType;
+        movedItem.id = movedItem.odId || movedItem.id; // Use the original ID for the list
         targetList.value.push(movedItem);
       }
     } catch (err) {
-      console.error('Erreur');
+      console.error('Erreur lors de l\'acceptation:', err);
     }
   } else if (result === 'declined' && item.type === 'invite') {
     try {
-      /* API */
       const isGroupInvite = item.category === 'group';
       const inviteList = isGroupInvite ? groupInvite : friendInvite;
+      
+      // API: Refuse invite
+      if (isGroupInvite) {
+        await apiCall(`/user-groups/${item.id}/refuse`);
+      } else {
+        await apiCall(`/friends/requests/${item.id}/refuse`);
+      }
+      
       const inviteIndex = inviteList.value.findIndex(i => i.id === item.id);
       if (inviteIndex !== -1) {
         inviteList.value.splice(inviteIndex, 1);
       }
     } catch (err) {
-      console.error('Erreur');
+      console.error('Erreur lors du refus:', err);
     }
   } else if (result === 'removed' && item.type === 'friend') {
     try {
-      /* API */
+      // API: Remove friend
+      await apiCall(`/friends/${item.id}`, 'DELETE');
+      
       const friendIndex = friends.value.findIndex(i => i.id === item.id);
       if (friendIndex !== -1) {
         friends.value.splice(friendIndex, 1);
       }
     } catch (err) {
-      console.error('Erreur');
+      console.error('Erreur lors de la suppression:', err);
     }
   } else if (result === 'left' && item.type === 'group') {
     try {
-      /* API */
+      // API: Leave group
+      await apiCall(`/groups/${item.id}/members/${userId.value}`, 'DELETE');
+      
       const groupIndex = groups.value.findIndex(i => i.id === item.id);
       if (groupIndex !== -1) {
         groups.value.splice(groupIndex, 1);
       }
-      if ((selectedGroupId.value = item.id)) {
+      if (selectedGroupId.value === item.id) {
         selectedGroupId.value = null;
       }
     } catch (err) {
-      console.error('Erreur');
+      console.error('Erreur lors du départ du groupe:', err);
     }
   }
 }
@@ -95,14 +212,20 @@ function handleCloseGroup() {
   selectedGroupId.value = null;
 }
 
-function handleLeaveGroup(groupData) {
-  /* API */
-  const groupIndex = groups.value.findIndex(g => g.id === groupData.id);
-  if (groupIndex !== -1) {
-    groups.value.splice(groupIndex, 1);
+async function handleLeaveGroup(groupData) {
+  try {
+    // API: Leave group
+    await apiCall(`/groups/${groupData.id}/members/${userId.value}`, 'DELETE');
+    
+    const groupIndex = groups.value.findIndex(g => g.id === groupData.id);
+    if (groupIndex !== -1) {
+      groups.value.splice(groupIndex, 1);
+    }
+    // Close the group view and return to list
+    selectedGroupId.value = null;
+  } catch (err) {
+    console.error('Erreur lors du départ du groupe:', err);
   }
-  // Close the group view and return to list
-  selectedGroupId.value = null;
 }
 
 function openCreateGroup() {
@@ -115,18 +238,42 @@ function closeCreateGroup() {
 
 async function handleCreateGroup(groupData) {
   try {
-    /* API */
-    const newGroup = {
-      id: 'g' + (groups.value.length + 3),
+    // API: Create group
+    const result = await apiCall('/groups', 'POST', {
       name: groupData.name,
-      type: 'group',
-      memberIds: groupData.memberIds
+      ownerId: userId.value
+    });
+    
+    const newGroupId = result.group._id;
+    
+    // Add current user to the group
+    await apiCall('/user-groups', 'POST', {
+      userId: userId.value,
+      groupId: newGroupId,
+      status: 'admin'
+    });
+    
+    // Add selected members to the group (as pending invites)
+    if (groupData.memberIds && groupData.memberIds.length > 0) {
+      await Promise.all(groupData.memberIds.map(memberId =>
+        apiCall('/user-groups', 'POST', {
+          userId: memberId,
+          groupId: newGroupId,
+          status: 'pending'
+        })
+      ));
+    }
+    
+    const newGroup = {
+      id: newGroupId,
+      name: groupData.name,
+      type: 'group'
     };
     groups.value.push(newGroup);
     isCreatingGroup.value = false;
     tab.value = 'groups';
   } catch (err) {
-    console.error('Erreur');
+    console.error('Erreur lors de la création du groupe:', err);
   }
 }
 </script>
@@ -137,6 +284,9 @@ async function handleCreateGroup(groupData) {
     @close="closeCreateGroup"
     @create="handleCreateGroup"
   />
+  <v-card v-else-if="loading" class="d-flex justify-center align-center pa-8">
+    <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+  </v-card>
   <v-card v-else>
     <v-tabs v-model="tab" direction="horizontal">
       <v-badge
