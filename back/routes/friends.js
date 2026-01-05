@@ -1,11 +1,11 @@
-import express from 'express';
-import { Friends, User } from '../models/index.js'; // adapte "User" si besoin
+﻿import express from 'express';
+import { Friends, User } from '../models/index.js';
 
 const router = express.Router();
 
 /**
  * 0. GET /friends
- * -> (optionnel) liste brute de toutes les relations, pour debug/admin
+ * -> liste brute de toutes les relations, pour debug/admin
  */
 router.get('/', async (req, res) => {
   try {
@@ -19,13 +19,8 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * 1. Create request (envoyer une demande d’ami)
+ * 1. Create request (envoyer une demande d'ami)
  * POST /friends/requests
- * Body :
- * {
- *   "userId": "CURRENT_USER_ID",
- *   "friendUserId": "TARGET_USER_ID"
- * }
  */
 router.post('/requests', async (req, res) => {
   try {
@@ -35,10 +30,9 @@ router.post('/requests', async (req, res) => {
       return res.status(400).json({ error: 'userId et friendUserId sont requis' });
     }
 
-    // On crée une relation avec status "pending"
     const friendship = await Friends.create({
       userId,
-      friendId: friendUserId, // champ dans ton modèle Friends
+      friendId: friendUserId,
       status: 'pending',
     });
 
@@ -57,7 +51,7 @@ router.post('/requests', async (req, res) => {
 });
 
 /**
- * 2. Accept request (accepter une demande d’ami)
+ * 2. Accept request
  * POST /friends/requests/:id/accept
  */
 router.post('/requests/:id/accept', async (req, res) => {
@@ -89,10 +83,8 @@ router.post('/requests/:id/accept', async (req, res) => {
 });
 
 /**
- * 3. Refuse request (refuser une demande d’ami)
+ * 3. Refuse request
  * POST /friends/requests/:id/refuse
- * Ici on garde l’historique avec status "refused".
- * Si tu préfères supprimer, je te montre plus bas.
  */
 router.post('/requests/:id/refuse', async (req, res) => {
   try {
@@ -123,20 +115,72 @@ router.post('/requests/:id/refuse', async (req, res) => {
 });
 
 /**
- * 4. Delete friend (supprimer un ami)
- * DELETE /friends/:id
+ * 6. List Unfriend (personnes qui ne sont pas encore mes amis)
+ * GET /friends/unfriends/:userId
+ * 
+ * MUST BE BEFORE /:userId routes to avoid matching "unfriends" as userId
  */
-router.delete('/:id', async (req, res) => {
+router.get('/unfriends/:userId', async (req, res) => {
   try {
-    const friendship = await Friends.findByIdAndDelete(req.params.id);
-    if (!friendship) {
-      return res.status(404).json({ error: 'Friendship not found' });
-    }
-    res.json({
-      message: 'Friend deleted',
-      id: req.params.id,
+    const { userId } = req.params;
+    console.log('Fetching unfriends for userId:', userId);
+
+    const relations = await Friends.find({
+      $or: [{ userId }, { friendId: userId }],
     });
+
+    const linkedIds = new Set();
+    linkedIds.add(userId);
+
+    relations.forEach((rel) => {
+      linkedIds.add(rel.userId.toString());
+      linkedIds.add(rel.friendId.toString());
+    });
+
+    const unfriends = await User.find({
+      _id: { $nin: Array.from(linkedIds) },
+    }).select('username email');
+
+    const result = unfriends.map((u) => ({
+      userId: u._id,
+      username: u.username,
+      email: u.email,
+    }));
+
+    res.json(result);
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 5b. List pending friend requests (invitations recues)
+ * GET /friends/:userId/pending
+ * 
+ * MUST BE BEFORE /:userId to avoid matching "pending" as part of userId
+ */
+router.get('/:userId/pending', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('Fetching pending friend requests for userId:', userId);
+
+    const pendingRequests = await Friends.find({
+      status: 'pending',
+      friendId: userId,
+    }).populate('userId', 'username');
+
+    console.log('Found pending requests:', pendingRequests.length);
+
+    const result = pendingRequests.map((f) => ({
+      friendshipId: f._id,
+      senderId: f.userId._id,
+      senderName: f.userId.username,
+      status: f.status,
+    }));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -144,21 +188,22 @@ router.delete('/:id', async (req, res) => {
 /**
  * 5. List Friends (voir mes amis)
  * GET /friends/:userId
- *
- * Règle : trouver toutes les relations où userId apparaît
- * dans userId OU friendId, et status = "accepted".
- * Puis renvoyer l’autre personne + le statut.
+ * 
+ * This catches all GET /friends/:something, so must be LAST among GET routes
  */
 router.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
+    console.log('Fetching friends for userId:', userId);
 
     const friendships = await Friends.find({
       status: 'accepted',
-      $or: [{ userId }, { friendId: userId }],
+      $or: [{ userId: userId }, { friendId: userId }],
     })
       .populate('userId', 'username')
       .populate('friendId', 'username');
+
+    console.log('Found accepted friendships:', friendships.length);
 
     const result = friendships.map((f) => {
       const isUserSender = f.userId._id.toString() === userId;
@@ -172,76 +217,28 @@ router.get('/:userId', async (req, res) => {
       };
     });
 
+    console.log('Returning friends:', result.length);
     res.json(result);
   } catch (error) {
+    console.error('Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-/** * 5b. List pending friend requests (invitations reçues)
- * GET /friends/:userId/pending
- *
- * Règle : trouver toutes les relations où userId est friendId
- * (= demandes reçues) et status = "pending".
+/**
+ * 4. Delete friend (supprimer un ami)
+ * DELETE /friends/:id
  */
-router.get('/:userId/pending', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    const pendingRequests = await Friends.find({
-      status: 'pending',
-      friendId: userId, // demandes reçues (l'utilisateur est la cible)
-    }).populate('userId', 'username');
-
-    const result = pendingRequests.map((f) => ({
-      friendshipId: f._id,
-      senderId: f.userId._id,
-      senderName: f.userId.username,
-      status: f.status,
-    }));
-
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/** * 6. List Unfriend (personnes qui ne sont pas encore mes amis)
- * GET /friends/unfriends/:userId
- *
- * Règle : tous les utilisateurs pour lesquels il n’existe
- * aucune relation Friends (ni userId, ni friendId) avec userId courant.
- */
-router.get('/unfriends/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    // 1. Toutes les relations où l’utilisateur est impliqué
-    const relations = await Friends.find({
-      $or: [{ userId }, { friendId: userId }],
+    const friendship = await Friends.findByIdAndDelete(req.params.id);
+    if (!friendship) {
+      return res.status(404).json({ error: 'Friendship not found' });
+    }
+    res.json({
+      message: 'Friend deleted',
+      id: req.params.id,
     });
-
-    // 2. Construire la liste des IDs déjà liés (amis + pending + refused)
-    const linkedIds = new Set();
-    linkedIds.add(userId);
-
-    relations.forEach((rel) => {
-      linkedIds.add(rel.userId.toString());
-      linkedIds.add(rel.friendId.toString());
-    });
-
-    // 3. Chercher tous les utilisateurs qui NE sont PAS dans ces IDs
-    const unfriends = await User.find({
-      _id: { $nin: Array.from(linkedIds) },
-    }).select('username email');
-
-    const result = unfriends.map((u) => ({
-      userId: u._id,
-      username: u.username,
-      email: u.email,
-    }));
-
-    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

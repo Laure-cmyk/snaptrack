@@ -146,6 +146,8 @@ router.put('/:id/password', async (req, res) => {
 // DELETE remove profile picture
 router.delete('/:id/profile-picture', async (req, res) => {
   try {
+    console.log('🗑️ Removing profile picture for user:', req.params.id);
+    
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -153,15 +155,19 @@ router.delete('/:id/profile-picture', async (req, res) => {
 
     // Delete image from Cloudinary if exists
     if (user.profilePicture) {
+      console.log('🗑️ Deleting from Cloudinary...');
       const oldPublicId = user.profilePicture.split('/').slice(-1)[0].split('.')[0];
-      await cloudinary.v2.uploader.destroy(`snaptrack/${oldPublicId}`);
+      const deleteResult = await cloudinary.uploader.destroy(`snaptrack/${oldPublicId}`);
+      console.log('🗑️ Delete result:', deleteResult);
     }
 
     user.profilePicture = null;
     await user.save();
+    console.log('🗑️ Profile picture removed successfully');
 
     res.json({ message: 'Profile picture removed successfully' });
   } catch (error) {
+    console.error('🗑️ Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -169,41 +175,80 @@ router.delete('/:id/profile-picture', async (req, res) => {
 // POST upload profile picture
 router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
   try {
-    console.log('Upload request received for user:', req.params.id);
-    console.log('File received:', req.file ? 'Yes' : 'No');
+    console.log('📸 ====== PROFILE PICTURE UPLOAD START ======');
+    console.log('📸 Step 1: Request received for user:', req.params.id);
+    console.log('📸 Step 2: File received:', req.file ? 'Yes ✅' : 'No ❌');
     
     if (!req.file) {
+      console.log('📸 Error: No file in request');
       return res.status(400).json({ error: 'No image file provided' });
     }
 
-    console.log('File path from Cloudinary:', req.file.path);
+    console.log('📸 Step 3: File details:');
+    console.log('  - Original name:', req.file.originalname);
+    console.log('  - Mime type:', req.file.mimetype);
+    console.log('  - Size:', req.file.size, 'bytes');
+    console.log('  - Buffer length:', req.file.buffer?.length, 'bytes');
 
+    console.log('📸 Step 4: Finding user in database...');
     const user = await User.findById(req.params.id);
     if (!user) {
+      console.log('📸 Error: User not found');
       return res.status(404).json({ error: 'User not found' });
     }
+    console.log('📸 Step 4: User found:', user.username);
 
     // Delete old image from Cloudinary if exists
     if (user.profilePicture) {
+      console.log('📸 Step 5: Deleting old profile picture...');
       try {
-        // Extract public_id from URL if needed
         const oldPublicId = user.profilePicture.split('/').slice(-1)[0].split('.')[0];
-        await cloudinary.v2.uploader.destroy(`snaptrack/${oldPublicId}`);
+        console.log('  - Old public ID:', `snaptrack/${oldPublicId}`);
+        const deleteResult = await cloudinary.uploader.destroy(`snaptrack/${oldPublicId}`);
+        console.log('  - Delete result:', deleteResult);
       } catch (deleteErr) {
-        console.warn('Failed to delete old image:', deleteErr.message);
+        console.warn('📸 Warning: Failed to delete old image:', deleteErr.message);
       }
+    } else {
+      console.log('📸 Step 5: No existing profile picture to delete');
     }
 
-    // Update user with new Cloudinary URL
-    user.profilePicture = req.file.path; // Cloudinary URL
-    await user.save();
+    // Upload new image to Cloudinary
+    console.log('📸 Step 6: Uploading to Cloudinary...');
+    
+    // Convert buffer to base64 data URI
+    const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    console.log('  - Base64 string created, length:', base64Image.length);
+    
+    console.log('📸 Step 7: Calling cloudinary.uploader.upload...');
+    const uploadResult = await cloudinary.uploader.upload(base64Image, {
+      folder: 'snaptrack',
+      resource_type: 'image',
+      overwrite: true,
+      transformation: [{ width: 800, height: 800, crop: 'limit' }]
+    });
+    
+    console.log('📸 Step 8: Upload successful! ✅');
+    console.log('  - Public ID:', uploadResult.public_id);
+    console.log('  - Secure URL:', uploadResult.secure_url);
+    console.log('  - Format:', uploadResult.format);
+    console.log('  - Size:', uploadResult.bytes, 'bytes');
 
+    // Update user with new Cloudinary URL
+    console.log('📸 Step 9: Saving to database...');
+    user.profilePicture = uploadResult.secure_url;
+    await user.save();
+    console.log('📸 Step 9: Database updated ✅');
+
+    console.log('📸 ====== PROFILE PICTURE UPLOAD COMPLETE ======');
+    
     res.json({
       message: 'Profile picture uploaded successfully',
       profilePicture: user.profilePicture
     });
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('📸 ❌ Upload error:', error);
+    console.error('📸 Error stack:', error.stack);
     res.status(500).json({ error: error.message });
   }
 });
