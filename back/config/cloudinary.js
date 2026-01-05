@@ -1,8 +1,9 @@
 import { v2 as cloudinary } from 'cloudinary';
-import multerStorageCloudinary from 'multer-storage-cloudinary';
+import { createRequire } from 'module';
 import multer from 'multer';
 
-const { CloudinaryStorage } = multerStorageCloudinary;
+const require = createRequire(import.meta.url);
+const CloudinaryStorage = require('multer-storage-cloudinary');
 
 // Configure Cloudinary
 cloudinary.config({

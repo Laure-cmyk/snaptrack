@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
-import { useFetchJson } from '@/composables/useFetchJson'
+import { fetchJson } from '@/utils/fetchJson'
 import avatarDefault from '@/assets/avatar.jpeg'
 
 // Get current user from localStorage
@@ -24,29 +24,39 @@ const loading = ref(true)
 const uploadingPhoto = ref(false)
 
 // Fetch user data from DB
-const { data: userData, execute: fetchUser } = useFetchJson({
-    url: computed(() => `/users/${userId.value}`),
-    immediate: false
-})
+async function fetchUserData() {
+    if (!userId.value) {
+        console.warn('No user ID found in localStorage')
+        return
+    }
+    
+    try {
+        const { request } = fetchJson({ url: `/users/${userId.value}` })
+        const data = await request
+        
+        user.value = {
+            username: data.username,
+            email: data.email,
+            profilePicture: data.profilePicture
+        }
+    } catch (err) {
+        console.error('Erreur lors du chargement du profil:', err)
+        // Fallback to localStorage data if API fails
+        if (storedUser.value) {
+            user.value = {
+                username: storedUser.value.username || '',
+                email: storedUser.value.email || '',
+                profilePicture: storedUser.value.profilePicture || null
+            }
+        }
+    }
+}
 
 onMounted(async () => {
-    if (userId.value) {
-        loading.value = true
-        try {
-            await fetchUser()
-            if (userData.value) {
-                user.value = {
-                    username: userData.value.username,
-                    email: userData.value.email,
-                    profilePicture: userData.value.profilePicture
-                }
-            }
-        } catch (err) {
-            console.error('Erreur lors du chargement du profil:', err)
-        } finally {
-            loading.value = false
-        }
-    } else {
+    loading.value = true
+    try {
+        await fetchUserData()
+    } finally {
         loading.value = false
     }
 })
@@ -112,13 +122,11 @@ async function handlePhotoUpload(event) {
 
 async function removePhoto() {
     try {
-        const response = await fetch(`/users/${userId.value}/profile-picture`, {
+        const { request } = fetchJson({
+            url: `/users/${userId.value}/profile-picture`,
             method: 'DELETE'
         })
-
-        if (!response.ok) {
-            throw new Error('Delete failed')
-        }
+        await request
 
         user.value.profilePicture = null
 
@@ -138,20 +146,15 @@ async function changePassword() {
     submittingPassword.value = true
 
     try {
-        const response = await fetch(`/users/${userId.value}/password`, {
+        const { request } = fetchJson({
+            url: `/users/${userId.value}/password`,
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+            data: {
                 currentPassword: passwordForm.value.currentPassword,
                 newPassword: passwordForm.value.newPassword
-            })
+            }
         })
-
-        const result = await response.json()
-
-        if (!response.ok) {
-            throw new Error(result.error || 'Erreur lors du changement de mot de passe')
-        }
+        await request
 
         passwordSuccess.value = 'Mot de passe modifié avec succès !'
         setTimeout(() => {
@@ -177,13 +180,11 @@ function logout() {
 
 async function deleteAccount() {
     try {
-        const response = await fetch(`/users/${userId.value}`, {
+        const { request } = fetchJson({
+            url: `/users/${userId.value}`,
             method: 'DELETE'
         })
-
-        if (!response.ok) {
-            throw new Error('Delete account failed')
-        }
+        await request
 
         localStorage.removeItem('jwt')
         localStorage.removeItem('myTrails')
