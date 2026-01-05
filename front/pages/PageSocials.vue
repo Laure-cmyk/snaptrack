@@ -33,8 +33,12 @@ const loading = ref(false);
 
 // Load all data on mount
 onMounted(async () => {
-  if (!userId.value) return;
+  if (!userId.value) {
+    console.log('No user ID found');
+    return;
+  }
   
+  console.log('Fetching data for user:', userId.value);
   loading.value = true;
   try {
     // Fetch all data in parallel
@@ -44,6 +48,11 @@ onMounted(async () => {
       fetchJson({ url: `/groups/user/${userId.value}` }).request,
       fetchJson({ url: `/user-groups/pending/${userId.value}` }).request
     ]);
+    
+    console.log('Friends from DB:', friendsResult);
+    console.log('Pending friend requests from DB:', pendingFriendsResult);
+    console.log('Groups from DB:', groupsResult);
+    console.log('Pending group invites from DB:', pendingGroupsResult);
     
     // Map friends data
     if (friendsResult) {

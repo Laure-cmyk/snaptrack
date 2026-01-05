@@ -154,7 +154,7 @@ router.delete('/:id/profile-picture', async (req, res) => {
     // Delete image from Cloudinary if exists
     if (user.profilePicture) {
       const oldPublicId = user.profilePicture.split('/').slice(-1)[0].split('.')[0];
-      await cloudinary.uploader.destroy(`snaptrack/${oldPublicId}`);
+      await cloudinary.v2.uploader.destroy(`snaptrack/${oldPublicId}`);
     }
 
     user.profilePicture = null;
@@ -188,7 +188,7 @@ router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
       try {
         // Extract public_id from URL if needed
         const oldPublicId = user.profilePicture.split('/').slice(-1)[0].split('.')[0];
-        await cloudinary.uploader.destroy(`snaptrack/${oldPublicId}`);
+        await cloudinary.v2.uploader.destroy(`snaptrack/${oldPublicId}`);
       } catch (deleteErr) {
         console.warn('Failed to delete old image:', deleteErr.message);
       }

@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from 'cloudinary';
 import { createRequire } from 'module';
 import multer from 'multer';
 
@@ -15,7 +15,7 @@ if (!cloudName || !apiKey || !apiSecret) {
 }
 
 // Configure Cloudinary
-cloudinary.config({
+cloudinary.v2.config({
   cloud_name: cloudName,
   api_key: apiKey,
   api_secret: apiSecret
