@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import TheListSocials from '../components/socials/TheListSocials.vue';
 import TheGroup from '../components/socials/TheGroup.vue';
 import CreateGroup from '../components/socials/CreateGroup.vue';
-import { useFetchJson } from '@/composables/useFetchJson';
+import { fetchJson } from '@/utils/fetchJson';
 
 /* TO IMPLEMENT ONCE FRONT BRANCHES ARE MERGED :
 Modal to confirm negative action
@@ -31,46 +31,23 @@ const groupInvite = ref([]);
 const groups = ref([]);
 const loading = ref(false);
 
-// Fetch friends list
-const { data: friendsData, execute: fetchFriends } = useFetchJson({
-  url: computed(() => `/friends/${userId.value}`),
-  immediate: false
-});
-
-// Fetch pending friend requests
-const { data: pendingFriendsData, execute: fetchPendingFriends } = useFetchJson({
-  url: computed(() => `/friends/${userId.value}/pending`),
-  immediate: false
-});
-
-// Fetch user groups
-const { data: groupsData, execute: fetchGroups } = useFetchJson({
-  url: computed(() => `/groups/user/${userId.value}`),
-  immediate: false
-});
-
-// Fetch pending group invites
-const { data: pendingGroupsData, execute: fetchPendingGroups } = useFetchJson({
-  url: computed(() => `/user-groups/pending/${userId.value}`),
-  immediate: false
-});
-
 // Load all data on mount
 onMounted(async () => {
   if (!userId.value) return;
   
   loading.value = true;
   try {
-    await Promise.all([
-      fetchFriends(),
-      fetchPendingFriends(),
-      fetchGroups(),
-      fetchPendingGroups()
+    // Fetch all data in parallel
+    const [friendsResult, pendingFriendsResult, groupsResult, pendingGroupsResult] = await Promise.all([
+      fetchJson({ url: `/friends/${userId.value}` }).request,
+      fetchJson({ url: `/friends/${userId.value}/pending` }).request,
+      fetchJson({ url: `/groups/user/${userId.value}` }).request,
+      fetchJson({ url: `/user-groups/pending/${userId.value}` }).request
     ]);
     
     // Map friends data
-    if (friendsData.value) {
-      friends.value = friendsData.value.map(f => ({
+    if (friendsResult) {
+      friends.value = friendsResult.map(f => ({
         id: f.friendshipId,
         odId: f.friendId,
         name: f.friendName,
@@ -79,8 +56,8 @@ onMounted(async () => {
     }
     
     // Map pending friend requests
-    if (pendingFriendsData.value) {
-      friendInvite.value = pendingFriendsData.value.map(f => ({
+    if (pendingFriendsResult) {
+      friendInvite.value = pendingFriendsResult.map(f => ({
         id: f.friendshipId,
         odId: f.senderId,
         name: f.senderName,
@@ -90,8 +67,8 @@ onMounted(async () => {
     }
     
     // Map groups data
-    if (groupsData.value) {
-      groups.value = groupsData.value.map(g => ({
+    if (groupsResult) {
+      groups.value = groupsResult.map(g => ({
         id: g._id,
         name: g.name,
         type: 'group'
@@ -99,8 +76,8 @@ onMounted(async () => {
     }
     
     // Map pending group invites
-    if (pendingGroupsData.value) {
-      groupInvite.value = pendingGroupsData.value.map(g => ({
+    if (pendingGroupsResult) {
+      groupInvite.value = pendingGroupsResult.map(g => ({
         id: g.inviteId,
         odId: g.groupId,
         name: g.groupName,
@@ -117,15 +94,8 @@ onMounted(async () => {
 
 // API helper
 async function apiCall(url, method = 'POST', body = null) {
-  const options = {
-    method,
-    headers: { 'Content-Type': 'application/json' }
-  };
-  if (body) options.body = JSON.stringify(body);
-  
-  const response = await fetch(url, options);
-  if (!response.ok) throw new Error('API call failed');
-  return response.json();
+  const { request } = fetchJson({ url, method, data: body });
+  return request;
 }
 
 async function onAction(payload) {

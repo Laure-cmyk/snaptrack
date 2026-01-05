@@ -169,9 +169,14 @@ router.delete('/:id/profile-picture', async (req, res) => {
 // POST upload profile picture
 router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
   try {
+    console.log('Upload request received for user:', req.params.id);
+    console.log('File received:', req.file ? 'Yes' : 'No');
+    
     if (!req.file) {
       return res.status(400).json({ error: 'No image file provided' });
     }
+
+    console.log('File path from Cloudinary:', req.file.path);
 
     const user = await User.findById(req.params.id);
     if (!user) {
@@ -180,9 +185,13 @@ router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
 
     // Delete old image from Cloudinary if exists
     if (user.profilePicture) {
-      // Extract public_id from URL if needed
-      const oldPublicId = user.profilePicture.split('/').slice(-1)[0].split('.')[0];
-      await cloudinary.uploader.destroy(`snaptrack/${oldPublicId}`);
+      try {
+        // Extract public_id from URL if needed
+        const oldPublicId = user.profilePicture.split('/').slice(-1)[0].split('.')[0];
+        await cloudinary.uploader.destroy(`snaptrack/${oldPublicId}`);
+      } catch (deleteErr) {
+        console.warn('Failed to delete old image:', deleteErr.message);
+      }
     }
 
     // Update user with new Cloudinary URL
@@ -194,6 +203,7 @@ router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
       profilePicture: user.profilePicture
     });
   } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({ error: error.message });
   }
 });

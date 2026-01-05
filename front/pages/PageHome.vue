@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import BaseCard from '@/components/BaseCard.vue'
 import TheSearchBar from '@/components/TheSearchBar.vue'
 import { useFetchJson } from '@/composables/useFetchJson'
@@ -12,7 +12,7 @@ const user = computed(() => {
 
 const searchQuery = ref('')
 
-// Fetch journeys from backend
+// Fetch journeys from backend (once on load)
 const { data: journeysData, loading, error, execute: fetchJourneys } = useFetchJson({
     url: '/journeys',
     immediate: true
@@ -31,18 +31,18 @@ const courses = computed(() => {
     }))
 })
 
-// Debounce search and refetch with search parameter
-let searchTimeout = null
-watch(searchQuery, (newQuery) => {
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        fetchJourneys({ search: newQuery })
-    }, 300)
-})
-
-// Filtrer les parcours selon la recherche (client-side fallback)
+// Filter courses client-side based on search query
 const filteredCourses = computed(() => {
-    return courses.value
+    if (!searchQuery.value) {
+        return courses.value
+    }
+
+    const query = searchQuery.value.toLowerCase()
+    return courses.value.filter(course =>
+        course.title.toLowerCase().includes(query) ||
+        course.description.toLowerCase().includes(query) ||
+        course.city.toLowerCase().includes(query)
+    )
 })
 </script>
 
