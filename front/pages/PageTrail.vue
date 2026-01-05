@@ -121,8 +121,13 @@ function startLive() {
                 </div>
 
                 <!-- Nombre d'étapes -->
-                <div class="text-body-2 mb-6">
-                    <span class="font-weight-bold">Nombre d'étapes :</span> {{ trail.locationsCount }}
+                <div class="d-flex align-center ga-4 mb-6">
+                    <div class="text-body-2">
+                        <span class="font-weight-bold">Nombre d'étapes :</span> {{ trail.locationsCount }}
+                    </div>
+                    <div class="text-body-2">
+                        <span class="font-weight-bold">Personnes en live :</span> {{ trail.liveParticipants }}
+                    </div>
                 </div>
 
                 <!-- Boutons d'action -->
@@ -133,7 +138,7 @@ function startLive() {
                     </v-btn>
 
                     <v-btn block size="x-large" color="indigo-darken-1" rounded="lg" variant="outlined"
-                        prepend-icon="mdi-account-multiple" @click="startLive">
+                        prepend-icon="mdi-account-multiple" @click="startLive" :disabled="trail.liveParticipants === 0">
                         Joindre le live
                     </v-btn>
                 </div>
