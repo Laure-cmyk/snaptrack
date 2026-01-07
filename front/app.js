@@ -24,7 +24,12 @@ const routes = [
   { path: '/trail/:id', name: 'trail', component: () => import('./pages/PageTrail.vue'), meta: { requiresAuth: true } },
   { path: '/challenge/play/:id', name: 'challenge-play', component: () => import('./pages/PageChallengePlay.vue'), meta: { requiresAuth: true } },
   { path: '/challenge/live/:id', name: 'challenge-live', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
-  { path: '/imateapot', component: () => import('./pages/PageError418.vue') }
+  { path: '/imateapot', component: () => import('./pages/PageError418.vue') },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('./pages/PageError404.vue')
+  }
 ];
 
 const router = createRouter({
