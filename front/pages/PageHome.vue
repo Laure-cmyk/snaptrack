@@ -18,6 +18,49 @@ const { data: journeysData, loading, error, execute: fetchJourneys } = useFetchJ
     immediate: true
 })
 
+// Temporary test function for image upload
+const testImageUpload = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        // Support both 'id' and '_id' for backwards compatibility
+        const userId = user.value?.id || user.value?._id
+        if (!userId) {
+            alert('No user logged in. User data: ' + JSON.stringify(user.value))
+            return
+        }
+
+        console.log('Uploading for user ID:', userId)
+
+        const formData = new FormData()
+        formData.append('image', file)
+
+        try {
+            const response = await fetch(`https://snaptrack-nd9h.onrender.com/users/${userId}/upload-profile`, {
+                method: 'POST',
+                body: formData
+            })
+            const result = await response.json()
+            if (response.ok) {
+                alert('Image uploaded successfully!\n' + result.profilePicture)
+                // Update localStorage with new profile picture
+                const userData = JSON.parse(localStorage.getItem('user'))
+                userData.profilePicture = result.profilePicture
+                localStorage.setItem('user', JSON.stringify(userData))
+            } else {
+                alert('Upload failed: ' + result.error)
+            }
+        } catch (err) {
+            alert('Error: ' + err.message)
+        }
+    }
+    input.click()
+}
+
 // Map backend data to card format
 const courses = computed(() => {
     if (!journeysData.value?.journeys) return []
@@ -62,6 +105,9 @@ const filteredCourses = computed(() => {
             <!-- Search Bar -->
             <div class="search-bar px-6 pb-8 pt-0">
                 <TheSearchBar v-model="searchQuery" />
+                <button id="temp" @click="testImageUpload" style="background: #fff; padding: 8px 16px; border-radius: 4px; margin-top: 8px; cursor: pointer;">
+                    Test Profile Upload
+                </button>
             </div>
         </div>
 
