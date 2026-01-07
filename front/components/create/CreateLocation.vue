@@ -203,7 +203,7 @@ function handleGPSError(err) {
         <!-- Action Buttons -->
         <div class="d-flex flex-column ga-2 mt-12">
             <v-btn block color="indigo-darken-1" size="x-large" rounded="lg" elevation="2" variant="flat"
-                :disabled="!canSave" :loading="loading" @click="$emit('save', localLocation)">
+                :disabled="!canSave" :loading="loading" @click="$emit('save', { ...localLocation })">
                 Ajouter ce lieu
             </v-btn>
 

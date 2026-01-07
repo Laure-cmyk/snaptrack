@@ -15,14 +15,14 @@ router.get('/journey/:journeyId', async (req, res) => {
   try {
     const { journeyId } = req.params;
 
-    const steps = await Step.find({ journeyId }).sort({ order: 1 });
+    const steps = await Step.find({ journeyId }).sort({ timestamp: 1 });
 
     const result = steps.map((s) => ({
       id: s._id,
       journeyId: s.journeyId,
-      title: s.title,
-      description: s.description,
-      order: s.order,
+      riddle: s.riddle,
+      image: s.image,
+      location: s.location,
     }));
 
     res.json(result);
@@ -73,27 +73,33 @@ router.get('/:id', async (req, res) => {
  *
  * Body JSON :
  * {
- *   "journeyId": "701",
- *   "title": "Quiz 2",
- *   "description": "Deuxième question clé",
- *   "order": 3
+ *   "journeyId": "...",
+ *   "riddle": "Find the hidden statue",
+ *   "location": { "type": "Point", "coordinates": [lng, lat] }
  * }
  */
 router.post('/', async (req, res) => {
   try {
-    const { journeyId, title, description, order } = req.body;
+    const { journeyId, riddle, location, image, note } = req.body;
 
-    if (!journeyId || !title) {
+    if (!journeyId) {
       return res
         .status(400)
-        .json({ error: 'journeyId et title sont requis' });
+        .json({ error: 'journeyId is required' });
+    }
+
+    if (!location || !location.coordinates) {
+      return res
+        .status(400)
+        .json({ error: 'location with coordinates is required' });
     }
 
     const step = await Step.create({
       journeyId,
-      title,
-      description,
-      order,
+      riddle,
+      location,
+      image,
+      note
     });
 
     res.status(201).json({
@@ -101,9 +107,8 @@ router.post('/', async (req, res) => {
       step: {
         id: step._id,
         journeyId: step.journeyId,
-        title: step.title,
-        description: step.description,
-        order: step.order,
+        riddle: step.riddle,
+        location: step.location,
       },
     });
   } catch (error) {

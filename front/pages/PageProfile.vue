@@ -1,67 +1,19 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
-import { fetchJson } from '@/utils/fetchJson'
 import avatarDefault from '@/assets/avatar.jpeg'
 
-// Get user from localStorage - use ref to ensure reactivity
-const storedUser = ref(null)
-const loading = ref(true)
-
-function loadStoredUser() {
-    const userData = localStorage.getItem('user')
-    storedUser.value = userData ? JSON.parse(userData) : null
-}
-
-const userId = computed(() => storedUser.value?.id || storedUser.value?._id)
-
 // State
+const loading = ref(true)
+const userId = ref(null)
 const user = ref({
-    pseudo: '',
+    username: '',
     email: '',
-    profileImage: null
+    profilePicture: null
 })
 
 const uploadingPhoto = ref(false)
-
-// Fetch user data from DB
-async function fetchUserData() {
-    if (!userId.value) {
-        console.warn('No user ID found in localStorage')
-        return
-    }
-    
-    try {
-        const { request } = fetchJson({ url: `/users/${userId.value}` })
-        const data = await request
-        
-        user.value = {
-            username: data.username,
-            email: data.email,
-            profilePicture: data.profilePicture
-        }
-    } catch (err) {
-        console.error('Erreur lors du chargement du profil:', err)
-        // Fallback to localStorage data if API fails
-        if (storedUser.value) {
-            user.value = {
-                username: storedUser.value.username || '',
-                email: storedUser.value.email || '',
-                profilePicture: storedUser.value.profilePicture || null
-            }
-        }
-    }
-}
-
-onMounted(async () => {
-    loading.value = true
-    try {
-        await fetchUserData()
-    } finally {
-        loading.value = false
-    }
-})
 
 const photoInput = ref(null)
 const expansionPanel = ref([])
@@ -77,45 +29,33 @@ const submittingPassword = ref(false)
 const deleteAccountDialog = ref(false)
 const logoutDialog = ref(false)
 
-// Load user data from API
+// Load user data directly from API
 async function loadUserData() {
-    // First load from localStorage
-    loadStoredUser()
-    
-    // Set initial values from localStorage immediately
-    if (storedUser.value) {
-        user.value = {
-            pseudo: storedUser.value.username || 'User',
-            email: storedUser.value.email || '',
-            profileImage: storedUser.value.profilePicture
-        }
-    }
-    
-    // If no userId, skip API call
-    if (!userId.value) {
-        loading.value = false
-        return
-    }
+    loading.value = true
     
     try {
-        const res = await fetch(`/users/${userId.value}`)
+        // Fetch the first user directly from the API
+        const res = await fetch('/users')
         
         if (!res.ok) {
             console.warn('API returned:', res.status)
-            // Keep localStorage data as fallback
             loading.value = false
             return
         }
         
-        const data = await res.json()
-        user.value = {
-            pseudo: data.username,
-            email: data.email,
-            profileImage: data.profilePicture
+        const users = await res.json()
+        
+        if (users.length > 0) {
+            const data = users[0]
+            userId.value = data._id
+            user.value = {
+                username: data.username,
+                email: data.email,
+                profilePicture: data.profilePicture
+            }
         }
     } catch (err) {
         console.error('Error loading user:', err)
-        // Fallback already set above
     } finally {
         loading.value = false
     }
@@ -151,14 +91,12 @@ async function handlePhotoUpload(event) {
         const data = await res.json()
         
         if (res.ok) {
-            user.value.profileImage = data.profilePicture
-            // Update localStorage
-            const storedData = JSON.parse(localStorage.getItem('user')) || {}
-            storedData.profilePicture = data.profilePicture
-            localStorage.setItem('user', JSON.stringify(storedData))
+            user.value.profilePicture = data.profilePicture
         }
     } catch (err) {
         console.error('Error uploading photo:', err)
+    } finally {
+        uploadingPhoto.value = false
     }
 }
 
@@ -171,11 +109,7 @@ async function removePhoto() {
         })
         
         if (res.ok) {
-            user.value.profileImage = null
-            // Update localStorage
-            const storedData = JSON.parse(localStorage.getItem('user')) || {}
-            storedData.profilePicture = null
-            localStorage.setItem('user', JSON.stringify(storedData))
+            user.value.profilePicture = null
         }
     } catch (err) {
         console.error('Error removing photo:', err)

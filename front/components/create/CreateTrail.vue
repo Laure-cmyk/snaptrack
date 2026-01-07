@@ -10,7 +10,7 @@ const props = defineProps({
     successMessage: { type: String, default: '' }
 })
 
-const emit = defineEmits(['update:trail', 'add-location', 'save', 'cancel'])
+const emit = defineEmits(['update:trail', 'add-location', 'save', 'cancel', 'delete-location'])
 
 // Refs (local state)
 const form = ref(null)
@@ -81,6 +81,8 @@ function saveLocationEdit() {
 
 function confirmDeleteLocation() {
     if (editingLocationIndex.value !== null) {
+        const locationToDelete = localTrail.value.locations[editingLocationIndex.value]
+        emit('delete-location', locationToDelete)
         localTrail.value.locations.splice(editingLocationIndex.value, 1)
         emitUpdate()
     }
