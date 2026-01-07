@@ -6,7 +6,6 @@ import { RouterView, RouterLink } from 'vue-router';
   <v-app>
     <nav>
       <RouterLink to="/">Home</RouterLink>
-      <RouterLink to="/friendlist">Friends</RouterLink>
       <RouterLink to="/createchallenge">Create</RouterLink>
     </nav>
     <RouterView />

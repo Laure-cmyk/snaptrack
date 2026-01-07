@@ -17,7 +17,12 @@ Routes need to always follow the template:
  */
 const routes = [
   { path: '/', component: () => import('./pages/PageHome.vue') },
-  { path: '/imateapot', component: () => import('./pages/PageError418.vue') }
+  { path: '/imateapot', component: () => import('./pages/PageError418.vue') },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('./pages/PageError404.vue')
+  }
 ];
 
 const router = createRouter({
