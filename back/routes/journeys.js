@@ -1,5 +1,6 @@
 import express from 'express';
 import { Journey, Step, Rating } from '../models/index.js';
+import { upload, uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -110,7 +111,84 @@ router.delete('/:id', async (req, res) => {
     if (!journey) {
       return res.status(404).json({ error: 'Journey not found' });
     }
+    // Delete image from Cloudinary if exists
+    if (journey.image) {
+      const publicId = getPublicIdFromUrl(journey.image);
+      if (publicId) {
+        await deleteFromCloudinary(publicId);
+      }
+    }
     res.json({ message: 'Journey deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ============================================================
+ *  UPLOAD JOURNEY IMAGE
+ *  POST /api/journeys/:id/upload-image
+ * ============================================================
+ */
+router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    const journey = await Journey.findById(req.params.id);
+    if (!journey) {
+      return res.status(404).json({ error: 'Journey not found' });
+    }
+
+    // Delete old image from Cloudinary if exists
+    if (journey.image) {
+      const oldPublicId = getPublicIdFromUrl(journey.image);
+      if (oldPublicId) {
+        await deleteFromCloudinary(oldPublicId);
+      }
+    }
+
+    // Upload new image to Cloudinary
+    const result = await uploadToCloudinary(req.file.buffer, 'journeys');
+
+    // Update journey with new image URL
+    journey.image = result.url;
+    await journey.save();
+
+    res.json({
+      message: 'Journey image uploaded successfully',
+      image: result.url,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ============================================================
+ *  DELETE JOURNEY IMAGE
+ *  DELETE /api/journeys/:id/image
+ * ============================================================
+ */
+router.delete('/:id/image', async (req, res) => {
+  try {
+    const journey = await Journey.findById(req.params.id);
+    if (!journey) {
+      return res.status(404).json({ error: 'Journey not found' });
+    }
+
+    if (journey.image) {
+      const publicId = getPublicIdFromUrl(journey.image);
+      if (publicId) {
+        await deleteFromCloudinary(publicId);
+      }
+    }
+
+    journey.image = null;
+    await journey.save();
+
+    res.json({ message: 'Journey image deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

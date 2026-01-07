@@ -38,11 +38,15 @@ async function handleCreate() {
   isCreating.value = true;
 
   try {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    /* API */
+    // Map selected friend IDs to actual user IDs (friendId field)
+    const memberUserIds = selectedFriends.value.map(id => {
+      const friend = props.friends.find(f => f.id === id);
+      return friend?.friendId || id;
+    });
+    
     emit('create', {
       name: groupName.value.trim(),
-      memberIds: selectedFriends.value
+      memberIds: memberUserIds
     });
   } catch (err) {
     console.error('Erreur lors de la création du groupe:', err);

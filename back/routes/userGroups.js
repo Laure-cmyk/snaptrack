@@ -1,7 +1,18 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import { UserGroup, User, Group } from '../models/index.js';
 
 const router = express.Router();
+
+// Helper function to convert string ID to ObjectId
+function toObjectId(id) {
+  if (!id) return null;
+  const idStr = id.toString();
+  if (mongoose.Types.ObjectId.isValid(idStr)) {
+    return new mongoose.Types.ObjectId(idStr);
+  }
+  return null;
+}
 
 /**
  * 0. GET /user-groups
@@ -74,6 +85,88 @@ router.get('/members/:groupId', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 1b. List pending group invitations for a user
+ * GET /user-groups/pending/:userId
+ *
+ * Returns all pending group invitations for a user
+ */
+router.get('/pending/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Convert string to ObjectId for proper querying
+    const userObjId = toObjectId(userId);
+    if (!userObjId) {
+      return res.status(400).json({ error: 'Invalid userId format' });
+    }
+
+    const pendingInvites = await UserGroup.find({
+      userId: userObjId,
+      status: 'pending',
+    }).populate('groupId', 'name');
+
+    const result = pendingInvites
+      .filter((ug) => ug.groupId)
+      .map((ug) => ({
+        id: ug._id,
+        name: ug.groupId.name,
+        groupId: ug.groupId._id,
+        type: 'invite',
+        category: 'group',
+      }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 1c. Accept group invitation
+ * POST /user-groups/:id/accept
+ */
+router.post('/:id/accept', async (req, res) => {
+  try {
+    const userGroup = await UserGroup.findByIdAndUpdate(
+      req.params.id,
+      { status: 'member' },
+      { new: true }
+    ).populate('groupId', 'name');
+
+    if (!userGroup) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    res.json({
+      message: 'Group invitation accepted',
+      userGroup,
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * 1d. Decline group invitation
+ * POST /user-groups/:id/decline
+ */
+router.post('/:id/decline', async (req, res) => {
+  try {
+    const userGroup = await UserGroup.findByIdAndDelete(req.params.id);
+
+    if (!userGroup) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    res.json({
+      message: 'Group invitation declined',
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 

@@ -7,6 +7,7 @@ const props = defineProps({
 });
 
 const isLeaving = ref(false);
+const loading = ref(true);
 
 const group = ref({
   id: props.groupId,
@@ -18,16 +19,25 @@ const group = ref({
 const emit = defineEmits(['close', 'leave']);
 
 async function loadGroup() {
-  /* API */
-  group.value = {
-    id: props.groupId,
-    name: props.groupId === 'g1' ? 'Study Group' : 'Project Team',
-    type: 'group',
-    members: [
-      { id: 1, name: 'Alice' },
-      { id: 2, name: 'Bob' }
-    ]
-  };
+  loading.value = true;
+  try {
+    const res = await fetch(`/groups/${props.groupId}/members`);
+    const data = await res.json();
+    
+    group.value = {
+      id: data.groupId,
+      name: data.groupName,
+      type: 'group',
+      members: data.members.map(m => ({
+        id: m._id,
+        name: m.username
+      }))
+    };
+  } catch (err) {
+    console.error('Error loading group:', err);
+  } finally {
+    loading.value = false;
+  }
 }
 
 async function handleLeave() {
@@ -36,11 +46,9 @@ async function handleLeave() {
   isLeaving.value = true;
 
   try {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    /* API */
     emit('leave', group.value);
   } catch (err) {
-    console.error('Erreur');
+    console.error('Error leaving group:', err);
     isLeaving.value = false;
   }
 }
