@@ -15,6 +15,7 @@ const successMessage = ref('')
 const deleteDialog = ref(false)
 const trailToDelete = ref(null)
 const loading = ref(true)
+const loggedInUserId = ref(null)
 
 // Dynamic header title based on the current view
 const headerTitle = computed(() => {
@@ -30,40 +31,56 @@ const headerTitle = computed(() => {
 onMounted(loadMyTrails)
 onActivated(loadMyTrails)
 
-// Get the list of journey IDs created by this user (stored locally)
-function getMyJourneyIds() {
-    const stored = localStorage.getItem('myJourneyIds')
-    return stored ? JSON.parse(stored) : []
+// Get the logged-in user ID from localStorage
+function getLoggedInUserId() {
+    const storedUser = localStorage.getItem('user')
+    if (!storedUser) return null
+    const user = JSON.parse(storedUser)
+    return user.id || user._id
 }
 
-function saveMyJourneyIds(ids) {
-    localStorage.setItem('myJourneyIds', JSON.stringify(ids))
-}
-
-// Data management - fetch from API
+// Data management - fetch from API using userJourneys
 async function loadMyTrails() {
     loading.value = true
     
     try {
-        const myIds = getMyJourneyIds()
+        // Get logged-in user ID
+        loggedInUserId.value = getLoggedInUserId()
         
-        if (myIds.length === 0) {
+        if (!loggedInUserId.value) {
+            console.warn('No logged-in user found')
             myTrails.value = []
             currentView.value = null
             createNewTrail()
             return
         }
         
-        // Fetch all journeys and filter by IDs we created
-        const res = await fetch('/journeys')
-        if (!res.ok) throw new Error('Failed to fetch journeys')
+        // Fetch journeys linked to the logged-in user via userJourneys
+        const res = await fetch(`/user-journeys?userId=${loggedInUserId.value}`)
+        if (!res.ok) throw new Error('Failed to fetch user journeys')
         
-        const data = await res.json()
+        const userJourneys = await res.json()
+        
+        if (userJourneys.length === 0) {
+            myTrails.value = []
+            currentView.value = null
+            createNewTrail()
+            return
+        }
+        
+        // Get journey IDs from userJourneys
+        const journeyIds = userJourneys.map(uj => uj.journeyId.toString())
+        
+        // Fetch all journeys and filter by IDs linked to user
+        const journeysRes = await fetch('/journeys')
+        if (!journeysRes.ok) throw new Error('Failed to fetch journeys')
+        
+        const data = await journeysRes.json()
         const allJourneys = data.journeys || []
         
-        // Filter to only show journeys we created
+        // Filter to only show journeys linked to user
         myTrails.value = allJourneys
-            .filter(j => myIds.includes(j._id))
+            .filter(j => journeyIds.includes(j._id))
             .map(j => ({
                 id: j._id,
                 title: j.name,
@@ -195,10 +212,17 @@ async function saveTrail() {
             const created = await res.json()
             journeyId = created._id
             
-            // Store this ID as one of our created journeys
-            const myIds = getMyJourneyIds()
-            myIds.push(journeyId)
-            saveMyJourneyIds(myIds)
+            // Link journey to logged-in user in userJourneys table
+            if (loggedInUserId.value) {
+                await fetch('/user-journeys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: loggedInUserId.value,
+                        journeyId: journeyId
+                    })
+                })
+            }
         } else {
             // Update existing journey
             journeyId = currentTrail.value.id

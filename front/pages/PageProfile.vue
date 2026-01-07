@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onActivated } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import avatarDefault from '@/assets/avatar.jpeg'
@@ -29,30 +29,50 @@ const submittingPassword = ref(false)
 const deleteAccountDialog = ref(false)
 const logoutDialog = ref(false)
 
-// Load user data directly from API
+// Load user data from the logged-in user
 async function loadUserData() {
     loading.value = true
     
     try {
-        // Fetch the first user directly from the API
-        const res = await fetch('/users')
-        
-        if (!res.ok) {
-            console.warn('API returned:', res.status)
+        // Get the logged-in user from localStorage
+        const storedUser = localStorage.getItem('user')
+        if (!storedUser) {
+            console.warn('No logged-in user found')
             loading.value = false
             return
         }
         
-        const users = await res.json()
+        const loggedInUser = JSON.parse(storedUser)
+        const loggedInUserId = loggedInUser.id || loggedInUser._id
         
-        if (users.length > 0) {
-            const data = users[0]
-            userId.value = data._id
+        if (!loggedInUserId) {
+            console.warn('No user ID in stored user data')
+            loading.value = false
+            return
+        }
+        
+        // Fetch the specific user from the API
+        const res = await fetch(`/users/${loggedInUserId}`)
+        
+        if (!res.ok) {
+            console.warn('API returned:', res.status)
+            // Fallback to localStorage data
+            userId.value = loggedInUserId
             user.value = {
-                username: data.username,
-                email: data.email,
-                profilePicture: data.profilePicture
+                username: loggedInUser.username || '',
+                email: loggedInUser.email || '',
+                profilePicture: loggedInUser.profilePicture || null
             }
+            loading.value = false
+            return
+        }
+        
+        const data = await res.json()
+        userId.value = data._id
+        user.value = {
+            username: data.username,
+            email: data.email,
+            profilePicture: data.profilePicture
         }
     } catch (err) {
         console.error('Error loading user:', err)
@@ -61,7 +81,9 @@ async function loadUserData() {
     }
 }
 
+// Load on mount and when navigating back to page
 onMounted(loadUserData)
+onActivated(loadUserData)
 
 // Validation rules
 const passwordRules = {
