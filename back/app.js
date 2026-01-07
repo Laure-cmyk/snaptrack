@@ -51,7 +51,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../dist')));
   
   // Catch-all for SPA - but NOT for API routes
-  app.get('*', (req, res, next) => {
+  app.get('{*path}', (req, res, next) => {
     // Skip API routes - let them fall through to 404 handler
     if (req.path.startsWith('/users') || 
         req.path.startsWith('/journeys') || 
