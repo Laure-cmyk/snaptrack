@@ -22,7 +22,11 @@ router.get('/journey/:journeyId', async (req, res) => {
       journeyId: s.journeyId,
       riddle: s.riddle,
       image: s.image,
-      location: s.location,
+      latitude: s.latitude,
+      longitude: s.longitude,
+      accuracy: s.accuracy,
+      altitude: s.altitude,
+      speed: s.speed
     }));
 
     res.json(result);
@@ -75,12 +79,13 @@ router.get('/:id', async (req, res) => {
  * {
  *   "journeyId": "...",
  *   "riddle": "Find the hidden statue",
- *   "location": { "type": "Point", "coordinates": [lng, lat] }
+ *   "latitude": 46.123456,
+ *   "longitude": 6.123456
  * }
  */
 router.post('/', async (req, res) => {
   try {
-    const { journeyId, riddle, location, image, note } = req.body;
+    const { journeyId, riddle, latitude, longitude, image, note, accuracy, altitude, speed } = req.body;
 
     if (!journeyId) {
       return res
@@ -88,18 +93,23 @@ router.post('/', async (req, res) => {
         .json({ error: 'journeyId is required' });
     }
 
-    if (!location || !location.coordinates) {
-      return res
-        .status(400)
-        .json({ error: 'location with coordinates is required' });
-    }
+    // Build location GeoJSON from lat/lng if provided
+    const location = (latitude != null && longitude != null) ? {
+      type: 'Point',
+      coordinates: [longitude, latitude]
+    } : { type: 'Point', coordinates: [0, 0] };
 
     const step = await Step.create({
       journeyId,
       riddle,
       location,
+      latitude,
+      longitude,
       image,
-      note
+      note,
+      accuracy,
+      altitude,
+      speed
     });
 
     res.status(201).json({
@@ -108,7 +118,11 @@ router.post('/', async (req, res) => {
         id: step._id,
         journeyId: step.journeyId,
         riddle: step.riddle,
-        location: step.location,
+        latitude: step.latitude,
+        longitude: step.longitude,
+        accuracy: step.accuracy,
+        altitude: step.altitude,
+        speed: step.speed
       },
     });
   } catch (error) {

@@ -97,6 +97,24 @@ function removePhoto() {
     localLocation.value.image = null
 }
 
+// Emit save with proper data cloning
+function emitSave() {
+    const locationData = {
+        id: localLocation.value.id,
+        title: localLocation.value.title,
+        description: localLocation.value.description,
+        image: localLocation.value.image,
+        coordinates: localLocation.value.coordinates ? {
+            lat: localLocation.value.coordinates.lat,
+            lng: localLocation.value.coordinates.lng,
+            accuracy: localLocation.value.coordinates.accuracy,
+            altitude: localLocation.value.coordinates.altitude,
+            speed: localLocation.value.coordinates.speed
+        } : null
+    }
+    emit('save', locationData)
+}
+
 // GPS functions
 async function getCurrentLocation() {
     loadingGPS.value = true
@@ -113,7 +131,9 @@ async function getCurrentLocation() {
         localLocation.value.coordinates = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-            accuracy: position.coords.accuracy
+            accuracy: position.coords.accuracy,
+            altitude: position.coords.altitude,
+            speed: position.coords.speed
         }
     } catch (err) {
         console.error('Erreur GPS:', err)
@@ -203,7 +223,7 @@ function handleGPSError(err) {
         <!-- Action Buttons -->
         <div class="d-flex flex-column ga-2 mt-12">
             <v-btn block color="indigo-darken-1" size="x-large" rounded="lg" elevation="2" variant="flat"
-                :disabled="!canSave" :loading="loading" @click="$emit('save', { ...localLocation })">
+                :disabled="!canSave" :loading="loading" @click="emitSave">
                 Ajouter ce lieu
             </v-btn>
 

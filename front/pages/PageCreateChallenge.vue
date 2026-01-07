@@ -85,9 +85,12 @@ async function loadMyTrails() {
                         title: `Lieu ${steps.indexOf(s) + 1}`,
                         description: s.riddle || '',
                         image: s.image || null,
-                        coordinates: s.location?.coordinates ? {
-                            lat: s.location.coordinates[1],
-                            lng: s.location.coordinates[0]
+                        coordinates: (s.latitude != null && s.longitude != null) ? {
+                            lat: s.latitude,
+                            lng: s.longitude,
+                            accuracy: s.accuracy,
+                            altitude: s.altitude,
+                            speed: s.speed
                         } : null
                     }))
                 }
@@ -242,10 +245,11 @@ async function saveTrail() {
                 const stepData = {
                     journeyId: journeyId,
                     riddle: loc.description || '',
-                    location: {
-                        type: 'Point',
-                        coordinates: [loc.coordinates?.lng || 0, loc.coordinates?.lat || 0]
-                    }
+                    latitude: loc.coordinates?.lat || null,
+                    longitude: loc.coordinates?.lng || null,
+                    accuracy: loc.coordinates?.accuracy || null,
+                    altitude: loc.coordinates?.altitude || null,
+                    speed: loc.coordinates?.speed || null
                 }
                 
                 const stepRes = await fetch('/steps', {
@@ -316,7 +320,13 @@ async function saveLocation(location) {
             title: location.title || '',
             description: location.description || '',
             image: location.image || null,
-            coordinates: location.coordinates ? { ...location.coordinates } : null
+            coordinates: location.coordinates ? {
+                lat: location.coordinates.lat,
+                lng: location.coordinates.lng,
+                accuracy: location.coordinates.accuracy,
+                altitude: location.coordinates.altitude,
+                speed: location.coordinates.speed
+            } : null
         }
         currentTrail.value.locations.push(newLocation)
         successMessage.value = 'Lieu ajouté avec succès !'
