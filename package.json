@@ -18,6 +18,7 @@
   "dependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
     "debug": "^4.4.1",
     "dotenv": "^17.2.3",
@@ -28,6 +29,8 @@
     "mongodb": "^7.0.0",
     "mongoose": "^8.20.3",
     "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^2.2.1",
     "vue": "^3.5.24",
     "vue-router": "^4.6.3",
     "vuetify": "^3.10.11"

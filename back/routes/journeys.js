@@ -267,4 +267,87 @@ router.get('/:journeyId/rating', async (req, res) => {
   }
 });
 
+/**
+ * ============================================================
+ *  UPLOAD JOURNEY IMAGE
+ *  POST /api/journeys/:id/upload-image
+ * ============================================================
+ */
+router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
+  try {
+    console.log('🖼️ ====== JOURNEY IMAGE UPLOAD START ======');
+    console.log('🖼️ Journey ID:', req.params.id);
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    const journey = await Journey.findById(req.params.id);
+    if (!journey) {
+      return res.status(404).json({ error: 'Journey not found' });
+    }
+
+    // Delete old image from Cloudinary if exists
+    if (journey.image) {
+      try {
+        const oldPublicId = journey.image.split('/').slice(-1)[0].split('.')[0];
+        await cloudinary.uploader.destroy(`snaptrack/journeys/${oldPublicId}`);
+        console.log('🖼️ Old image deleted');
+      } catch (deleteErr) {
+        console.warn('🖼️ Warning: Failed to delete old image:', deleteErr.message);
+      }
+    }
+
+    // Upload new image to Cloudinary
+    const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    
+    const uploadResult = await cloudinary.uploader.upload(base64Image, {
+      folder: 'snaptrack/journeys',
+      resource_type: 'image',
+      transformation: [{ width: 1200, height: 800, crop: 'limit' }]
+    });
+
+    // Update journey with new Cloudinary URL
+    journey.image = uploadResult.secure_url;
+    await journey.save();
+
+    console.log('🖼️ ====== JOURNEY IMAGE UPLOAD COMPLETE ======');
+    
+    res.json({
+      message: 'Journey image uploaded successfully',
+      image: journey.image
+    });
+  } catch (error) {
+    console.error('🖼️ Upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ============================================================
+ *  DELETE JOURNEY IMAGE
+ *  DELETE /api/journeys/:id/image
+ * ============================================================
+ */
+router.delete('/:id/image', async (req, res) => {
+  try {
+    const journey = await Journey.findById(req.params.id);
+    if (!journey) {
+      return res.status(404).json({ error: 'Journey not found' });
+    }
+
+    if (journey.image) {
+      const oldPublicId = journey.image.split('/').slice(-1)[0].split('.')[0];
+      await cloudinary.uploader.destroy(`snaptrack/journeys/${oldPublicId}`);
+    }
+
+    journey.image = null;
+    await journey.save();
+
+    res.json({ message: 'Journey image removed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

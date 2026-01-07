@@ -62,6 +62,9 @@ const filteredCourses = computed(() => {
             <!-- Search Bar -->
             <div class="search-bar px-6 pb-8 pt-0">
                 <TheSearchBar v-model="searchQuery" />
+                <button id="temp" @click="testImageUpload" style="background: #fff; padding: 8px 16px; border-radius: 4px; margin-top: 8px; cursor: pointer;">
+                    Test Profile Upload
+                </button>
             </div>
         </div>
 

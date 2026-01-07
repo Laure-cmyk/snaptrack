@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import TheListSocials from '../components/socials/TheListSocials.vue';
 import TheGroup from '../components/socials/TheGroup.vue';
 import CreateGroup from '../components/socials/CreateGroup.vue';
+import { fetchJson } from '@/utils/fetchJson';
 
 const tab = ref('friends');
 const selectedGroupId = ref(null);
@@ -248,6 +249,9 @@ async function handleCreateGroup(groupData) {
     @close="closeCreateGroup"
     @create="handleCreateGroup"
   />
+  <v-card v-else-if="loading" class="d-flex justify-center align-center pa-8">
+    <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+  </v-card>
   <v-card v-else>
     <v-tabs v-model="tab" direction="horizontal">
       <v-badge

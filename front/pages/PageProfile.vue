@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
-import { compressImage } from '@/utils/imageCompression'
+import { fetchJson } from '@/utils/fetchJson'
 import avatarDefault from '@/assets/avatar.jpeg'
 
 // Get user from localStorage - use ref to ensure reactivity
@@ -21,6 +21,47 @@ const user = ref({
     pseudo: '',
     email: '',
     profileImage: null
+})
+
+const loading = ref(true)
+const uploadingPhoto = ref(false)
+
+// Fetch user data from DB
+async function fetchUserData() {
+    if (!userId.value) {
+        console.warn('No user ID found in localStorage')
+        return
+    }
+    
+    try {
+        const { request } = fetchJson({ url: `/users/${userId.value}` })
+        const data = await request
+        
+        user.value = {
+            username: data.username,
+            email: data.email,
+            profilePicture: data.profilePicture
+        }
+    } catch (err) {
+        console.error('Erreur lors du chargement du profil:', err)
+        // Fallback to localStorage data if API fails
+        if (storedUser.value) {
+            user.value = {
+                username: storedUser.value.username || '',
+                email: storedUser.value.email || '',
+                profilePicture: storedUser.value.profilePicture || null
+            }
+        }
+    }
+}
+
+onMounted(async () => {
+    loading.value = true
+    try {
+        await fetchUserData()
+    } finally {
+        loading.value = false
+    }
 })
 
 const photoInput = ref(null)
@@ -99,6 +140,7 @@ async function handlePhotoUpload(event) {
     const file = event.target.files[0]
     if (!file || !userId.value) return
 
+    uploadingPhoto.value = true
     try {
         const formData = new FormData()
         formData.append('image', file)
@@ -172,7 +214,7 @@ async function changePassword() {
             expansionPanel.value = []
         }, 2000)
     } catch (err) {
-        passwordError.value = 'Erreur lors du changement de mot de passe.'
+        passwordError.value = err.message || 'Erreur lors du changement de mot de passe.'
     } finally {
         submittingPassword.value = false
     }
@@ -208,8 +250,13 @@ async function deleteAccount() {
         <!-- Header -->
         <BaseHeader title="Profil" :show-back="false" />
 
+        <!-- Loading State -->
+        <v-container v-if="loading" fluid class="d-flex justify-center align-center py-16">
+            <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+        </v-container>
+
         <!-- Content -->
-        <v-container fluid class="px-6 py-8 pb-24">
+        <v-container v-else fluid class="px-6 py-8 pb-24">
             <!-- Photo de profil -->
             <div class="text-center mb-8">
                 <input ref="photoInput" type="file" accept="image/*" style="display: none"
@@ -218,18 +265,19 @@ async function deleteAccount() {
                 <div class="position-relative d-inline-block">
                     <!-- Avatar -->
                     <v-avatar size="120" class="mb-4" style="cursor: pointer;" @click="triggerPhotoUpload">
-                        <v-img :src="user.profileImage || avatarDefault" cover />
+                        <v-progress-circular v-if="uploadingPhoto" indeterminate color="white" size="40"></v-progress-circular>
+                        <v-img v-else :src="user.profilePicture || avatarDefault" cover />
                     </v-avatar>
 
                     <!-- Edit button -->
                     <v-btn icon size="small" color="indigo-darken-1" class="position-absolute"
-                        style="bottom: 16px; right: 0;" @click="triggerPhotoUpload">
+                        style="bottom: 16px; right: 0;" @click="triggerPhotoUpload" :loading="uploadingPhoto">
                         <v-icon size="small">mdi-camera</v-icon>
                     </v-btn>
                 </div>
 
                 <!-- Remove photo button -->
-                <div v-if="user.profileImage" class="mt-2">
+                <div v-if="user.profilePicture" class="mt-2">
                     <v-btn size="small" variant="text" color="grey-darken-1" @click="removePhoto">
                         Supprimer la photo
                     </v-btn>
@@ -243,7 +291,7 @@ async function deleteAccount() {
                     <!-- Pseudo -->
                     <div class="mb-4">
                         <div class="text-caption text-grey-darken-1 mb-1">Pseudo</div>
-                        <div class="text-body-1 font-weight-medium">{{ user.pseudo }}</div>
+                        <div class="text-body-1 font-weight-medium">{{ user.username }}</div>
                     </div>
 
                     <!-- Email -->
