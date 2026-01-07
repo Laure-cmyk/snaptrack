@@ -1,7 +1,18 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import { Group, UserGroup, User } from '../models/index.js';
 
 const router = express.Router();
+
+// Helper function to convert string ID to ObjectId
+function toObjectId(id) {
+  if (!id) return null;
+  const idStr = id.toString();
+  if (mongoose.Types.ObjectId.isValid(idStr)) {
+    return new mongoose.Types.ObjectId(idStr);
+  }
+  return null;
+}
 
 /**
  * 0. GET /groups
@@ -70,8 +81,14 @@ router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
+    // Convert string to ObjectId for proper querying
+    const userObjId = toObjectId(userId);
+    if (!userObjId) {
+      return res.status(400).json({ error: 'Invalid userId format' });
+    }
+
     // 1. On récupère toutes les liaisons UserGroup pour cet utilisateur
-    const userGroups = await UserGroup.find({ userId }).populate(
+    const userGroups = await UserGroup.find({ userId: userObjId }).populate(
       'groupId',
       'name'
     );

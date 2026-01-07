@@ -1,7 +1,18 @@
-import express from 'express';
-import { Friends, User } from '../models/index.js'; // adapte "User" si besoin
+﻿import express from 'express';
+import mongoose from 'mongoose';
+import { Friends, User } from '../models/index.js';
 
 const router = express.Router();
+
+// Helper to convert string ID to ObjectId if needed
+function toObjectId(id) {
+  if (!id) return null;
+  const idStr = id.toString();
+  if (mongoose.Types.ObjectId.isValid(idStr)) {
+    return new mongoose.Types.ObjectId(idStr);
+  }
+  return null;
+}
 
 /**
  * 0. GET /friends
@@ -9,10 +20,33 @@ const router = express.Router();
  */
 router.get('/', async (req, res) => {
   try {
-    const friends = await Friends.find()
-      .populate('userId', 'username email')
-      .populate('friendId', 'username email');
-    res.json(friends);
+    const friends = await Friends.find();
+    
+    // Manual lookup for each friend relationship
+    const result = await Promise.all(
+      friends.map(async (f) => {
+        const userObjId = toObjectId(f.userId);
+        const friendObjId = toObjectId(f.friendId);
+        
+        const [user, friend] = await Promise.all([
+          userObjId ? User.findById(userObjId).select('username email') : null,
+          friendObjId ? User.findById(friendObjId).select('username email') : null,
+        ]);
+        
+        return {
+          _id: f._id,
+          userId: user || { _id: f.userId, username: 'Unknown' },
+          friendId: friend || { _id: f.friendId, username: 'Unknown' },
+          status: f.status,
+          requestedAt: f.requestedAt,
+          acceptedAt: f.acceptedAt,
+          createdAt: f.createdAt,
+          updatedAt: f.updatedAt,
+        };
+      })
+    );
+    
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -123,6 +157,50 @@ router.post('/requests/:id/refuse', async (req, res) => {
 });
 
 /**
+ * 3b. List pending friend requests for a user
+ * GET /friends/requests/pending/:userId
+ *
+ * Returns all pending friend requests where the user is the target (friendId)
+ */
+router.get('/requests/pending/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Convert string to ObjectId for proper querying
+    const userObjId = toObjectId(userId);
+    if (!userObjId) {
+      return res.status(400).json({ error: 'Invalid userId format' });
+    }
+
+    const pendingRequests = await Friends.find({
+      friendId: userObjId,
+      status: 'pending',
+    });
+    console.log('Pending friend requests found:', pendingRequests.length);
+
+    // Manual lookup since userId might be stored as string
+    const result = await Promise.all(
+      pendingRequests.map(async (f) => {
+        const senderObjId = toObjectId(f.userId);
+        const sender = senderObjId ? await User.findById(senderObjId).select('username') : null;
+        
+        return {
+          id: f._id,
+          name: sender?.username || 'Unknown',
+          senderId: f.userId,
+          type: 'invite',
+          category: 'friend',
+        };
+      })
+    );
+
+    res.json(result.filter(r => r.name !== 'Unknown'));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * 4. Delete friend (supprimer un ami)
  * DELETE /friends/:id
  */
@@ -143,37 +221,56 @@ router.delete('/:id', async (req, res) => {
 
 /**
  * 5. List Friends (voir mes amis)
- * GET /friends/:userId
+ * GET /friends/list/:userId
  *
  * Règle : trouver toutes les relations où userId apparaît
  * dans userId OU friendId, et status = "accepted".
- * Puis renvoyer l’autre personne + le statut.
+ * Puis renvoyer l'autre personne + le statut.
  */
-router.get('/:userId', async (req, res) => {
+router.get('/list/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
+    console.log('GET /friends/list - Looking for userId:', userId);
+
+    // Convert string to ObjectId for proper querying
+    const userObjId = toObjectId(userId);
+    console.log('Converted to ObjectId:', userObjId);
+
+    if (!userObjId) {
+      return res.status(400).json({ error: 'Invalid userId format' });
+    }
 
     const friendships = await Friends.find({
       status: 'accepted',
-      $or: [{ userId }, { friendId: userId }],
-    })
-      .populate('userId', 'username')
-      .populate('friendId', 'username');
-
-    const result = friendships.map((f) => {
-      const isUserSender = f.userId._id.toString() === userId;
-      const otherUser = isUserSender ? f.friendId : f.userId;
-
-      return {
-        friendshipId: f._id,
-        friendId: otherUser._id,
-        friendName: otherUser.username,
-        status: f.status,
-      };
+      $or: [{ userId: userObjId }, { friendId: userObjId }],
     });
+    console.log('Matched friendships:', friendships.length);
 
-    res.json(result);
+    // Manual lookup since userId/friendId might be strings instead of ObjectIds
+    const result = await Promise.all(
+      friendships.map(async (f) => {
+        const friendUserIdStr = f.userId?.toString() || f.userId;
+        const friendIdStr = f.friendId?.toString() || f.friendId;
+        
+        const isUserSender = friendUserIdStr === userId;
+        const otherUserId = isUserSender ? friendIdStr : friendUserIdStr;
+
+        // Lookup the other user - convert string ID to ObjectId
+        const otherUserObjId = toObjectId(otherUserId);
+        const otherUser = otherUserObjId ? await User.findById(otherUserObjId).select('username') : null;
+
+        return {
+          friendshipId: f._id,
+          friendId: otherUserId,
+          friendName: otherUser?.username || 'Unknown',
+          status: f.status,
+        };
+      })
+    );
+
+    res.json(result.filter(r => r.friendName !== 'Unknown'));
   } catch (error) {
+    console.error('Error in /friends/list/:userId:', error);
     res.status(500).json({ error: error.message });
   }
 });

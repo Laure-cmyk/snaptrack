@@ -2,6 +2,7 @@ import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { EJSON } from 'bson';
 import connectDB from '../config/database.js';
 import {
   User,
@@ -22,7 +23,7 @@ const __dirname = path.dirname(__filename);
 async function exportDatabase() {
   try {
     await connectDB();
-    console.log('📦 Exporting database...\n');
+    console.log('📦 Exporting database with proper ObjectIds...\n');
 
     const collections = {
       users: await User.find({}).lean(),
@@ -43,17 +44,20 @@ async function exportDatabase() {
       fs.mkdirSync(exportDir, { recursive: true });
     }
 
-    // Export each collection to a separate JSON file
+    // Export each collection to a separate JSON file using EJSON (Extended JSON)
+    // This preserves ObjectId types for proper MongoDB Compass import
     for (const [name, data] of Object.entries(collections)) {
       const filePath = path.join(exportDir, `${name}.json`);
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      // Use EJSON.stringify with relaxed mode for MongoDB Compass compatibility
+      fs.writeFileSync(filePath, EJSON.stringify(data, null, 2, { relaxed: false }));
       console.log(`✅ Exported ${data.length} documents to ${name}.json`);
     }
 
     // Also create a combined export file
     const combinedPath = path.join(exportDir, 'all-collections.json');
-    fs.writeFileSync(combinedPath, JSON.stringify(collections, null, 2));
+    fs.writeFileSync(combinedPath, EJSON.stringify(collections, null, 2, { relaxed: false }));
     console.log(`\n📁 All data exported to: ${exportDir}`);
+    console.log('ℹ️  Files use Extended JSON format - import via MongoDB Compass "Add Data > Import JSON"');
 
     process.exit(0);
   } catch (error) {

@@ -1,5 +1,6 @@
 import express from 'express';
 import { Step } from '../models/index.js';
+import { upload, uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -153,10 +154,83 @@ router.delete('/:id', async (req, res) => {
     if (!step) {
       return res.status(404).json({ error: 'Step not found' });
     }
+    // Delete image from Cloudinary if exists
+    if (step.image) {
+      const publicId = getPublicIdFromUrl(step.image);
+      if (publicId) {
+        await deleteFromCloudinary(publicId);
+      }
+    }
     res.json({
       message: 'Step deleted',
       id: step._id,
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 6. Upload Step Image
+ * POST /api/steps/:id/upload-image
+ */
+router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    const step = await Step.findById(req.params.id);
+    if (!step) {
+      return res.status(404).json({ error: 'Step not found' });
+    }
+
+    // Delete old image from Cloudinary if exists
+    if (step.image) {
+      const oldPublicId = getPublicIdFromUrl(step.image);
+      if (oldPublicId) {
+        await deleteFromCloudinary(oldPublicId);
+      }
+    }
+
+    // Upload new image to Cloudinary
+    const result = await uploadToCloudinary(req.file.buffer, 'steps');
+
+    // Update step with new image URL
+    step.image = result.url;
+    await step.save();
+
+    res.json({
+      message: 'Step image uploaded successfully',
+      image: result.url,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 7. Delete Step Image
+ * DELETE /api/steps/:id/image
+ */
+router.delete('/:id/image', async (req, res) => {
+  try {
+    const step = await Step.findById(req.params.id);
+    if (!step) {
+      return res.status(404).json({ error: 'Step not found' });
+    }
+
+    if (step.image) {
+      const publicId = getPublicIdFromUrl(step.image);
+      if (publicId) {
+        await deleteFromCloudinary(publicId);
+      }
+    }
+
+    step.image = null;
+    await step.save();
+
+    res.json({ message: 'Step image deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

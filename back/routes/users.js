@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
+import { upload, uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -64,7 +65,7 @@ router.get('/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'User not founded' });
     }
     res.json(user);
   } catch (error) {
@@ -106,7 +107,74 @@ router.delete('/:id', async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
+    // Delete profile picture from Cloudinary if exists
+    if (user.profilePicture) {
+      const publicId = getPublicIdFromUrl(user.profilePicture);
+      if (publicId) {
+        await deleteFromCloudinary(publicId);
+      }
+    }
     res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST upload profile picture
+router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Delete old profile picture from Cloudinary if exists
+    if (user.profilePicture) {
+      const oldPublicId = getPublicIdFromUrl(user.profilePicture);
+      if (oldPublicId) {
+        await deleteFromCloudinary(oldPublicId);
+      }
+    }
+
+    // Upload new image to Cloudinary
+    const result = await uploadToCloudinary(req.file.buffer, 'users');
+
+    // Update user with new profile picture URL
+    user.profilePicture = result.url;
+    await user.save();
+
+    res.json({
+      message: 'Profile picture uploaded successfully',
+      profilePicture: result.url,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE profile picture
+router.delete('/:id/profile-picture', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.profilePicture) {
+      const publicId = getPublicIdFromUrl(user.profilePicture);
+      if (publicId) {
+        await deleteFromCloudinary(publicId);
+      }
+    }
+
+    user.profilePicture = null;
+    await user.save();
+
+    res.json({ message: 'Profile picture deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

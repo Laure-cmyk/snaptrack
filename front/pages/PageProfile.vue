@@ -1,14 +1,25 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import { compressImage } from '@/utils/imageCompression'
 import avatarDefault from '@/assets/avatar.jpeg'
 
+// Get user from localStorage - use ref to ensure reactivity
+const storedUser = ref(null)
+const loading = ref(true)
+
+function loadStoredUser() {
+    const userData = localStorage.getItem('user')
+    storedUser.value = userData ? JSON.parse(userData) : null
+}
+
+const userId = computed(() => storedUser.value?.id || storedUser.value?._id)
+
 // State
 const user = ref({
-    pseudo: 'JohnDoe',
-    email: 'john.doe@example.com',
+    pseudo: '',
+    email: '',
     profileImage: null
 })
 
@@ -26,6 +37,52 @@ const submittingPassword = ref(false)
 const deleteAccountDialog = ref(false)
 const logoutDialog = ref(false)
 
+// Load user data from API
+async function loadUserData() {
+    // First load from localStorage
+    loadStoredUser()
+    
+    // Set initial values from localStorage immediately
+    if (storedUser.value) {
+        user.value = {
+            pseudo: storedUser.value.username || 'User',
+            email: storedUser.value.email || '',
+            profileImage: storedUser.value.profilePicture
+        }
+    }
+    
+    // If no userId, skip API call
+    if (!userId.value) {
+        loading.value = false
+        return
+    }
+    
+    try {
+        const res = await fetch(`/users/${userId.value}`)
+        
+        if (!res.ok) {
+            console.warn('API returned:', res.status)
+            // Keep localStorage data as fallback
+            loading.value = false
+            return
+        }
+        
+        const data = await res.json()
+        user.value = {
+            pseudo: data.username,
+            email: data.email,
+            profileImage: data.profilePicture
+        }
+    } catch (err) {
+        console.error('Error loading user:', err)
+        // Fallback already set above
+    } finally {
+        loading.value = false
+    }
+}
+
+onMounted(loadUserData)
+
 // Validation rules
 const passwordRules = {
     required: value => !!value || 'Ce champ est requis',
@@ -40,18 +97,48 @@ function triggerPhotoUpload() {
 
 async function handlePhotoUpload(event) {
     const file = event.target.files[0]
-    if (!file) return
+    if (!file || !userId.value) return
 
     try {
-        const compressedImage = await compressImage(file, 400, 400, 0.8)
-        user.value.profileImage = compressedImage
+        const formData = new FormData()
+        formData.append('image', file)
+        
+        const res = await fetch(`/users/${userId.value}/upload-profile`, {
+            method: 'POST',
+            body: formData
+        })
+        const data = await res.json()
+        
+        if (res.ok) {
+            user.value.profileImage = data.profilePicture
+            // Update localStorage
+            const storedData = JSON.parse(localStorage.getItem('user')) || {}
+            storedData.profilePicture = data.profilePicture
+            localStorage.setItem('user', JSON.stringify(storedData))
+        }
     } catch (err) {
-        console.error('Erreur compression image:', err)
+        console.error('Error uploading photo:', err)
     }
 }
 
-function removePhoto() {
-    user.value.profileImage = null
+async function removePhoto() {
+    if (!userId.value) return
+    
+    try {
+        const res = await fetch(`/users/${userId.value}/profile-picture`, {
+            method: 'DELETE'
+        })
+        
+        if (res.ok) {
+            user.value.profileImage = null
+            // Update localStorage
+            const storedData = JSON.parse(localStorage.getItem('user')) || {}
+            storedData.profilePicture = null
+            localStorage.setItem('user', JSON.stringify(storedData))
+        }
+    } catch (err) {
+        console.error('Error removing photo:', err)
+    }
 }
 
 // Password functions
@@ -61,15 +148,28 @@ async function changePassword() {
     submittingPassword.value = true
 
     try {
-        // TODO: Appel API
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        const res = await fetch(`/users/${userId.value}/password`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                currentPassword: passwordForm.value.currentPassword,
+                newPassword: passwordForm.value.newPassword
+            })
+        })
+        
+        const data = await res.json()
+        
+        if (!res.ok) {
+            passwordError.value = data.error || 'Erreur lors du changement de mot de passe.'
+            return
+        }
 
         passwordSuccess.value = 'Mot de passe modifié avec succès !'
         setTimeout(() => {
             passwordForm.value = { currentPassword: '', newPassword: '', confirmPassword: '' }
             passwordError.value = ''
             passwordSuccess.value = ''
-            expansionPanel.value = [] // Fermer le panel
+            expansionPanel.value = []
         }, 2000)
     } catch (err) {
         passwordError.value = 'Erreur lors du changement de mot de passe.'
@@ -81,11 +181,20 @@ async function changePassword() {
 // Account actions
 function logout() {
     localStorage.removeItem('jwt')
+    localStorage.removeItem('user')
     logoutDialog.value = false
     window.location.href = '/authentification'
 }
 
-function deleteAccount() {
+async function deleteAccount() {
+    try {
+        if (userId.value) {
+            await fetch(`/users/${userId.value}`, { method: 'DELETE' })
+        }
+    } catch (err) {
+        console.error('Error deleting account:', err)
+    }
+    
     localStorage.removeItem('jwt')
     localStorage.removeItem('myTrails')
     localStorage.removeItem('user')
