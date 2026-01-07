@@ -23,7 +23,6 @@ const user = ref({
     profileImage: null
 })
 
-const loading = ref(true)
 const uploadingPhoto = ref(false)
 
 // Fetch user data from DB
