@@ -39,12 +39,13 @@ const emit = defineEmits(['click', 'delete'])
 function handleClick() {
     emit('click')
 }
+
 </script>
 
 <template>
-    <v-card rounded="lg" elevation="2" class="base-card" :class="{ 'cursor-pointer': clickable }" @click="handleClick">
-        <!-- Image -->
-        <v-img :src="image" height="180" cover class="bg-grey-lighten-2">
+    <v-card rounded="lg" elevation="2" class="base-card" style="cursor: pointer;" @click="$emit('click')">
+        <!-- Image Section -->
+        <v-img :src="image" height="220" cover class="bg-grey-lighten-2">
             <div v-if="!image" class="d-flex align-center justify-center fill-height">
                 <v-icon size="48" color="grey-lighten-1">mdi-image-outline</v-icon>
             </div>

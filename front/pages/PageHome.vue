@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, onMounted, onActivated } from 'vue'
+import { useRouter } from 'vue-router'
 import BaseCard from '@/components/BaseCard.vue'
 import TheSearchBar from '@/components/TheSearchBar.vue'
 
+const router = useRouter()
 const searchQuery = ref('')
 const journeys = ref([])
 const loading = ref(true)
@@ -59,6 +61,10 @@ const filteredCourses = computed(() => {
         course.city.toLowerCase().includes(query)
     )
 })
+
+function goToTrail(courseId) {
+    router.push({ name: 'trail', params: { id: courseId } })
+}
 </script>
 
 <template>
@@ -101,7 +107,7 @@ const filteredCourses = computed(() => {
             <v-row v-else-if="filteredCourses.length > 0">
                 <v-col cols="12" v-for="course in filteredCourses" :key="course.id">
                     <BaseCard :title="course.title" :description="course.description" :rating="course.rating"
-                        :image="course.image" :city="course.city" :show-rating="true" />
+                        :image="course.image" :city="course.city" @click="goToTrail(course.id)" />
                 </v-col>
             </v-row>
 
@@ -116,7 +122,6 @@ const filteredCourses = computed(() => {
         </v-container>
     </v-main>
 </template>
-
 
 <style scoped>
 .main-content {
