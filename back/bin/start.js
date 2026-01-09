@@ -3,14 +3,16 @@
 import 'dotenv/config';
 import createDebugger from 'debug';
 import http from 'node:http';
+import { WSServerRoomManager, WSServerRoom } from 'wsmini';
 
 import app from '../app.js';
 import connectDB from '../config/database.js';
+import Room from '../../websocket/server/Room.js';
 
 const debug = createDebugger('snaptrack:server');
 
 // Get port from environment and store in Express
-const port = normalizePort(process.env.PORT || '3000');
+const port = normalizePort(process.env.PORT || '10000');
 app.set('port', port);
 
 // Connect to MongoDB
@@ -18,6 +20,29 @@ await connectDB();
 
 // Create HTTP server
 const httpServer = http.createServer(app);
+
+// WebSocket Server - starts on port 443 (separate from HTTP server)
+const wsServer = new WSServerRoomManager({
+  port: 443,
+  origins: '*',
+  maxUsersByRoom: 50,
+  roomClass: class extends WSServerRoom {
+    onJoin(msg, clientMeta) {
+      return { username: msg.username || 'User' };
+    }
+
+    onCmdLocation(data, clientMeta) {
+      return { 
+        username: clientMeta.username, 
+        lat: data.lat, 
+        lng: data.lng 
+      };
+    }
+  },
+  usersCanCreateRoom: true
+});
+
+wsServer.start();
 
 // Listen on provided port, on all network interfaces
 httpServer.listen(port);
