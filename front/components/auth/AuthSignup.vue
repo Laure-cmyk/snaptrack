@@ -7,7 +7,26 @@ const username = ref('')
 const email = ref('')
 const password = ref('')
 const passwordConfirm = ref('')
+const showPassword = ref(false)
+const showPasswordConfirm = ref(false)
 const errorMessage = ref('')
+const usernameExistsError = ref('')
+
+const emailField = ref(null)
+const passwordField = ref(null)
+const passwordConfirmField = ref(null)
+
+function focusEmail() {
+    emailField.value?.focus()
+}
+
+function focusPassword() {
+    passwordField.value?.focus()
+}
+
+function focusPasswordConfirm() {
+    passwordConfirmField.value?.focus()
+}
 
 // États pour savoir si les champs ont été touchés
 const usernameTouched = ref(false)
@@ -17,6 +36,7 @@ const passwordConfirmTouched = ref(false)
 
 // Validations individuelles
 const usernameError = computed(() => {
+    if (usernameExistsError.value) return usernameExistsError.value
     if (!usernameTouched.value) return ''
     if (!username.value) return 'Le nom d\'utilisateur est requis.'
     if (username.value.length < 3) return 'Le nom d\'utilisateur doit contenir au moins 3 caractères.'
@@ -47,6 +67,7 @@ const passwordConfirmError = computed(() => {
 
 async function signup() {
     errorMessage.value = ''
+    usernameExistsError.value = ''
 
     // Marquer tous les champs comme touchés
     usernameTouched.value = true
@@ -72,7 +93,14 @@ async function signup() {
         // Simulation réussite
         emit('signup-success', { username: username.value, email: email.value })
     } catch (err) {
-        errorMessage.value = 'Erreur lors de la création du compte.'
+        // Vérifier si l'erreur est due à un nom d'utilisateur existant
+        if (err.status === 409 || err.message?.includes('username') || err.message?.includes('existe')) {
+            usernameExistsError.value = 'Ce nom d\'utilisateur est déjà utilisé.'
+        } else if (err.status === 400 || err.message?.includes('email')) {
+            errorMessage.value = 'Cet email est déjà utilisé.'
+        } else {
+            errorMessage.value = 'Erreur lors de la création du compte.'
+        }
     }
 }
 </script>
@@ -96,29 +124,36 @@ async function signup() {
 
                     <!-- Username Field -->
                     <v-text-field label="Nom d'utilisateur" v-model="username" type="text" variant="outlined"
-                        class="mb-0" density="comfortable" :error="!!usernameError" @blur="usernameTouched = true" />
+                        class="mb-0" density="comfortable" :error="!!usernameError" @blur="usernameTouched = true"
+                        @keyup.enter="focusEmail" />
                     <div v-if="usernameError" class="text-error text-body-2 text-left mb-6" style="margin-top: -8px;">
                         {{ usernameError }}
                     </div>
 
                     <!-- Email Field -->
-                    <v-text-field label="Email" v-model="email" type="email" variant="outlined" class="mb-0"
-                        density="comfortable" :error="!!emailError" @blur="emailTouched = true" />
+                    <v-text-field ref="emailField" label="Email" v-model="email" type="email" variant="outlined"
+                        class="mb-0" density="comfortable" :error="!!emailError" @blur="emailTouched = true"
+                        @keyup.enter="focusPassword" />
                     <div v-if="emailError" class="text-error text-body-2 text-left mb-6" style="margin-top: -8px;">
                         {{ emailError }}
                     </div>
 
                     <!-- Password Field -->
-                    <v-text-field label="Mot de passe" v-model="password" type="password" variant="outlined"
-                        class="mb-0" density="comfortable" :error="!!passwordError" @blur="passwordTouched = true" />
+                    <v-text-field ref="passwordField" label="Mot de passe" v-model="password"
+                        :type="showPassword ? 'text' : 'password'" variant="outlined" class="mb-0" density="comfortable"
+                        :error="!!passwordError" :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                        @click:append-inner="showPassword = !showPassword" @blur="passwordTouched = true"
+                        @keyup.enter="focusPasswordConfirm" />
                     <div v-if="passwordError" class="text-error text-body-2 text-left mb-6" style="margin-top: -8px;">
                         {{ passwordError }}
                     </div>
 
                     <!-- Confirm Password Field -->
-                    <v-text-field label="Confirmer le mot de passe" v-model="passwordConfirm" type="password"
-                        variant="outlined" class="mb-0" density="comfortable" :error="!!passwordConfirmError"
-                        @blur="passwordConfirmTouched = true" />
+                    <v-text-field ref="passwordConfirmField" label="Confirmer le mot de passe" v-model="passwordConfirm"
+                        :type="showPasswordConfirm ? 'text' : 'password'" variant="outlined" class="mb-0"
+                        density="comfortable" :append-inner-icon="showPasswordConfirm ? 'mdi-eye-off' : 'mdi-eye'"
+                        @click:append-inner="showPasswordConfirm = !showPasswordConfirm" :error="!!passwordConfirmError"
+                        @blur="passwordConfirmTouched = true" @keyup.enter="signup" />
                     <div v-if="passwordConfirmError" class="text-error text-body-2 text-left mb-8"
                         style="margin-top: -8px;">
                         {{ passwordConfirmError }}
