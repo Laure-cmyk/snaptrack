@@ -4,21 +4,29 @@ import { useFetchJson } from '@/composables/useFetchJson';
 
 const emit = defineEmits(['go-signup', 'login-success']);
 
-const email = ref('');
-const password = ref('');
-const errorMessage = ref('');
-const isLoading = ref(false);
+const emailOrUsername = ref('')
+const password = ref('')
+const showPassword = ref(false)
+const errorMessage = ref('')
+
+const passwordField = ref(null)
+
+function focusPassword() {
+    passwordField.value?.focus()
+}
 
 async function login() {
   errorMessage.value = '';
 
-  // Validation
-  if (!email.value || !password.value) {
-    errorMessage.value = 'Veuillez remplir tous les champs.';
-    return;
-  }
+    // Simuler appel API
+    if (!emailOrUsername.value || !password.value) {
+        errorMessage.value = 'Veuillez remplir tous les champs.'
+        return
+    }
 
-  isLoading.value = true;
+    try {
+        // Ici tu peux appeler ton backend avec useFetchJson
+        // Exemple : await useFetchJson({ url: '/api/login', method: 'POST', data: { email, password } })
 
   try {
     // Call actual backend login endpoint
@@ -33,10 +41,9 @@ async function login() {
     });
 
     await execute();
-
-    if (error.value) {
-      errorMessage.value = error.value.data?.error || 'Email ou mot de passe incorrect.';
-      return;
+        emit('login-success', { emailOrUsername: emailOrUsername.value })
+    } catch (err) {
+        errorMessage.value = 'Email/nom d\'utilisateur ou mot de passe incorrect.'
     }
 
     // Save the JWT token
@@ -68,25 +75,15 @@ async function login() {
             Se connecter
           </v-card-title>
 
-          <!-- Email Field -->
-          <v-text-field
-            label="Email"
-            v-model="email"
-            type="email"
-            variant="outlined"
-            class="mb-4"
-            density="comfortable"
-          />
+                    <!-- Email or Username Field -->
+                    <v-text-field label="Email ou nom d'utilisateur" v-model="emailOrUsername" type="text"
+                        variant="outlined" class="mb-4" density="comfortable" @keyup.enter="focusPassword" />
 
-          <!-- Password Field -->
-          <v-text-field
-            label="Mot de passe"
-            v-model="password"
-            type="password"
-            variant="outlined"
-            class="mb-4"
-            density="comfortable"
-          />
+                    <!-- Password Field -->
+                    <v-text-field ref="passwordField" label="Mot de passe" v-model="password"
+                        :type="showPassword ? 'text' : 'password'" variant="outlined" class="mb-4" density="comfortable"
+                        :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                        @click:append-inner="showPassword = !showPassword" @keyup.enter="login" />
 
           <!-- Error Alert -->
           <v-alert v-if="errorMessage" type="error" variant="tonal" class="mb-4 text-center">
