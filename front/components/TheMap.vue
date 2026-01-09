@@ -7,7 +7,6 @@ const props = defineProps({
   center: {
     type: Array,
     default: () => [46.7785, 6.6410] 
-    // Y-city as default 
   },
   zoom: {
     type: Number,
@@ -16,17 +15,20 @@ const props = defineProps({
   markers: {
     type: Array,
     default: () => []
+  },
+  showStatus: {
+    type: Boolean,
+    default: false
   }
 });
 
 const emit = defineEmits(['mapClick', 'markerClick']);
 
-// Reactive data
 const mapContainer = ref(null);
 let map = null;
 let markerLayer = null;
 
-// Add markers to map
+/* Creates markers */
 const addMarkers = (markers) => {
   if (!markerLayer) return;
   
@@ -43,31 +45,26 @@ const addMarkers = (markers) => {
   });
 };
 
-// Watch for marker changes and update them
+/* Updates marker when changes occur */
 watch(() => props.markers, (newMarkers) => {
   addMarkers(newMarkers);
 }, { deep: true });
 
-// Initialize map
+/* Initilize Map */
 onMounted(() => {
-  // Create map
   map = L.map(mapContainer.value, { zoomControl: false }).setView(props.center, props.zoom);
 
-  // Use OpenStreetMap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19
   }).addTo(map);
 
-  // Create marker layer group
   markerLayer = L.layerGroup().addTo(map);
 
-  // Add markers if provided
   if (props.markers.length > 0) {
     addMarkers(props.markers);
   }
 
-  // Fix for marker icons not displaying correctly with bundlers
   delete L.Icon.Default.prototype._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -76,14 +73,13 @@ onMounted(() => {
   });
 });
 
-// Cleanup on unmount so Leaflet doesn't keep old resources running background
+/* Map needs to be removed otherwise Leaflet keeps resources in memory */
 onBeforeUnmount(() => {
   if (map) {
     map.remove();
   }
 });
 
-// Expose methods to parent component
 defineExpose({
   addMarker: (lat, lng, popup) => {
     const marker = L.marker([lat, lng]);
@@ -110,14 +106,58 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="mapContainer" class="map-container"></div>
+  <div class="map-wrapper">
+    <div ref="mapContainer" class="map-container"></div>
+    
+    <!-- Status chip overlay -->
+    <div v-if="showStatus" class="map-overlay">
+      <v-chip 
+      variant="flat"
+        color="default" 
+        class="count-chip"
+        size="small"
+      >
+        {{ markers.length }} participants
+      </v-chip>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+.map-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
 .map-container {
   width: 100%;
   height: 100%;
   min-height: 100%;
   position: relative;
+}
+
+.map-overlay {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.map-overlay .v-chip {
+  pointer-events: auto;
+}
+
+.status-chip {
+  margin-right: auto;
+}
+
+.count-chip {
+  margin-left: auto;
 }
 </style>

@@ -7,7 +7,6 @@ import { WSServerRoomManager, WSServerRoom } from 'wsmini';
 
 import app from '../app.js';
 import connectDB from '../config/database.js';
-import Room from '../../websocket/server/Room.js';
 
 const debug = createDebugger('snaptrack:server');
 

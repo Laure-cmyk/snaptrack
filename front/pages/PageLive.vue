@@ -8,15 +8,17 @@ import BaseHeader from '../components/BaseHeader.vue';
 const router = useRouter();
 const route = useRoute();
 
+const challengersLocationRef = ref(null);
 const markers = ref([]);
 const room = ref(null);
 const roomName = ref('Live Challenge');
-const isConnected = ref(false);
 let locationInterval = null;
 
 const handleBack = () => router.back();
 
-// Fake participants for testing
+//* Uncomment below if test data is needed
+
+/* // Fake participants for testing
 const fakeParticipants = [
   { username: 'Alice', lat: 46.7785, lng: 6.6410 },
   { username: 'Bob', lat: 46.7795, lng: 6.6420 },
@@ -44,10 +46,23 @@ const simulateFakeParticipants = () => {
       markers.value.push(marker);
     }
   });
-};
+}; */
 
 onMounted(async () => {
   try {
+    const journeyId = route.query.journeyId || 'default';
+    const username = localStorage.getItem('username') || 'TestUser';
+    
+    // Fetch journey name from API
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/journeys/${journeyId}`);
+      const journey = await response.json();
+      roomName.value = journey.name || 'Live Challenge';
+    } catch (error) {
+      console.error('Failed to fetch journey name:', error);
+      roomName.value = 'Live Challenge'; // Fallback
+    }
+    
     // WebSocket on port 443
     const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:443';
     const ws = new WSClientRoom(wsUrl);
@@ -56,13 +71,7 @@ onMounted(async () => {
     await ws.connect();
     console.log('WebSocket connected!');
     
-    isConnected.value = true;
-    
-    const journeyId = route.query.journeyId || 'default';
-    const username = localStorage.getItem('username') || 'TestUser';
-    
     room.value = await ws.roomCreateOrJoin(`journey-${journeyId}`, { username });
-    roomName.value = `Challenge ${journeyId}`;
     
     console.log('Joined room:', room.value);
     
@@ -74,40 +83,20 @@ onMounted(async () => {
       
       if (existing >= 0) markers.value[existing] = marker;
       else markers.value.push(marker);
+      
+      if (markers.value.length > 0 && challengersLocationRef.value) {
+        const bounds = markers.value.map(m => [m.lat, m.lng]);
+        challengersLocationRef.value.fitBounds(bounds);
+      }
     });
 
-    // Start fake participants simulation (moving every 2 seconds)
-    setInterval(simulateFakeParticipants, 100);
+    //* Uncomment below if test data is needed
+    /* 
+    // Start fake participants simulation (moving every 1 seconds)
+    setInterval(simulateFakeParticipants, 1000); */
     
-    // Send your real location if geolocation available
-    if (navigator.geolocation && room.value) {
-      // Send immediately
-      navigator.geolocation.getCurrentPosition((pos) => {
-        console.log('Sending location:', pos.coords.latitude, pos.coords.longitude);
-        room.value.sendCmd('location', { 
-          lat: pos.coords.latitude, 
-          lng: pos.coords.longitude 
-        });
-      });
-      
-      // Then send every 0.5 seconds
-      locationInterval = setInterval(() => {
-        if (room.value) {
-          navigator.geolocation.getCurrentPosition((pos) => {
-            console.log('Sending location:', pos.coords.latitude, pos.coords.longitude);
-            room.value.sendCmd('location', { 
-              lat: pos.coords.latitude, 
-              lng: pos.coords.longitude 
-            });
-          }, (error) => {
-            console.warn('Geolocation error:', error);
-          });
-        }
-      }, 5000);
-    }
   } catch (error) {
     console.error('WebSocket connection failed:', error);
-    isConnected.value = false;
   }
 });
 
@@ -123,27 +112,17 @@ onBeforeUnmount(() => {
 
 <template>
   <v-container fluid class="pa-0 map-page">
-    <BaseHeader :title="roomName" :show-back="true" @back="handleBack" />
-    
-    <!-- Connection Status -->
-    <v-chip 
-      :color="isConnected ? 'success' : 'error'" 
-      class="connection-status"
-      size="small"
-    >
-      {{ isConnected ? '🟢 Connected' : '🔴 Disconnected' }}
-    </v-chip>
-    
-    <!-- Participant Count -->
-    <v-chip 
-      color="primary" 
-      class="participant-count"
-      size="small"
-    >
-      {{ markers.length }} participants
-    </v-chip>
-    
-    <TheMap :center="[46.7785, 6.6410]" :zoom="13" :markers="markers" />
+    <BaseHeader 
+    :title="roomName" 
+    :show-back="true" 
+    @back="handleBack" 
+    />
+    <TheMap 
+    ref="challengersLocationRef"
+    :center="[0, 0]" 
+    :zoom="2" 
+    :markers="markers"
+    :show-status="true" />
   </v-container>
 </template>
 
@@ -151,19 +130,5 @@ onBeforeUnmount(() => {
 .map-page {
   height: 100vh;
   width: 100%;
-}
-
-.connection-status {
-  position: absolute;
-  top: 70px;
-  left: 10px;
-  z-index: 1000;
-}
-
-.participant-count {
-  position: absolute;
-  top: 70px;
-  right: 10px;
-  z-index: 1000;
 }
 </style>
