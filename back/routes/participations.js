@@ -50,10 +50,10 @@ router.get('/journey/:journeyId', async (req, res) => {
       .populate('userId', 'username')
       .populate('journeyId', '_id'); // juste pour vérifier
 
-    const result = participations.map((p) => ({
+    const result = participations.map(p => ({
       userId: p.userId._id,
       username: p.userId.username,
-      journeyId: p.journeyId._id,
+      journeyId: p.journeyId._id
     }));
 
     res.json(result);
@@ -78,16 +78,14 @@ router.post('/', async (req, res) => {
     const { userId, journeyId } = req.body;
 
     if (!userId || !journeyId) {
-      return res
-        .status(400)
-        .json({ error: 'userId et journeyId sont requis' });
+      return res.status(400).json({ error: 'userId et journeyId sont requis' });
     }
 
     // (Optionnel) vérifier si la participation existe déjà
     const existing = await Participation.findOne({ userId, journeyId });
     if (existing) {
       return res.status(409).json({
-        error: 'Participant already registered for this journey',
+        error: 'Participant already registered for this journey'
       });
     }
 
@@ -98,8 +96,8 @@ router.post('/', async (req, res) => {
       participation: {
         _id: participation._id,
         userId: participation.userId,
-        journeyId: participation.journeyId,
-      },
+        journeyId: participation.journeyId
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -118,23 +116,19 @@ router.delete('/', async (req, res) => {
     const { userId, journeyId } = req.query;
 
     if (!userId || !journeyId) {
-      return res
-        .status(400)
-        .json({ error: 'userId et journeyId sont requis dans la query' });
+      return res.status(400).json({ error: 'userId et journeyId sont requis dans la query' });
     }
 
     const deleted = await Participation.findOneAndDelete({ userId, journeyId });
 
     if (!deleted) {
-      return res
-        .status(404)
-        .json({ error: 'Participation not found for this user/journey' });
+      return res.status(404).json({ error: 'Participation not found for this user/journey' });
     }
 
     res.json({
       message: 'Participant removed',
       userId,
-      journeyId,
+      journeyId
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -165,11 +159,10 @@ router.get('/:id', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const participation = await Participation.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const participation = await Participation.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
     if (!participation) {
       return res.status(404).json({ error: 'Participation not found' });
     }
@@ -185,9 +178,7 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const participation = await Participation.findByIdAndDelete(
-      req.params.id
-    );
+    const participation = await Participation.findByIdAndDelete(req.params.id);
     if (!participation) {
       return res.status(404).json({ error: 'Participation not found' });
     }

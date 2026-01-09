@@ -37,23 +37,24 @@ onMounted(async () => {
     console.log('No user ID found');
     return;
   }
-  
+
   console.log('Fetching data for user:', userId.value);
   loading.value = true;
   try {
     // Fetch all data in parallel
-    const [friendsResult, pendingFriendsResult, groupsResult, pendingGroupsResult] = await Promise.all([
-      fetchJson({ url: `/friends/${userId.value}` }).request,
-      fetchJson({ url: `/friends/${userId.value}/pending` }).request,
-      fetchJson({ url: `/groups/user/${userId.value}` }).request,
-      fetchJson({ url: `/user-groups/pending/${userId.value}` }).request
-    ]);
-    
+    const [friendsResult, pendingFriendsResult, groupsResult, pendingGroupsResult] =
+      await Promise.all([
+        fetchJson({ url: `/friends/${userId.value}` }).request,
+        fetchJson({ url: `/friends/${userId.value}/pending` }).request,
+        fetchJson({ url: `/groups/user/${userId.value}` }).request,
+        fetchJson({ url: `/user-groups/pending/${userId.value}` }).request
+      ]);
+
     console.log('Friends from DB:', friendsResult);
     console.log('Pending friend requests from DB:', pendingFriendsResult);
     console.log('Groups from DB:', groupsResult);
     console.log('Pending group invites from DB:', pendingGroupsResult);
-    
+
     // Map friends data
     if (friendsResult) {
       friends.value = friendsResult.map(f => ({
@@ -63,7 +64,7 @@ onMounted(async () => {
         type: 'friend'
       }));
     }
-    
+
     // Map pending friend requests
     if (pendingFriendsResult) {
       friendInvite.value = pendingFriendsResult.map(f => ({
@@ -74,7 +75,7 @@ onMounted(async () => {
         category: 'friend'
       }));
     }
-    
+
     // Map groups data
     if (groupsResult) {
       groups.value = groupsResult.map(g => ({
@@ -83,7 +84,7 @@ onMounted(async () => {
         type: 'group'
       }));
     }
-    
+
     // Map pending group invites
     if (pendingGroupsResult) {
       groupInvite.value = pendingGroupsResult.map(g => ({
@@ -116,14 +117,14 @@ async function onAction(payload) {
       const inviteList = isGroupInvite ? groupInvite : friendInvite;
       const targetList = isGroupInvite ? groups : friends;
       const targetType = isGroupInvite ? 'group' : 'friend';
-      
+
       // API: Accept invite
       if (isGroupInvite) {
         await apiCall(`/user-groups/${item.id}/accept`);
       } else {
         await apiCall(`/friends/requests/${item.id}/accept`);
       }
-      
+
       const inviteIndex = inviteList.value.findIndex(i => i.id === item.id);
       if (inviteIndex !== -1) {
         const movedItem = inviteList.value.splice(inviteIndex, 1)[0];
@@ -132,20 +133,20 @@ async function onAction(payload) {
         targetList.value.push(movedItem);
       }
     } catch (err) {
-      console.error('Erreur lors de l\'acceptation:', err);
+      console.error("Erreur lors de l'acceptation:", err);
     }
   } else if (result === 'declined' && item.type === 'invite') {
     try {
       const isGroupInvite = item.category === 'group';
       const inviteList = isGroupInvite ? groupInvite : friendInvite;
-      
+
       // API: Refuse invite
       if (isGroupInvite) {
         await apiCall(`/user-groups/${item.id}/refuse`);
       } else {
         await apiCall(`/friends/requests/${item.id}/refuse`);
       }
-      
+
       const inviteIndex = inviteList.value.findIndex(i => i.id === item.id);
       if (inviteIndex !== -1) {
         inviteList.value.splice(inviteIndex, 1);
@@ -157,7 +158,7 @@ async function onAction(payload) {
     try {
       // API: Remove friend
       await apiCall(`/friends/${item.id}`, 'DELETE');
-      
+
       const friendIndex = friends.value.findIndex(i => i.id === item.id);
       if (friendIndex !== -1) {
         friends.value.splice(friendIndex, 1);
@@ -169,7 +170,7 @@ async function onAction(payload) {
     try {
       // API: Leave group
       await apiCall(`/groups/${item.id}/members/${userId.value}`, 'DELETE');
-      
+
       const groupIndex = groups.value.findIndex(i => i.id === item.id);
       if (groupIndex !== -1) {
         groups.value.splice(groupIndex, 1);
@@ -195,7 +196,7 @@ async function handleLeaveGroup(groupData) {
   try {
     // API: Leave group
     await apiCall(`/groups/${groupData.id}/members/${userId.value}`, 'DELETE');
-    
+
     const groupIndex = groups.value.findIndex(g => g.id === groupData.id);
     if (groupIndex !== -1) {
       groups.value.splice(groupIndex, 1);
@@ -222,27 +223,29 @@ async function handleCreateGroup(groupData) {
       name: groupData.name,
       ownerId: userId.value
     });
-    
+
     const newGroupId = result.group._id;
-    
+
     // Add current user to the group
     await apiCall('/user-groups', 'POST', {
       userId: userId.value,
       groupId: newGroupId,
       status: 'admin'
     });
-    
+
     // Add selected members to the group (as pending invites)
     if (groupData.memberIds && groupData.memberIds.length > 0) {
-      await Promise.all(groupData.memberIds.map(memberId =>
-        apiCall('/user-groups', 'POST', {
-          userId: memberId,
-          groupId: newGroupId,
-          status: 'pending'
-        })
-      ));
+      await Promise.all(
+        groupData.memberIds.map(memberId =>
+          apiCall('/user-groups', 'POST', {
+            userId: memberId,
+            groupId: newGroupId,
+            status: 'pending'
+          })
+        )
+      );
     }
-    
+
     const newGroup = {
       id: newGroupId,
       name: groupData.name,

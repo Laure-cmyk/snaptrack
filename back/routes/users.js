@@ -86,11 +86,10 @@ router.post('/', async (req, res) => {
 // PUT update user
 router.put('/:id', async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    ).select('-password');
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    }).select('-password');
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -147,7 +146,7 @@ router.put('/:id/password', async (req, res) => {
 router.delete('/:id/profile-picture', async (req, res) => {
   try {
     console.log('🗑️ Removing profile picture for user:', req.params.id);
-    
+
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -178,7 +177,7 @@ router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
     console.log('📸 ====== PROFILE PICTURE UPLOAD START ======');
     console.log('📸 Step 1: Request received for user:', req.params.id);
     console.log('📸 Step 2: File received:', req.file ? 'Yes ✅' : 'No ❌');
-    
+
     if (!req.file) {
       console.log('📸 Error: No file in request');
       return res.status(400).json({ error: 'No image file provided' });
@@ -215,11 +214,11 @@ router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
 
     // Upload new image to Cloudinary
     console.log('📸 Step 6: Uploading to Cloudinary...');
-    
+
     // Convert buffer to base64 data URI
     const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
     console.log('  - Base64 string created, length:', base64Image.length);
-    
+
     console.log('📸 Step 7: Calling cloudinary.uploader.upload...');
     const uploadResult = await cloudinary.uploader.upload(base64Image, {
       folder: 'snaptrack',
@@ -227,7 +226,7 @@ router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
       overwrite: true,
       transformation: [{ width: 800, height: 800, crop: 'limit' }]
     });
-    
+
     console.log('📸 Step 8: Upload successful! ✅');
     console.log('  - Public ID:', uploadResult.public_id);
     console.log('  - Secure URL:', uploadResult.secure_url);
@@ -241,7 +240,7 @@ router.post('/:id/upload-profile', upload.single('image'), async (req, res) => {
     console.log('📸 Step 9: Database updated ✅');
 
     console.log('📸 ====== PROFILE PICTURE UPLOAD COMPLETE ======');
-    
+
     res.json({
       message: 'Profile picture uploaded successfully',
       profilePicture: user.profilePicture

@@ -60,17 +60,17 @@ router.get('/members/:groupId', async (req, res) => {
     }
 
     // 3. Construire la liste des membres avec leur statut
-    const members = userGroups.map((ug) => ({
+    const members = userGroups.map(ug => ({
       userId: ug.userId._id,
       username: ug.userId.username,
-      status: ug.status, // ex: admin, member, pending...
+      status: ug.status // ex: admin, member, pending...
     }));
 
     // 4. Réponse structurée
     res.json({
       groupId: groupId,
       groupName: group.name,
-      members,
+      members
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -89,16 +89,16 @@ router.get('/pending/:userId', async (req, res) => {
 
     const pendingInvites = await UserGroup.find({
       userId,
-      status: 'pending',
+      status: 'pending'
     }).populate('groupId', 'name');
 
     const result = pendingInvites
-      .filter((ug) => ug.groupId)
-      .map((ug) => ({
+      .filter(ug => ug.groupId)
+      .map(ug => ({
         inviteId: ug._id,
         groupId: ug.groupId._id,
         groupName: ug.groupId.name,
-        status: ug.status,
+        status: ug.status
       }));
 
     res.json(result);
@@ -129,8 +129,8 @@ router.post('/:id/accept', async (req, res) => {
         id: userGroup._id,
         groupId: userGroup.groupId._id,
         groupName: userGroup.groupId.name,
-        status: userGroup.status,
-      },
+        status: userGroup.status
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -151,7 +151,7 @@ router.post('/:id/refuse', async (req, res) => {
 
     res.json({
       message: 'Group invitation refused',
-      id: req.params.id,
+      id: req.params.id
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -201,11 +201,10 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const userGroup = await UserGroup.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const userGroup = await UserGroup.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
     if (!userGroup) {
       return res.status(404).json({ error: 'UserGroup not found' });
     }

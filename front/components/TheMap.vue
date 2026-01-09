@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 const props = defineProps({
   center: {
     type: Array,
-    default: () => [46.7785, 6.6410] 
+    default: () => [46.7785, 6.641]
   },
   zoom: {
     type: Number,
@@ -29,33 +29,38 @@ let map = null;
 let markerLayer = null;
 
 /* Creates markers */
-const addMarkers = (markers) => {
+const addMarkers = markers => {
   if (!markerLayer) return;
-  
+
   markerLayer.clearLayers();
-  
-  markers.forEach((markerData) => {
+
+  markers.forEach(markerData => {
     const marker = L.marker([markerData.lat, markerData.lng]);
-    
+
     if (markerData.popup) {
       marker.bindPopup(markerData.popup);
     }
-    
+
     markerLayer.addLayer(marker);
   });
 };
 
 /* Updates marker when changes occur */
-watch(() => props.markers, (newMarkers) => {
-  addMarkers(newMarkers);
-}, { deep: true });
+watch(
+  () => props.markers,
+  newMarkers => {
+    addMarkers(newMarkers);
+  },
+  { deep: true }
+);
 
 /* Initilize Map */
 onMounted(() => {
   map = L.map(mapContainer.value, { zoomControl: false }).setView(props.center, props.zoom);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19
   }).addTo(map);
 
@@ -69,7 +74,7 @@ onMounted(() => {
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
   });
 });
 
@@ -89,7 +94,7 @@ defineExpose({
     markerLayer.addLayer(marker);
     return marker;
   },
-  removeMarker: (marker) => {
+  removeMarker: marker => {
     markerLayer.removeLayer(marker);
   },
   clearMarkers: () => {
@@ -98,7 +103,7 @@ defineExpose({
   setView: (lat, lng, zoom) => {
     map.setView([lat, lng], zoom || props.zoom);
   },
-  fitBounds: (bounds) => {
+  fitBounds: bounds => {
     map.fitBounds(bounds);
   },
   getMap: () => map
@@ -108,15 +113,10 @@ defineExpose({
 <template>
   <div class="map-wrapper">
     <div ref="mapContainer" class="map-container"></div>
-    
+
     <!-- Status chip overlay -->
     <div v-if="showStatus" class="map-overlay">
-      <v-chip 
-      variant="flat"
-        color="default" 
-        class="count-chip"
-        size="small"
-      >
+      <v-chip variant="flat" color="default" class="count-chip" size="small">
         {{ markers.length }} participants
       </v-chip>
     </div>

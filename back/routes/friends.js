@@ -33,7 +33,7 @@ router.post('/requests', async (req, res) => {
     const friendship = await Friends.create({
       userId,
       friendId: friendUserId,
-      status: 'pending',
+      status: 'pending'
     });
 
     res.status(201).json({
@@ -42,8 +42,8 @@ router.post('/requests', async (req, res) => {
         id: friendship._id,
         userId: friendship.userId,
         friendUserId: friendship.friendId,
-        status: friendship.status,
-      },
+        status: friendship.status
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -58,11 +58,7 @@ router.post('/requests/:id/accept', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const friendship = await Friends.findByIdAndUpdate(
-      id,
-      { status: 'accepted' },
-      { new: true }
-    );
+    const friendship = await Friends.findByIdAndUpdate(id, { status: 'accepted' }, { new: true });
 
     if (!friendship) {
       return res.status(404).json({ error: 'Friendship not found' });
@@ -74,8 +70,8 @@ router.post('/requests/:id/accept', async (req, res) => {
         id: friendship._id,
         userId: friendship.userId,
         friendUserId: friendship.friendId,
-        status: friendship.status,
-      },
+        status: friendship.status
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -90,11 +86,7 @@ router.post('/requests/:id/refuse', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const friendship = await Friends.findByIdAndUpdate(
-      id,
-      { status: 'refused' },
-      { new: true }
-    );
+    const friendship = await Friends.findByIdAndUpdate(id, { status: 'refused' }, { new: true });
 
     if (!friendship) {
       return res.status(404).json({ error: 'Friendship not found' });
@@ -106,8 +98,8 @@ router.post('/requests/:id/refuse', async (req, res) => {
         id: friendship._id,
         userId: friendship.userId,
         friendUserId: friendship.friendId,
-        status: friendship.status,
-      },
+        status: friendship.status
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -117,7 +109,7 @@ router.post('/requests/:id/refuse', async (req, res) => {
 /**
  * 6. List Unfriend (personnes qui ne sont pas encore mes amis)
  * GET /friends/unfriends/:userId
- * 
+ *
  * MUST BE BEFORE /:userId routes to avoid matching "unfriends" as userId
  */
 router.get('/unfriends/:userId', async (req, res) => {
@@ -126,25 +118,25 @@ router.get('/unfriends/:userId', async (req, res) => {
     console.log('Fetching unfriends for userId:', userId);
 
     const relations = await Friends.find({
-      $or: [{ userId }, { friendId: userId }],
+      $or: [{ userId }, { friendId: userId }]
     });
 
     const linkedIds = new Set();
     linkedIds.add(userId);
 
-    relations.forEach((rel) => {
+    relations.forEach(rel => {
       linkedIds.add(rel.userId.toString());
       linkedIds.add(rel.friendId.toString());
     });
 
     const unfriends = await User.find({
-      _id: { $nin: Array.from(linkedIds) },
+      _id: { $nin: Array.from(linkedIds) }
     }).select('username email');
 
-    const result = unfriends.map((u) => ({
+    const result = unfriends.map(u => ({
       userId: u._id,
       username: u.username,
-      email: u.email,
+      email: u.email
     }));
 
     res.json(result);
@@ -156,7 +148,7 @@ router.get('/unfriends/:userId', async (req, res) => {
 /**
  * 5b. List pending friend requests (invitations recues)
  * GET /friends/:userId/pending
- * 
+ *
  * MUST BE BEFORE /:userId to avoid matching "pending" as part of userId
  */
 router.get('/:userId/pending', async (req, res) => {
@@ -166,16 +158,16 @@ router.get('/:userId/pending', async (req, res) => {
 
     const pendingRequests = await Friends.find({
       status: 'pending',
-      friendId: userId,
+      friendId: userId
     }).populate('userId', 'username');
 
     console.log('Found pending requests:', pendingRequests.length);
 
-    const result = pendingRequests.map((f) => ({
+    const result = pendingRequests.map(f => ({
       friendshipId: f._id,
       senderId: f.userId._id,
       senderName: f.userId.username,
-      status: f.status,
+      status: f.status
     }));
 
     res.json(result);
@@ -188,7 +180,7 @@ router.get('/:userId/pending', async (req, res) => {
 /**
  * 5. List Friends (voir mes amis)
  * GET /friends/:userId
- * 
+ *
  * This catches all GET /friends/:something, so must be LAST among GET routes
  */
 router.get('/:userId', async (req, res) => {
@@ -198,14 +190,14 @@ router.get('/:userId', async (req, res) => {
 
     const friendships = await Friends.find({
       status: 'accepted',
-      $or: [{ userId: userId }, { friendId: userId }],
+      $or: [{ userId: userId }, { friendId: userId }]
     })
       .populate('userId', 'username')
       .populate('friendId', 'username');
 
     console.log('Found accepted friendships:', friendships.length);
 
-    const result = friendships.map((f) => {
+    const result = friendships.map(f => {
       const isUserSender = f.userId._id.toString() === userId;
       const otherUser = isUserSender ? f.friendId : f.userId;
 
@@ -213,7 +205,7 @@ router.get('/:userId', async (req, res) => {
         friendshipId: f._id,
         friendId: otherUser._id,
         friendName: otherUser.username,
-        status: f.status,
+        status: f.status
       };
     });
 
@@ -237,7 +229,7 @@ router.delete('/:id', async (req, res) => {
     }
     res.json({
       message: 'Friend deleted',
-      id: req.params.id,
+      id: req.params.id
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

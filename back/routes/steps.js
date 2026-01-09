@@ -16,12 +16,12 @@ router.get('/journey/:journeyId', async (req, res) => {
 
     const steps = await Step.find({ journeyId }).sort({ order: 1 });
 
-    const result = steps.map((s) => ({
+    const result = steps.map(s => ({
       id: s._id,
       journeyId: s.journeyId,
       title: s.title,
       description: s.description,
-      order: s.order,
+      order: s.order
     }));
 
     res.json(result);
@@ -59,7 +59,7 @@ router.get('/:id', async (req, res) => {
       journeyId: step.journeyId,
       title: step.title,
       description: step.description,
-      order: step.order,
+      order: step.order
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -83,16 +83,14 @@ router.post('/', async (req, res) => {
     const { journeyId, title, description, order } = req.body;
 
     if (!journeyId || !title) {
-      return res
-        .status(400)
-        .json({ error: 'journeyId et title sont requis' });
+      return res.status(400).json({ error: 'journeyId et title sont requis' });
     }
 
     const step = await Step.create({
       journeyId,
       title,
       description,
-      order,
+      order
     });
 
     res.status(201).json({
@@ -102,8 +100,8 @@ router.post('/', async (req, res) => {
         journeyId: step.journeyId,
         title: step.title,
         description: step.description,
-        order: step.order,
-      },
+        order: step.order
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -135,8 +133,8 @@ router.put('/:id', async (req, res) => {
         journeyId: step.journeyId,
         title: step.title,
         description: step.description,
-        order: step.order,
-      },
+        order: step.order
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -155,7 +153,7 @@ router.delete('/:id', async (req, res) => {
     }
     res.json({
       message: 'Step deleted',
-      id: step._id,
+      id: step._id
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

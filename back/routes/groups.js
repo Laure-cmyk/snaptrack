@@ -50,8 +50,8 @@ router.post('/', async (req, res) => {
         _id: group._id,
         name: group.name,
         ownerId: group.createdBy ?? null,
-        createdAt: group.createdAt,
-      },
+        createdAt: group.createdAt
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -71,17 +71,14 @@ router.get('/user/:userId', async (req, res) => {
     const { userId } = req.params;
 
     // 1. On récupère toutes les liaisons UserGroup pour cet utilisateur
-    const userGroups = await UserGroup.find({ userId }).populate(
-      'groupId',
-      'name'
-    );
+    const userGroups = await UserGroup.find({ userId }).populate('groupId', 'name');
 
     // 2. On extrait la liste des groupes
     const groups = userGroups
-      .filter((ug) => ug.groupId) // au cas où un groupe aurait été supprimé
-      .map((ug) => ({
+      .filter(ug => ug.groupId) // au cas où un groupe aurait été supprimé
+      .map(ug => ({
         _id: ug.groupId._id,
-        name: ug.groupId.name,
+        name: ug.groupId.name
       }));
 
     res.json(groups);
@@ -108,23 +105,20 @@ router.get('/:groupId/members', async (req, res) => {
     }
 
     // 2. Récupérer les liaisons UserGroup pour ce groupe
-    const userGroups = await UserGroup.find({ groupId }).populate(
-      'userId',
-      'username'
-    );
+    const userGroups = await UserGroup.find({ groupId }).populate('userId', 'username');
 
     // 3. Construire la liste des membres
     const members = userGroups
-      .filter((ug) => ug.userId)
-      .map((ug) => ({
+      .filter(ug => ug.userId)
+      .map(ug => ({
         _id: ug.userId._id,
-        username: ug.userId.username,
+        username: ug.userId.username
       }));
 
     res.json({
       groupId: group._id,
       groupName: group.name,
-      members,
+      members
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -158,8 +152,8 @@ router.put('/:groupId', async (req, res) => {
       message: 'Group updated',
       group: {
         _id: group._id,
-        name: group.name,
-      },
+        name: group.name
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -187,7 +181,7 @@ router.delete('/:groupId', async (req, res) => {
 
     res.json({
       message: 'Group deleted',
-      groupId,
+      groupId
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -216,7 +210,7 @@ router.delete('/:groupId/members/:userId', async (req, res) => {
     res.json({
       message: 'User removed from group',
       groupId,
-      userId,
+      userId
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -233,10 +227,7 @@ router.delete('/:groupId/members/:userId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const group = await Group.findById(req.params.id).populate(
-      'createdBy',
-      'username email'
-    );
+    const group = await Group.findById(req.params.id).populate('createdBy', 'username email');
     if (!group) {
       return res.status(404).json({ error: 'Group not found' });
     }

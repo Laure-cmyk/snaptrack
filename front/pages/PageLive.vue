@@ -2,6 +2,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { WSClientRoom } from 'wsmini/client';
+import { fetchJson } from '@/utils/fetchJson';
 import TheMap from '../components/TheMap.vue';
 import BaseHeader from '../components/BaseHeader.vue';
 
@@ -52,38 +53,37 @@ onMounted(async () => {
   try {
     const journeyId = route.query.journeyId || 'default';
     const username = localStorage.getItem('username') || 'TestUser';
-    
-    // Fetch journey name from API
+
+    // Get the journeys id
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/journeys/${journeyId}`);
-      const journey = await response.json();
-      roomName.value = journey.name || 'Live Challenge';
+      const journey = await fetchJson({ url: `/journeys/${journeyId}` }).request;
+      roomName.value = journey.name || 'Live';
     } catch (error) {
       console.error('Failed to fetch journey name:', error);
-      roomName.value = 'Live Challenge'; // Fallback
+      roomName.value = journeyId; // Fallback to journey ID
     }
-    
+
     // WebSocket on port 443
     const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:443';
     const ws = new WSClientRoom(wsUrl);
-    
+
     console.log('Connecting to WebSocket:', wsUrl);
     await ws.connect();
     console.log('WebSocket connected!');
-    
+
     room.value = await ws.roomCreateOrJoin(`journey-${journeyId}`, { username });
-    
+
     console.log('Joined room:', room.value);
-    
+
     // Listen for location updates from real users
-    room.value.onCmd('location', (data) => {
+    room.value.onCmd('location', data => {
       console.log('Received location:', data);
       const existing = markers.value.findIndex(m => m.popup === data.username);
       const marker = { lat: data.lat, lng: data.lng, popup: data.username };
-      
+
       if (existing >= 0) markers.value[existing] = marker;
       else markers.value.push(marker);
-      
+
       if (markers.value.length > 0 && challengersLocationRef.value) {
         const bounds = markers.value.map(m => [m.lat, m.lng]);
         challengersLocationRef.value.fitBounds(bounds);
@@ -94,7 +94,6 @@ onMounted(async () => {
     /* 
     // Start fake participants simulation (moving every 1 seconds)
     setInterval(simulateFakeParticipants, 1000); */
-    
   } catch (error) {
     console.error('WebSocket connection failed:', error);
   }
@@ -112,17 +111,14 @@ onBeforeUnmount(() => {
 
 <template>
   <v-container fluid class="pa-0 map-page">
-    <BaseHeader 
-    :title="roomName" 
-    :show-back="true" 
-    @back="handleBack" 
+    <BaseHeader :title="roomName" :show-back="true" @back="handleBack" />
+    <TheMap
+      ref="challengersLocationRef"
+      :center="[0, 0]"
+      :zoom="2"
+      :markers="markers"
+      :show-status="true"
     />
-    <TheMap 
-    ref="challengersLocationRef"
-    :center="[0, 0]" 
-    :zoom="2" 
-    :markers="markers"
-    :show-status="true" />
   </v-container>
 </template>
 

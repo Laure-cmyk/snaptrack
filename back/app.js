@@ -24,10 +24,12 @@ import scoresRouter from '../back/routes/scores.js';
 const app = express();
 
 // CORS configuration
-app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true
+  })
+);
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -49,7 +51,7 @@ app.use('/scores', scoresRouter);
 // Serve static files and index.html in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../dist')));
-  
+
   app.get('/{*splat}', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });

@@ -11,9 +11,8 @@ const showNavigation = computed(() => route.path !== '/authentification');
 </script>
 
 <template>
-
   <v-app>
-<!--     <nav>
+    <!--     <nav>
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/friendlist">Friends</RouterLink>
     </nav> -->
