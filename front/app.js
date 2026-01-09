@@ -30,7 +30,8 @@ const routes = [
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('./pages/PageError404.vue')
-  }
+  },
+  { path: '/live', component: () => import('./pages/PageLive.vue')}
 ];
 
 const router = createRouter({

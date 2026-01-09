@@ -10,16 +10,16 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/users': 'http://localhost:3000',
-      '/journeys': 'http://localhost:3000',
-      '/friends': 'http://localhost:3000',
-      '/groups': 'http://localhost:3000',
-      '/user-groups': 'http://localhost:3000',
-      '/user-journeys': 'http://localhost:3000',
-      '/steps': 'http://localhost:3000',
-      '/ratings': 'http://localhost:3000',
-      '/participations': 'http://localhost:3000',
-      '/scores': 'http://localhost:3000'
+      '/users': 'http://localhost:10000',
+      '/journeys': 'http://localhost:10000',
+      '/friends': 'http://localhost:10000',
+      '/groups': 'http://localhost:10000',
+      '/user-groups': 'http://localhost:10000',
+      '/user-journeys': 'http://localhost:10000',
+      '/steps': 'http://localhost:10000',
+      '/ratings': 'http://localhost:10000',
+      '/participations': 'http://localhost:10000',
+      '/scores': 'http://localhost:10000'
     }
   },
   build: {
