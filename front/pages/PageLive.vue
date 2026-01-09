@@ -90,7 +90,7 @@ onMounted(async () => {
         });
       });
       
-      // Then send every 5 seconds
+      // Then send every 0.5 seconds
       locationInterval = setInterval(() => {
         if (room.value) {
           navigator.geolocation.getCurrentPosition((pos) => {
