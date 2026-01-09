@@ -15,14 +15,18 @@ router.get('/journey/:journeyId', async (req, res) => {
   try {
     const { journeyId } = req.params;
 
-    const steps = await Step.find({ journeyId }).sort({ order: 1 });
+    const steps = await Step.find({ journeyId }).sort({ timestamp: 1 });
 
     const result = steps.map((s) => ({
       id: s._id,
       journeyId: s.journeyId,
-      title: s.title,
-      description: s.description,
-      order: s.order,
+      riddle: s.riddle,
+      image: s.image,
+      latitude: s.latitude,
+      longitude: s.longitude,
+      accuracy: s.accuracy,
+      altitude: s.altitude,
+      speed: s.speed
     }));
 
     res.json(result);
@@ -73,27 +77,39 @@ router.get('/:id', async (req, res) => {
  *
  * Body JSON :
  * {
- *   "journeyId": "701",
- *   "title": "Quiz 2",
- *   "description": "Deuxième question clé",
- *   "order": 3
+ *   "journeyId": "...",
+ *   "riddle": "Find the hidden statue",
+ *   "latitude": 46.123456,
+ *   "longitude": 6.123456
  * }
  */
 router.post('/', async (req, res) => {
   try {
-    const { journeyId, title, description, order } = req.body;
+    const { journeyId, riddle, latitude, longitude, image, note, accuracy, altitude, speed } = req.body;
 
-    if (!journeyId || !title) {
+    if (!journeyId) {
       return res
         .status(400)
-        .json({ error: 'journeyId et title sont requis' });
+        .json({ error: 'journeyId is required' });
     }
+
+    // Build location GeoJSON from lat/lng if provided
+    const location = (latitude != null && longitude != null) ? {
+      type: 'Point',
+      coordinates: [longitude, latitude]
+    } : { type: 'Point', coordinates: [0, 0] };
 
     const step = await Step.create({
       journeyId,
-      title,
-      description,
-      order,
+      riddle,
+      location,
+      latitude,
+      longitude,
+      image,
+      note,
+      accuracy,
+      altitude,
+      speed
     });
 
     res.status(201).json({
@@ -101,9 +117,12 @@ router.post('/', async (req, res) => {
       step: {
         id: step._id,
         journeyId: step.journeyId,
-        title: step.title,
-        description: step.description,
-        order: step.order,
+        riddle: step.riddle,
+        latitude: step.latitude,
+        longitude: step.longitude,
+        accuracy: step.accuracy,
+        altitude: step.altitude,
+        speed: step.speed
       },
     });
   } catch (error) {

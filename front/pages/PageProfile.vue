@@ -1,67 +1,23 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted, onActivated } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
-import { fetchJson } from '@/utils/fetchJson'
 import avatarDefault from '@/assets/avatar.jpeg'
 
-// Get user from localStorage - use ref to ensure reactivity
-const storedUser = ref(null)
-const loading = ref(true)
-
-function loadStoredUser() {
-    const userData = localStorage.getItem('user')
-    storedUser.value = userData ? JSON.parse(userData) : null
-}
-
-const userId = computed(() => storedUser.value?.id || storedUser.value?._id)
-
 // State
+const loading = ref(true)
+const userId = ref(null)
 const user = ref({
-    pseudo: '',
+    username: '',
     email: '',
-    profileImage: null
+    bio: '',
+    profilePicture: null
 })
 
 const uploadingPhoto = ref(false)
-
-// Fetch user data from DB
-async function fetchUserData() {
-    if (!userId.value) {
-        console.warn('No user ID found in localStorage')
-        return
-    }
-    
-    try {
-        const { request } = fetchJson({ url: `/users/${userId.value}` })
-        const data = await request
-        
-        user.value = {
-            username: data.username,
-            email: data.email,
-            profilePicture: data.profilePicture
-        }
-    } catch (err) {
-        console.error('Erreur lors du chargement du profil:', err)
-        // Fallback to localStorage data if API fails
-        if (storedUser.value) {
-            user.value = {
-                username: storedUser.value.username || '',
-                email: storedUser.value.email || '',
-                profilePicture: storedUser.value.profilePicture || null
-            }
-        }
-    }
-}
-
-onMounted(async () => {
-    loading.value = true
-    try {
-        await fetchUserData()
-    } finally {
-        loading.value = false
-    }
-})
+const editingBio = ref(false)
+const bioForm = ref('')
+const savingBio = ref(false)
 
 const photoInput = ref(null)
 const expansionPanel = ref([])
@@ -77,51 +33,63 @@ const submittingPassword = ref(false)
 const deleteAccountDialog = ref(false)
 const logoutDialog = ref(false)
 
-// Load user data from API
+// Load user data from the logged-in user
 async function loadUserData() {
-    // First load from localStorage
-    loadStoredUser()
-    
-    // Set initial values from localStorage immediately
-    if (storedUser.value) {
-        user.value = {
-            pseudo: storedUser.value.username || 'User',
-            email: storedUser.value.email || '',
-            profileImage: storedUser.value.profilePicture
-        }
-    }
-    
-    // If no userId, skip API call
-    if (!userId.value) {
-        loading.value = false
-        return
-    }
-    
+    loading.value = true
+
     try {
-        const res = await fetch(`/users/${userId.value}`)
-        
-        if (!res.ok) {
-            console.warn('API returned:', res.status)
-            // Keep localStorage data as fallback
+        // Get the logged-in user from localStorage
+        const storedUser = localStorage.getItem('user')
+        if (!storedUser) {
+            console.warn('No logged-in user found')
             loading.value = false
             return
         }
-        
+
+        const loggedInUser = JSON.parse(storedUser)
+        const loggedInUserId = loggedInUser.id || loggedInUser._id
+
+        if (!loggedInUserId) {
+            console.warn('No user ID in stored user data')
+            loading.value = false
+            return
+        }
+
+        // Fetch the specific user from the API
+        const res = await fetch(`/users/${loggedInUserId}`)
+
+        if (!res.ok) {
+            console.warn('API returned:', res.status)
+            // Fallback to localStorage data
+            userId.value = loggedInUserId
+            user.value = {
+                username: loggedInUser.username || '',
+                email: loggedInUser.email || '',
+                bio: loggedInUser.bio || '',
+                profilePicture: loggedInUser.profilePicture || null
+            }
+            loading.value = false
+            return
+        }
+
         const data = await res.json()
+        userId.value = data._id
         user.value = {
-            pseudo: data.username,
+            username: data.username,
             email: data.email,
-            profileImage: data.profilePicture
+            bio: data.bio || '',
+            profilePicture: data.profilePicture
         }
     } catch (err) {
         console.error('Error loading user:', err)
-        // Fallback already set above
     } finally {
         loading.value = false
     }
 }
 
+// Load on mount and when navigating back to page
 onMounted(loadUserData)
+onActivated(loadUserData)
 
 // Validation rules
 const passwordRules = {
@@ -135,6 +103,43 @@ function triggerPhotoUpload() {
     photoInput.value.click()
 }
 
+// Bio functions
+function startEditingBio() {
+    bioForm.value = user.value.bio
+    editingBio.value = true
+}
+
+function cancelEditingBio() {
+    bioForm.value = ''
+    editingBio.value = false
+}
+
+async function saveBio() {
+    if (!userId.value) return
+
+    savingBio.value = true
+    try {
+        const res = await fetch(`/users/${userId.value}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bio: bioForm.value })
+        })
+
+        if (res.ok) {
+            const data = await res.json()
+            user.value.bio = data.bio || bioForm.value
+            editingBio.value = false
+            bioForm.value = ''
+        } else {
+            console.error('Error saving bio:', res.status)
+        }
+    } catch (err) {
+        console.error('Error saving bio:', err)
+    } finally {
+        savingBio.value = false
+    }
+}
+
 async function handlePhotoUpload(event) {
     const file = event.target.files[0]
     if (!file || !userId.value) return
@@ -143,39 +148,33 @@ async function handlePhotoUpload(event) {
     try {
         const formData = new FormData()
         formData.append('image', file)
-        
+
         const res = await fetch(`/users/${userId.value}/upload-profile`, {
             method: 'POST',
             body: formData
         })
         const data = await res.json()
-        
+
         if (res.ok) {
-            user.value.profileImage = data.profilePicture
-            // Update localStorage
-            const storedData = JSON.parse(localStorage.getItem('user')) || {}
-            storedData.profilePicture = data.profilePicture
-            localStorage.setItem('user', JSON.stringify(storedData))
+            user.value.profilePicture = data.profilePicture
         }
     } catch (err) {
         console.error('Error uploading photo:', err)
+    } finally {
+        uploadingPhoto.value = false
     }
 }
 
 async function removePhoto() {
     if (!userId.value) return
-    
+
     try {
         const res = await fetch(`/users/${userId.value}/profile-picture`, {
             method: 'DELETE'
         })
-        
+
         if (res.ok) {
-            user.value.profileImage = null
-            // Update localStorage
-            const storedData = JSON.parse(localStorage.getItem('user')) || {}
-            storedData.profilePicture = null
-            localStorage.setItem('user', JSON.stringify(storedData))
+            user.value.profilePicture = null
         }
     } catch (err) {
         console.error('Error removing photo:', err)
@@ -197,9 +196,9 @@ async function changePassword() {
                 newPassword: passwordForm.value.newPassword
             })
         })
-        
+
         const data = await res.json()
-        
+
         if (!res.ok) {
             passwordError.value = data.error || 'Erreur lors du changement de mot de passe.'
             return
@@ -235,7 +234,7 @@ async function deleteAccount() {
     } catch (err) {
         console.error('Error deleting account:', err)
     }
-    
+
     localStorage.removeItem('jwt')
     localStorage.removeItem('myTrails')
     localStorage.removeItem('user')
@@ -264,7 +263,8 @@ async function deleteAccount() {
                 <div class="position-relative d-inline-block">
                     <!-- Avatar -->
                     <v-avatar size="120" class="mb-4" style="cursor: pointer;" @click="triggerPhotoUpload">
-                        <v-progress-circular v-if="uploadingPhoto" indeterminate color="white" size="40"></v-progress-circular>
+                        <v-progress-circular v-if="uploadingPhoto" indeterminate color="white"
+                            size="40"></v-progress-circular>
                         <v-img v-else :src="user.profilePicture || avatarDefault" cover />
                     </v-avatar>
 
@@ -294,9 +294,40 @@ async function deleteAccount() {
                     </div>
 
                     <!-- Email -->
-                    <div>
+                    <div class="mb-4">
                         <div class="text-caption text-grey-darken-1 mb-1">Email</div>
                         <div class="text-body-1 font-weight-medium">{{ user.email }}</div>
+                    </div>
+
+                    <!-- Bio -->
+                    <div>
+                        <div class="text-caption text-grey-darken-1 mb-1">Bio</div>
+
+                        <!-- Vue en lecture -->
+                        <div v-if="!editingBio" class="d-flex align-start justify-space-between ga-2">
+                            <div class="text-body-1 flex-grow-1">
+                                {{ user.bio || 'Aucune bio' }}
+                            </div>
+                            <v-btn icon size="x-small" variant="text" color="indigo-darken-1" @click="startEditingBio"
+                                class="flex-shrink-0">
+                                <v-icon size="small">mdi-pencil</v-icon>
+                            </v-btn>
+                        </div>
+
+                        <!-- Vue en édition -->
+                        <div v-else>
+                            <v-textarea v-model="bioForm" variant="outlined" density="comfortable"
+                                placeholder="Décris-toi en quelques mots..." rows="3" counter="150" maxlength="150"
+                                bg-color="grey-lighten-4" class="mb-2" />
+                            <div class="d-flex ga-2">
+                                <v-btn size="small" color="indigo-darken-1" :loading="savingBio" @click="saveBio">
+                                    Enregistrer
+                                </v-btn>
+                                <v-btn size="small" variant="outlined" @click="cancelEditingBio">
+                                    Annuler
+                                </v-btn>
+                            </div>
+                        </div>
                     </div>
                 </v-card-text>
             </v-card>
@@ -375,22 +406,27 @@ async function deleteAccount() {
 
 <style scoped>
 .password-panel {
-    background-color: white !important;
+    background-color: white;
+    overflow: hidden;
 }
 
 .password-panel-title {
-    background-color: white !important;
+    background-color: white;
 }
 
 .password-panel-text {
-    background-color: white !important;
+    background-color: white;
 }
 
 :deep(.v-expansion-panel__shadow) {
-    box-shadow: none !important;
+    box-shadow: none;
 }
 
 :deep(.v-expansion-panel-title__overlay) {
-    display: none !important;
+    display: none;
+}
+
+:deep(.v-expansion-panel-text__wrapper) {
+    border-radius: 0 0 12px 12px;
 }
 </style>

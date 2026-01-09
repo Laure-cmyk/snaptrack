@@ -1,27 +1,42 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
 import BaseCard from '@/components/BaseCard.vue'
 import TheSearchBar from '@/components/TheSearchBar.vue'
-import { useFetchJson } from '@/composables/useFetchJson'
-
-// Get user from localStorage
-const user = computed(() => {
-    const userData = localStorage.getItem('user')
-    return userData ? JSON.parse(userData) : null
-})
 
 const searchQuery = ref('')
+const journeys = ref([])
+const loading = ref(true)
+const error = ref(null)
 
 // Fetch journeys from backend
-const { data: journeysData, loading, error, execute: fetchJourneys } = useFetchJson({
-    url: '/journeys',
-    immediate: true
-})
+async function fetchJourneys() {
+    loading.value = true
+    error.value = null
+    
+    try {
+        const res = await fetch('/journeys')
+        
+        if (!res.ok) {
+            throw new Error(`API returned ${res.status}`)
+        }
+        
+        const data = await res.json()
+        journeys.value = data.journeys || []
+    } catch (err) {
+        console.error('Error fetching journeys:', err)
+        error.value = err.message
+    } finally {
+        loading.value = false
+    }
+}
+
+// Fetch on mount and when navigating back to this page
+onMounted(fetchJourneys)
+onActivated(fetchJourneys)
 
 // Map backend data to card format
 const courses = computed(() => {
-    if (!journeysData.value?.journeys) return []
-    return journeysData.value.journeys.map(journey => ({
+    return journeys.value.map(journey => ({
         id: journey._id,
         title: journey.name,
         description: journey.description,
@@ -54,7 +69,7 @@ const filteredCourses = computed(() => {
             <!-- Header Section -->
             <div class="pa-6 pt-10">
                 <div class="mb-0">
-                    <div class="text-h4 font-weight-bold text-white">Salut, {{ user?.username || 'Bruno' }}</div>
+                    <div class="text-h4 font-weight-bold text-white">Salut !</div>
                     <div class="text-h6 text-white mt-2">Bienvenue sur SnapTrack</div>
                 </div>
             </div>

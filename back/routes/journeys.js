@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
 
     // Query principale
     const journeys = await Journey.find(filter)
-      .select('name image time description')
+      .select('name image time description town')
       .limit(Number(limit))
       .skip(Number(offset))
       .sort(sortQuery);

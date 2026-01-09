@@ -50,7 +50,22 @@ app.use('/scores', scoresRouter);
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../dist')));
   
-  app.get('/{*splat}', (req, res) => {
+  // Catch-all for SPA - but NOT for API routes
+  app.get('{*path}', (req, res, next) => {
+    // Skip API routes - let them fall through to 404 handler
+    if (req.path.startsWith('/users') || 
+        req.path.startsWith('/journeys') || 
+        req.path.startsWith('/steps') ||
+        req.path.startsWith('/friends') ||
+        req.path.startsWith('/groups') ||
+        req.path.startsWith('/ratings') ||
+        req.path.startsWith('/participations') ||
+        req.path.startsWith('/scores') ||
+        req.path.startsWith('/user-groups') ||
+        req.path.startsWith('/user-journeys') ||
+        req.path.startsWith('/api')) {
+      return next();
+    }
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
 }

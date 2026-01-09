@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
 import CreateList from '@/components/create/CreateList.vue'
 import CreateTrail from '@/components/create/CreateTrail.vue'
@@ -14,6 +14,8 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const deleteDialog = ref(false)
 const trailToDelete = ref(null)
+const loading = ref(true)
+const loggedInUserId = ref(null)
 
 // Dynamic header title based on the current view
 const headerTitle = computed(() => {
@@ -25,39 +27,114 @@ const headerTitle = computed(() => {
     return titles[currentView.value] || 'Mes parcours'
 })
 
-// Load persisted data when the page is mounted.
+// Load data when the page is mounted or activated
 onMounted(loadMyTrails)
+onActivated(loadMyTrails)
 
-// Data management
-function loadMyTrails() {
-    const stored = localStorage.getItem('myTrails')
-    if (stored) {
-        myTrails.value = JSON.parse(stored)
-    }
-
-    currentView.value = myTrails.value.length === 0 ? null : 'list'
-    if (myTrails.value.length === 0) {
-        createNewTrail()
-    }
+// Get the logged-in user ID from localStorage
+function getLoggedInUserId() {
+    const storedUser = localStorage.getItem('user')
+    if (!storedUser) return null
+    const user = JSON.parse(storedUser)
+    return user.id || user._id
 }
 
-function saveToLocalStorage() {
+// Data management - fetch from API using userJourneys
+async function loadMyTrails() {
+    loading.value = true
+    
     try {
-        localStorage.setItem('myTrails', JSON.stringify(myTrails.value))
-        return true
-    } catch (err) {
-        if (err.name === 'QuotaExceededError') {
-            errorMessage.value = 'Espace de stockage insuffisant. Vos images sont trop volumineuses. Veuillez en supprimer quelques-unes ou réduire leur taille.'
-            return false
+        // Get logged-in user ID
+        loggedInUserId.value = getLoggedInUserId()
+        
+        if (!loggedInUserId.value) {
+            console.warn('No logged-in user found')
+            myTrails.value = []
+            currentView.value = null
+            createNewTrail()
+            return
         }
-        throw err
+        
+        // Fetch journeys linked to the logged-in user via userJourneys
+        const res = await fetch(`/user-journeys?userId=${loggedInUserId.value}`)
+        if (!res.ok) throw new Error('Failed to fetch user journeys')
+        
+        const userJourneys = await res.json()
+        
+        if (userJourneys.length === 0) {
+            myTrails.value = []
+            currentView.value = null
+            createNewTrail()
+            return
+        }
+        
+        // Get journey IDs from userJourneys
+        const journeyIds = userJourneys.map(uj => uj.journeyId.toString())
+        
+        // Fetch all journeys and filter by IDs linked to user
+        const journeysRes = await fetch('/journeys')
+        if (!journeysRes.ok) throw new Error('Failed to fetch journeys')
+        
+        const data = await journeysRes.json()
+        const allJourneys = data.journeys || []
+        
+        // Filter to only show journeys linked to user
+        myTrails.value = allJourneys
+            .filter(j => journeyIds.includes(j._id))
+            .map(j => ({
+                id: j._id,
+                title: j.name,
+                description: j.description,
+                city: j.town || '',
+                image: j.image,
+                locations: [],
+                createdAt: j.createdAt
+            }))
+        
+        // Load steps for each journey
+        for (const trail of myTrails.value) {
+            try {
+                const stepsRes = await fetch(`/steps/journey/${trail.id}`)
+                if (stepsRes.ok) {
+                    const steps = await stepsRes.json()
+                    trail.locations = steps.map(s => ({
+                        id: s.id,
+                        title: `Lieu ${steps.indexOf(s) + 1}`,
+                        description: s.riddle || '',
+                        image: s.image || null,
+                        coordinates: (s.latitude != null && s.longitude != null) ? {
+                            lat: s.latitude,
+                            lng: s.longitude,
+                            accuracy: s.accuracy,
+                            altitude: s.altitude,
+                            speed: s.speed
+                        } : null
+                    }))
+                }
+            } catch (err) {
+                console.warn('Failed to load steps for journey:', trail.id)
+            }
+        }
+        
+        currentView.value = myTrails.value.length === 0 ? null : 'list'
+        if (myTrails.value.length === 0) {
+            createNewTrail()
+        }
+    } catch (err) {
+        console.error('Error loading trails:', err)
+        errorMessage.value = 'Erreur lors du chargement des parcours.'
+        myTrails.value = []
+        currentView.value = null
+        createNewTrail()
+    } finally {
+        loading.value = false
     }
 }
 
 // Trail actions
 function createNewTrail() {
     currentTrail.value = {
-        id: Date.now(),
+        id: null,
         title: '',
         description: '',
         city: '',
@@ -70,7 +147,7 @@ function createNewTrail() {
 }
 
 function editTrail(trail) {
-    currentTrail.value = { ...trail }
+    currentTrail.value = { ...trail, isNew: false }
     currentView.value = 'trail'
 }
 
@@ -79,13 +156,32 @@ function confirmDelete(trail) {
     deleteDialog.value = true
 }
 
-function deleteTrail() {
+async function deleteTrail() {
     if (!trailToDelete.value) return
-
-    myTrails.value = myTrails.value.filter(t => t.id !== trailToDelete.value.id)
-    localStorage.setItem('myTrails', JSON.stringify(myTrails.value))
-    deleteDialog.value = false
-    trailToDelete.value = null
+    
+    submitting.value = true
+    try {
+        const res = await fetch(`/journeys/${trailToDelete.value.id}`, {
+            method: 'DELETE'
+        })
+        
+        if (!res.ok) throw new Error('Failed to delete journey')
+        
+        // Remove from local list
+        myTrails.value = myTrails.value.filter(t => t.id !== trailToDelete.value.id)
+        
+        // Remove from stored IDs
+        const myIds = getMyJourneyIds().filter(id => id !== trailToDelete.value.id)
+        saveMyJourneyIds(myIds)
+        
+        deleteDialog.value = false
+        trailToDelete.value = null
+    } catch (err) {
+        console.error('Error deleting trail:', err)
+        errorMessage.value = 'Erreur lors de la suppression du parcours.'
+    } finally {
+        submitting.value = false
+    }
 }
 
 async function saveTrail() {
@@ -94,25 +190,127 @@ async function saveTrail() {
 
     try {
         const isNew = currentTrail.value.isNew
-
+        
+        const journeyData = {
+            name: currentTrail.value.title,
+            description: currentTrail.value.description,
+            town: currentTrail.value.city
+        }
+        
+        let journeyId
+        
         if (isNew) {
-            currentTrail.value.isNew = false
-            myTrails.value.push(currentTrail.value)
+            // Create new journey
+            const res = await fetch('/journeys', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(journeyData)
+            })
+            
+            if (!res.ok) throw new Error('Failed to create journey')
+            
+            const created = await res.json()
+            journeyId = created._id
+            
+            // Link journey to logged-in user in userJourneys table
+            if (loggedInUserId.value) {
+                await fetch('/user-journeys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: loggedInUserId.value,
+                        journeyId: journeyId
+                    })
+                })
+            }
         } else {
-            const index = myTrails.value.findIndex(t => t.id === currentTrail.value.id)
-            if (index !== -1) {
-                myTrails.value[index] = currentTrail.value
+            // Update existing journey
+            journeyId = currentTrail.value.id
+            
+            const res = await fetch(`/journeys/${journeyId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(journeyData)
+            })
+            
+            if (!res.ok) throw new Error('Failed to update journey')
+        }
+        
+        // Upload image if it's a base64 string (new image)
+        if (currentTrail.value.image && currentTrail.value.image.startsWith('data:')) {
+            try {
+                // Convert base64 to blob
+                const response = await fetch(currentTrail.value.image)
+                const blob = await response.blob()
+                
+                const formData = new FormData()
+                formData.append('image', blob, 'journey-image.jpg')
+                
+                const uploadRes = await fetch(`/journeys/${journeyId}/upload-image`, {
+                    method: 'POST',
+                    body: formData
+                })
+                
+                if (!uploadRes.ok) {
+                    const errData = await uploadRes.json()
+                    console.warn('Image upload failed:', errData)
+                }
+            } catch (imgErr) {
+                console.error('Error uploading image:', imgErr)
+            }
+        }
+        
+        // Save steps/locations
+        for (let i = 0; i < currentTrail.value.locations.length; i++) {
+            const loc = currentTrail.value.locations[i]
+            
+            // Only create new steps (those without a proper MongoDB ID)
+            if (!loc.id || typeof loc.id === 'number') {
+                const stepData = {
+                    journeyId: journeyId,
+                    riddle: loc.description || '',
+                    latitude: loc.coordinates?.lat || null,
+                    longitude: loc.coordinates?.lng || null,
+                    accuracy: loc.coordinates?.accuracy || null,
+                    altitude: loc.coordinates?.altitude || null,
+                    speed: loc.coordinates?.speed || null
+                }
+                
+                const stepRes = await fetch('/steps', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stepData)
+                })
+                
+                if (!stepRes.ok) {
+                    const errData = await stepRes.json()
+                    console.warn('Step creation failed:', errData)
+                } else {
+                    // Upload step image if exists
+                    if (loc.image && loc.image.startsWith('data:')) {
+                        const stepResult = await stepRes.json()
+                        try {
+                            const imgResponse = await fetch(loc.image)
+                            const blob = await imgResponse.blob()
+                            
+                            const formData = new FormData()
+                            formData.append('image', blob, 'step-image.jpg')
+                            
+                            await fetch(`/steps/${stepResult.step.id}/upload-image`, {
+                                method: 'POST',
+                                body: formData
+                            })
+                        } catch (imgErr) {
+                            console.warn('Step image upload failed:', imgErr)
+                        }
+                    }
+                }
             }
         }
 
-        const saved = saveToLocalStorage()
-        if (!saved) {
-            if (isNew) myTrails.value.pop() // Rollback si échec
-            return
-        }
-
         successMessage.value = 'Parcours enregistré avec succès !'
-        setTimeout(() => {
+        setTimeout(async () => {
+            await loadMyTrails()
             currentView.value = 'list'
             resetMessages()
             currentTrail.value = null
@@ -140,8 +338,21 @@ async function saveLocation(location) {
     submitting.value = true
 
     try {
-        location.id = Date.now()
-        currentTrail.value.locations.push(location)
+        // Clone the location data to avoid reference issues
+        const newLocation = {
+            id: Date.now(),
+            title: location.title || '',
+            description: location.description || '',
+            image: location.image || null,
+            coordinates: location.coordinates ? {
+                lat: location.coordinates.lat,
+                lng: location.coordinates.lng,
+                accuracy: location.coordinates.accuracy,
+                altitude: location.coordinates.altitude,
+                speed: location.coordinates.speed
+            } : null
+        }
+        currentTrail.value.locations.push(newLocation)
         successMessage.value = 'Lieu ajouté avec succès !'
 
         setTimeout(() => {
@@ -158,6 +369,23 @@ async function saveLocation(location) {
 
 function handleLocationError(error) {
     errorMessage.value = error
+}
+
+// Delete a location/step from the database
+async function deleteLocation(location) {
+    // Only delete from DB if it has a MongoDB ID (string, not number)
+    if (location.id && typeof location.id === 'string') {
+        try {
+            const res = await fetch(`/steps/${location.id}`, {
+                method: 'DELETE'
+            })
+            if (!res.ok) {
+                console.warn('Failed to delete step from DB')
+            }
+        } catch (err) {
+            console.error('Error deleting step:', err)
+        }
+    }
 }
 
 // Navigation
@@ -185,14 +413,19 @@ function resetMessages() {
 
         <!-- Content Container -->
         <v-container fluid class="px-0 pb-24 pt-6">
+            <!-- Loading State -->
+            <div v-if="loading" class="d-flex justify-center align-center py-16">
+                <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+            </div>
+            
             <!-- Liste des trails -->
-            <CreateList v-if="currentView === 'list'" :trails="myTrails" @create-new="createNewTrail" @edit="editTrail"
+            <CreateList v-else-if="currentView === 'list'" :trails="myTrails" @create-new="createNewTrail" @edit="editTrail"
                 @delete="confirmDelete" />
 
             <!-- Formulaire de trail -->
             <CreateTrail v-else-if="currentView === 'trail'" v-model:trail="currentTrail" :loading="submitting"
                 :error-message="errorMessage" :success-message="successMessage" @add-location="switchToLocationForm"
-                @save="saveTrail" @cancel="currentView = 'list'" />
+                @save="saveTrail" @cancel="currentView = 'list'" @delete-location="deleteLocation" />
 
             <!-- Formulaire de lieu -->
             <CreateLocation v-else-if="currentView === 'location'" :loading="submitting" :error-message="errorMessage"

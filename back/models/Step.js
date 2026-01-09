@@ -15,8 +15,16 @@ const stepSchema = new mongoose.Schema(
       },
       coordinates: {
         type: [Number],
-        required: true
+        default: [0, 0]
       }
+    },
+    latitude: {
+      type: Number,
+      default: null
+    },
+    longitude: {
+      type: Number,
+      default: null
     },
     image: {
       type: String,
