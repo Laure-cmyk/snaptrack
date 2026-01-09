@@ -31,10 +31,10 @@ const wsServer = new WSServerRoomManager({
     }
 
     onCmdLocation(data, clientMeta) {
-      return { 
-        username: clientMeta.username, 
-        lat: data.lat, 
-        lng: data.lng 
+      return {
+        username: clientMeta.username,
+        lat: data.lat,
+        lng: data.lng
       };
     }
   },

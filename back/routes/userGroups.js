@@ -71,17 +71,17 @@ router.get('/members/:groupId', async (req, res) => {
     }
 
     // 3. Construire la liste des membres avec leur statut
-    const members = userGroups.map((ug) => ({
+    const members = userGroups.map(ug => ({
       userId: ug.userId._id,
       username: ug.userId.username,
-      status: ug.status, // ex: admin, member, pending...
+      status: ug.status // ex: admin, member, pending...
     }));
 
     // 4. Réponse structurée
     res.json({
       groupId: groupId,
       groupName: group.name,
-      members,
+      members
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -213,11 +213,10 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const userGroup = await UserGroup.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const userGroup = await UserGroup.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
     if (!userGroup) {
       return res.status(404).json({ error: 'UserGroup not found' });
     }

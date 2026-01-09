@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
     res.json({
       message: 'Journeys fetched',
       total,
-      journeys,
+      journeys
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -86,11 +86,10 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const journey = await Journey.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const journey = await Journey.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
     if (!journey) {
       return res.status(404).json({ error: 'Journey not found' });
     }
@@ -216,7 +215,7 @@ router.get('/:journeyId/steps/count', async (req, res) => {
     res.json({
       message: 'Step amount fetched',
       journeyId,
-      totalSteps,
+      totalSteps
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -247,20 +246,19 @@ router.get('/:journeyId/rating', async (req, res) => {
         message: 'No ratings for this journey',
         journeyId,
         averageRating: null,
-        totalRatings: 0,
+        totalRatings: 0
       });
     }
 
     // Calculer la moyenne
     const totalRatings = ratings.length;
-    const averageRating =
-      ratings.reduce((acc, r) => acc + r.rating, 0) / totalRatings;
+    const averageRating = ratings.reduce((acc, r) => acc + r.rating, 0) / totalRatings;
 
     res.json({
       message: 'Journey rating fetched',
       journeyId,
       averageRating: Number(averageRating.toFixed(2)),
-      totalRatings,
+      totalRatings
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

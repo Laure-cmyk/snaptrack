@@ -20,17 +20,16 @@ defineEmits(['update:modelValue', 'close', 'blur'])
         @blur="$emit('blur')" rounded="lg" hide-details class="search-bar" />
 </template>
 
-
 <style scoped>
 .search-bar {
-    background-color: white;
+  background-color: white;
 }
 
 .search-bar :deep(.v-field) {
-    background-color: white;
+  background-color: white;
 }
 
 .search-bar :deep(.v-field__outline) {
-    color: #4f4f4fe6;
+  color: #4f4f4fe6;
 }
 </style>

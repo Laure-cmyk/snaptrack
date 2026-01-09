@@ -286,7 +286,9 @@ describe('API Routes - REST Operations Test Suite', () => {
     // ─────────────────────────────────────────────────────────────────────────────
     describe('Verification - GET /ratings with filters', () => {
       test('[19] GET /ratings?targetId=<id>&userId=<id> - should filter by both targetId and userId', async () => {
-        const res = await request(app).get(`/ratings?targetId=${targetId}&userId=${userId.toString()}`);
+        const res = await request(app).get(
+          `/ratings?targetId=${targetId}&userId=${userId.toString()}`
+        );
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body)).toBe(true);
         if (res.body.length > 0) {
@@ -328,10 +330,12 @@ describe('API Routes - REST Operations Test Suite', () => {
     // ─────────────────────────────────────────────────────────────────────────────
     describe('CREATE Operation - POST /steps', () => {
       test('[20] POST /steps - should create a new step', async () => {
-        const res = await request(app).post('/steps').send({
-          journeyId,
-          ...stepData
-        });
+        const res = await request(app)
+          .post('/steps')
+          .send({
+            journeyId,
+            ...stepData
+          });
         expect(res.status).toBe(201);
         expect(res.body).toHaveProperty('message');
         expect(res.body.message).toBe('Step created');

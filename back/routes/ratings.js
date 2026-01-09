@@ -33,14 +33,14 @@ router.post('/', async (req, res) => {
     // Vérifications simples
     if (!userId || !targetId || typeof value !== 'number') {
       return res.status(400).json({
-        error: 'userId, targetId et value (number) sont requis',
+        error: 'userId, targetId et value (number) sont requis'
       });
     }
 
     const rating = await Rating.create({
       userId,
       targetId,
-      value,
+      value
     });
 
     res.status(201).json({
@@ -50,8 +50,8 @@ router.post('/', async (req, res) => {
         userId: rating.userId,
         targetId: rating.targetId,
         value: rating.value,
-        createdAt: rating.createdAt,
-      },
+        createdAt: rating.createdAt
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -83,12 +83,12 @@ router.get('/', async (req, res) => {
       .sort({ createdAt: -1 });
 
     // On formate la réponse comme dans ton exemple
-    const result = ratings.map((r) => ({
+    const result = ratings.map(r => ({
       id: r._id,
       userId: r.userId?._id ?? r.userId,
       username: r.userId?.username ?? null,
       value: r.value,
-      createdAt: r.createdAt,
+      createdAt: r.createdAt
     }));
 
     res.json(result);
@@ -96,7 +96,5 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-
 
 export default router;

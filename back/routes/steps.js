@@ -17,7 +17,7 @@ router.get('/journey/:journeyId', async (req, res) => {
 
     const steps = await Step.find({ journeyId }).sort({ timestamp: 1 });
 
-    const result = steps.map((s) => ({
+    const result = steps.map(s => ({
       id: s._id,
       journeyId: s.journeyId,
       riddle: s.riddle,
@@ -64,7 +64,7 @@ router.get('/:id', async (req, res) => {
       journeyId: step.journeyId,
       title: step.title,
       description: step.description,
-      order: step.order,
+      order: step.order
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -155,8 +155,8 @@ router.put('/:id', async (req, res) => {
         journeyId: step.journeyId,
         title: step.title,
         description: step.description,
-        order: step.order,
-      },
+        order: step.order
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -182,7 +182,7 @@ router.delete('/:id', async (req, res) => {
     }
     res.json({
       message: 'Step deleted',
-      id: step._id,
+      id: step._id
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

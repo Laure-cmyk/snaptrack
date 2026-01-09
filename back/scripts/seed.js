@@ -58,7 +58,6 @@ async function seedDatabase() {
       }
     ]);
 
-
     // ============ FRIENDS ============
     const friends = await Friends.create([
       {
@@ -100,12 +99,8 @@ async function seedDatabase() {
         status: 'blocked',
         requestedAt: new Date('2025-09-05'),
         acceptedAt: null
-
       }
-
     ]);
-
-    
 
     // ============ GROUPS ============
     const groups = await Group.create([
@@ -123,14 +118,12 @@ async function seedDatabase() {
       }
     ]);
 
-
     // ============ USER GROUPS ============
     const userGroups = await UserGroup.create([
       {
         userId: users[0]._id,
         groupId: groups[0]._id,
         role: 'admin'
-        
       },
       {
         userId: users[1]._id,
@@ -164,7 +157,6 @@ async function seedDatabase() {
       }
     ]);
 
-
     // ============ JOURNEYS ============
     const journeys = await Journey.create([
       {
@@ -187,14 +179,14 @@ async function seedDatabase() {
       },
       {
         name: 'Lausanne Street Art Tour',
-        image: 'https://static.lausanne-tourisme.ch/image/upload/w_1936,f_auto,q_auto/6yLenM0MZJ1YD3n1Gog3woVeV5M6vFA6ROnJ6qgj',
+        image:
+          'https://static.lausanne-tourisme.ch/image/upload/w_1936,f_auto,q_auto/6yLenM0MZJ1YD3n1Gog3woVeV5M6vFA6ROnJ6qgj',
         town: 'Lausanne',
         description: 'Discover amazing street art and murals in Vieille Ville'
       }
     ]);
 
     console.log('✅ Created 4 journeys');
-
 
     // ============ STEPS ============
     const steps = await Step.create([
@@ -212,7 +204,7 @@ async function seedDatabase() {
         journeyId: journeys[0]._id,
         location: {
           type: 'Point',
-          coordinates: [6.635200, 46.520600]
+          coordinates: [6.6352, 46.5206]
         },
         image: 'https://images.unsplash.com/photo-1469022563149-aa64e87c54a6',
         riddle: 'Find the Renaissance architecture near the cathedral'
@@ -231,7 +223,7 @@ async function seedDatabase() {
         journeyId: journeys[1]._id,
         location: {
           type: 'Point',
-          coordinates: [6.865100, 45.833000]
+          coordinates: [6.8651, 45.833]
         },
         image: 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e',
         riddle: 'Reach the first shelter at 2000m altitude'
@@ -240,7 +232,7 @@ async function seedDatabase() {
         journeyId: journeys[1]._id,
         location: {
           type: 'Point',
-          coordinates: [6.865500, 45.833400]
+          coordinates: [6.8655, 45.8334]
         },
         image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
         riddle: 'Stand at the summit and enjoy the panoramic views'
@@ -259,7 +251,7 @@ async function seedDatabase() {
         journeyId: journeys[2]._id,
         location: {
           type: 'Point',
-          coordinates: [6.642000, 46.442000]
+          coordinates: [6.642, 46.442]
         },
         image: 'https://images.unsplash.com/photo-1469022563149-aa64e87c54a6',
         riddle: 'Watch the sunset over the Jura mountains'
@@ -271,14 +263,15 @@ async function seedDatabase() {
           type: 'Point',
           coordinates: [6.143208, 46.204391]
         },
-        image: 'https://static.lausanne-tourisme.ch/image/upload/w_1936,f_auto,q_auto/6yLenM0MZJ1YD3n1Gog3woVeV5M6vFA6ROnJ6qgj',
+        image:
+          'https://static.lausanne-tourisme.ch/image/upload/w_1936,f_auto,q_auto/6yLenM0MZJ1YD3n1Gog3woVeV5M6vFA6ROnJ6qgj',
         riddle: 'Find the colorful mural in the old town'
       },
       {
         journeyId: journeys[3]._id,
         location: {
           type: 'Point',
-          coordinates: [6.143500, 46.204700]
+          coordinates: [6.1435, 46.2047]
         },
         image: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b',
         riddle: 'Discover the street art beneath the historic buildings'
@@ -287,7 +280,7 @@ async function seedDatabase() {
         journeyId: journeys[3]._id,
         location: {
           type: 'Point',
-          coordinates: [6.143900, 46.205000]
+          coordinates: [6.1439, 46.205]
         },
         image: 'https://images.unsplash.com/photo-1579783902614-e3fb5141b0cb',
         riddle: 'Capture the essence of urban creativity'
@@ -329,7 +322,6 @@ async function seedDatabase() {
         journeyId: journeys[3]._id
       }
     ]);
-    
 
     // ============ RATINGS ============
     const ratings = await Rating.create([
@@ -365,11 +357,10 @@ async function seedDatabase() {
       },
       {
         userId: users[4]._id,
-        journeyId: journeys[2]._id, 
+        journeyId: journeys[2]._id,
         rating: 4
       }
     ]);
-
 
     // ============ PARTICIPATIONS ============
     const participations = await Participation.create([
@@ -450,7 +441,6 @@ async function seedDatabase() {
         status: 'completed'
       }
     ]);
-
 
     // ============ SCORES ============
     const scores = await Score.create([
