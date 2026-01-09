@@ -3,16 +3,21 @@ const props = defineProps({
     modelValue: {
         type: String,
         default: ''
+    },
+    showClearButton: {
+        type: Boolean,
+        default: false
     }
 })
 
-defineEmits(['update:modelValue'])
+defineEmits(['update:modelValue', 'close', 'blur'])
 </script>
 
 <template>
     <v-text-field :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)"
-        placeholder="Chercher un parcours" variant="outlined" density="comfortable" prepend-inner-icon="mdi-magnify"
-        rounded="lg" hide-details class="search-bar" />
+        placeholder="Rechercher" variant="outlined" density="comfortable" prepend-inner-icon="mdi-magnify"
+        :append-inner-icon="showClearButton ? 'mdi-close' : undefined" @click:append-inner="$emit('close')"
+        @blur="$emit('blur')" rounded="lg" hide-details class="search-bar" />
 </template>
 
 

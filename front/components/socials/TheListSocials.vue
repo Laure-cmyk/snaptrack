@@ -73,46 +73,30 @@ function handleClick(item) {
 
 <template>
   <v-list lines="two">
-    <v-list-item
-      v-for="(item, index) in items"
-      :key="item?.id ?? index"
-      @click="() => handleClick(item)"
-      :title="item?.name ?? item?.title ?? 'User ' + (index + 1)"
-    >
+    <v-list-item v-for="(item, index) in items" :key="item?.id ?? index" @click="() => handleClick(item)"
+      :title="item?.name ?? item?.title ?? 'User ' + (index + 1)">
+      <template v-slot:prepend>
+        <v-avatar color="grey-lighten-1">
+          <v-img v-if="item.profilePicture" :src="item.profilePicture" cover />
+          <span v-else class="text-h6">{{ (item?.name ?? item?.title ?? 'U')?.charAt(0).toUpperCase() }}</span>
+        </v-avatar>
+      </template>
       <template v-slot:append>
-        <template
-          v-if="showButton && item.type === 'invite' && stateMap[item?.id ?? index] === addLabel"
-        >
+        <template v-if="showButton && item.type === 'invite' && stateMap[item?.id ?? index] === addLabel">
           <v-btn size="small" variant="outlined" @click.stop="() => handleAccept(item, index)">
             {{ stateMap[item?.id ?? index] }}
           </v-btn>
-          <v-btn
-            size="small"
-            variant="outlined"
-            color="error"
-            @click.stop="() => handleDelete(item, index)"
-          >
+          <v-btn size="small" variant="outlined" color="error" @click.stop="() => handleDelete(item, index)">
             {{ getDeleteLabel(item) }}
           </v-btn>
         </template>
-        <v-btn
-          v-else-if="
-            showButton && item.type === 'invite' && stateMap[item?.id ?? index] !== addLabel
-          "
-          size="small"
-          variant="outlined"
-          disabled
-        >
+        <v-btn v-else-if="
+          showButton && item.type === 'invite' && stateMap[item?.id ?? index] !== addLabel
+        " size="small" variant="outlined" disabled>
           {{ stateMap[item?.id ?? index] }}
         </v-btn>
-        <v-btn
-          v-else-if="showButton && item.type === 'friend'"
-          size="small"
-          color="error"
-          variant="text"
-          :disabled="stateMap[item?.id ?? index] === pendingLabel"
-          @click.stop="() => handleDelete(item, index)"
-        >
+        <v-btn v-else-if="showButton && item.type === 'friend'" size="small" color="error" variant="text"
+          :disabled="stateMap[item?.id ?? index] === pendingLabel" @click.stop="() => handleDelete(item, index)">
           {{ getDeleteLabel(item) }}
         </v-btn>
       </template>

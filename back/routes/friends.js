@@ -21,18 +21,18 @@ function toObjectId(id) {
 router.get('/', async (req, res) => {
   try {
     const friends = await Friends.find();
-    
+
     // Manual lookup for each friend relationship
     const result = await Promise.all(
       friends.map(async (f) => {
         const userObjId = toObjectId(f.userId);
         const friendObjId = toObjectId(f.friendId);
-        
+
         const [user, friend] = await Promise.all([
           userObjId ? User.findById(userObjId).select('username email') : null,
           friendObjId ? User.findById(friendObjId).select('username email') : null,
         ]);
-        
+
         return {
           _id: f._id,
           userId: user || { _id: f.userId, username: 'Unknown' },
@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
         };
       })
     );
-    
+
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -175,7 +175,7 @@ router.get('/requests/pending/:userId', async (req, res) => {
       pendingRequests.map(async (f) => {
         const senderObjId = toObjectId(f.userId);
         const sender = senderObjId ? await User.findById(senderObjId).select('username') : null;
-        
+
         return {
           id: f._id,
           name: sender?.username || 'Unknown',
@@ -293,18 +293,19 @@ router.get('/list/:userId', async (req, res) => {
       friendships.map(async (f) => {
         const friendUserIdStr = f.userId?.toString() || f.userId;
         const friendIdStr = f.friendId?.toString() || f.friendId;
-        
+
         const isUserSender = friendUserIdStr === userId;
         const otherUserId = isUserSender ? friendIdStr : friendUserIdStr;
 
         // Lookup the other user - convert string ID to ObjectId
         const otherUserObjId = toObjectId(otherUserId);
-        const otherUser = otherUserObjId ? await User.findById(otherUserObjId).select('username') : null;
+        const otherUser = otherUserObjId ? await User.findById(otherUserObjId).select('username profilePicture') : null;
 
         return {
           friendshipId: f._id,
           friendId: otherUserId,
           friendName: otherUser?.username || 'Unknown',
+          profilePicture: otherUser?.profilePicture,
           status: f.status,
         };
       })

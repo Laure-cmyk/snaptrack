@@ -127,7 +127,7 @@ router.get('/:groupId/members', async (req, res) => {
     // 2. Récupérer les liaisons UserGroup pour ce groupe
     const userGroups = await UserGroup.find({ groupId }).populate(
       'userId',
-      'username'
+      'username profilePicture'
     );
 
     // 3. Construire la liste des membres
@@ -136,6 +136,7 @@ router.get('/:groupId/members', async (req, res) => {
       .map((ug) => ({
         _id: ug.userId._id,
         username: ug.userId.username,
+        profilePicture: ug.userId.profilePicture,
       }));
 
     res.json({

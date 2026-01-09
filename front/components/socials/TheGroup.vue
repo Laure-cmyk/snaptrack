@@ -23,14 +23,15 @@ async function loadGroup() {
   try {
     const res = await fetch(`/groups/${props.groupId}/members`);
     const data = await res.json();
-    
+
     group.value = {
       id: data.groupId,
       name: data.groupName,
       type: 'group',
       members: data.members.map(m => ({
         id: m._id,
-        name: m.username
+        name: m.username,
+        profilePicture: m.profilePicture
       }))
     };
   } catch (err) {
@@ -75,21 +76,17 @@ watch(
       <v-list lines="two">
         <v-list-item v-for="member in group.members" :key="member.id" :title="member.name">
           <template v-slot:prepend>
-            <v-avatar color="primary">
-              <span class="text-white">{{ member.name.charAt(0) }}</span>
+            <v-avatar color="grey-lighten-1">
+              <v-img v-if="member.profilePicture" :src="member.profilePicture" cover />
+              <span v-else class="text-h6">{{ member.name?.charAt(0).toUpperCase() }}</span>
             </v-avatar>
           </template>
         </v-list-item>
       </v-list>
     </v-card-text>
+
     <v-card-actions class="justify-end">
-      <v-btn
-        color="error"
-        variant="outlined"
-        :disabled="isLeaving"
-        :loading="isLeaving"
-        @click="handleLeave"
-      >
+      <v-btn color="error" variant="outlined" :disabled="isLeaving" :loading="isLeaving" @click="handleLeave">
         {{ getDeleteLabel(group) }}
       </v-btn>
     </v-card-actions>
