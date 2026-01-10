@@ -7,6 +7,7 @@ import 'vuetify/styles';
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
+import '@mdi/font/css/materialdesignicons.css'
 
 // Components
 import App from './App.vue';
@@ -16,14 +17,20 @@ Routes need to always follow the template:
 { path: '/pathName', component: () => import('./pages/PageIWantToAddToRoutes.vue') }
  */
 const routes = [
+  { path: '/authentification', component: () => import('./pages/PageAuth.vue') },
   { path: '/', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
   { path: '/create-challenge', component: () => import('./pages/PageCreateChallenge.vue'), meta: { requiresAuth: true } },
   { path: '/profil', component: () => import('./pages/PageProfile.vue'), meta: { requiresAuth: true } },
-  { path: '/authentification', component: () => import('./pages/PageAuth.vue') },
-  { path: '/socials', component: () => import('./pages/PageSocials.vue') },
+  { path: '/socials', component: () => import('./pages/PageSocials.vue'), meta: { requiresAuth: true } },
   { path: '/trail/:id', name: 'trail', component: () => import('./pages/PageTrail.vue'), meta: { requiresAuth: true } },
   { path: '/challenge/play/:id', name: 'challenge-play', component: () => import('./pages/PageChallengePlay.vue'), meta: { requiresAuth: true } },
   { path: '/challenge/live/:id', name: 'challenge-live', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
+  { path: '/imateapot', component: () => import('./pages/PageError418.vue'), meta: { requiresAuth: true } },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('./pages/PageError404.vue')
+  }
 ];
 
 const router = createRouter({
