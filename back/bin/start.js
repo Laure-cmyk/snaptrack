@@ -3,6 +3,7 @@
 import 'dotenv/config';
 import createDebugger from 'debug';
 import http from 'node:http';
+import { WSServerRoomManager, WSServerRoom } from 'wsmini';
 
 import app from '../app.js';
 import connectDB from '../config/database.js';
@@ -10,7 +11,7 @@ import connectDB from '../config/database.js';
 const debug = createDebugger('snaptrack:server');
 
 // Get port from environment and store in Express
-const port = normalizePort(process.env.PORT || '3000');
+const port = normalizePort(process.env.PORT || '10000');
 app.set('port', port);
 
 // Connect to MongoDB
@@ -18,6 +19,32 @@ await connectDB();
 
 // Create HTTP server
 const httpServer = http.createServer(app);
+
+// WebSocket Server - attached to HTTP server for Render compatibility (single port)
+const wsServer = new WSServerRoomManager({
+  origins: '*',
+  maxUsersByRoom: 50,
+  roomClass: class extends WSServerRoom {
+    onJoin(msg, clientMeta) {
+      return { username: msg.username || 'User' };
+    }
+
+    onCmdLocation(data, clientMeta) {
+      // Broadcast location as a command to all room members
+      this.broadcastCmd('location', {
+        username: clientMeta.username,
+        lat: data.lat,
+        lng: data.lng
+      });
+      // Return null to prevent default message broadcast
+      return null;
+    }
+  },
+  usersCanCreateRoom: true
+});
+
+// Attach WebSocket to HTTP server (same port)
+wsServer.start({ server: httpServer });
 
 // Listen on provided port, on all network interfaces
 httpServer.listen(port);

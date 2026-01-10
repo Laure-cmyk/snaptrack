@@ -4,10 +4,7 @@
     "journeyId": "6942a977a481e1ad38601953",
     "location": {
       "type": "Point",
-      "coordinates": [
-        6.634878,
-        46.520841
-      ]
+      "coordinates": [6.634878, 46.520841]
     },
     "image": "https://images.unsplash.com/photo-1552561895-697cd0d59b58",
     "riddle": "Look for the old water fountain in the heart of the old town",
@@ -25,10 +22,7 @@
     "journeyId": "6942a977a481e1ad38601954",
     "location": {
       "type": "Point",
-      "coordinates": [
-        6.8651,
-        45.833
-      ]
+      "coordinates": [6.8651, 45.833]
     },
     "image": "https://images.unsplash.com/photo-1519904981063-b0cf448d479e",
     "riddle": "Reach the first shelter at 2000m altitude",
@@ -46,10 +40,7 @@
     "journeyId": "6942a977a481e1ad38601953",
     "location": {
       "type": "Point",
-      "coordinates": [
-        6.6352,
-        46.5206
-      ]
+      "coordinates": [6.6352, 46.5206]
     },
     "image": "https://images.unsplash.com/photo-1469022563149-aa64e87c54a6",
     "riddle": "Find the Renaissance architecture near the cathedral",
@@ -67,10 +58,7 @@
     "journeyId": "6942a977a481e1ad38601954",
     "location": {
       "type": "Point",
-      "coordinates": [
-        6.8655,
-        45.8334
-      ]
+      "coordinates": [6.8655, 45.8334]
     },
     "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
     "riddle": "Stand at the summit and enjoy the panoramic views",
@@ -88,10 +76,7 @@
     "journeyId": "6942a977a481e1ad38601955",
     "location": {
       "type": "Point",
-      "coordinates": [
-        6.640941,
-        46.443359
-      ]
+      "coordinates": [6.640941, 46.443359]
     },
     "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
     "riddle": "Begin your walk at the lake shore promenade",
@@ -109,10 +94,7 @@
     "journeyId": "6942a977a481e1ad38601956",
     "location": {
       "type": "Point",
-      "coordinates": [
-        6.1435,
-        46.2047
-      ]
+      "coordinates": [6.1435, 46.2047]
     },
     "image": "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b",
     "riddle": "Discover the street art beneath the historic buildings",
@@ -130,10 +112,7 @@
     "journeyId": "6942a977a481e1ad38601955",
     "location": {
       "type": "Point",
-      "coordinates": [
-        6.642,
-        46.442
-      ]
+      "coordinates": [6.642, 46.442]
     },
     "image": "https://images.unsplash.com/photo-1469022563149-aa64e87c54a6",
     "riddle": "Watch the sunset over the Jura mountains",
@@ -151,10 +130,7 @@
     "journeyId": "6942a977a481e1ad38601956",
     "location": {
       "type": "Point",
-      "coordinates": [
-        6.1439,
-        46.205
-      ]
+      "coordinates": [6.1439, 46.205]
     },
     "image": "https://images.unsplash.com/photo-1579783902614-e3fb5141b0cb",
     "riddle": "Capture the essence of urban creativity",
@@ -172,10 +148,7 @@
     "journeyId": "6942a977a481e1ad38601956",
     "location": {
       "type": "Point",
-      "coordinates": [
-        6.143208,
-        46.204391
-      ]
+      "coordinates": [6.143208, 46.204391]
     },
     "image": "https://static.lausanne-tourisme.ch/image/upload/w_1936,f_auto,q_auto/6yLenM0MZJ1YD3n1Gog3woVeV5M6vFA6ROnJ6qgj",
     "riddle": "Find the colorful mural in the old town",
@@ -193,10 +166,7 @@
     "journeyId": "6942a977a481e1ad38601954",
     "location": {
       "type": "Point",
-      "coordinates": [
-        6.864791,
-        45.832408
-      ]
+      "coordinates": [6.864791, 45.832408]
     },
     "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
     "riddle": "Start your climb at the base of Mont-Blanc",

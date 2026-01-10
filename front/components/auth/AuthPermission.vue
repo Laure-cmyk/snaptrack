@@ -1,28 +1,28 @@
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const errorMessage = ref('')
+const errorMessage = ref('');
 
 async function requestPermissions() {
-  errorMessage.value = ''
+  errorMessage.value = '';
 
   try {
     // 1. Permission caméra
-    await navigator.mediaDevices.getUserMedia({ video: true })
+    await navigator.mediaDevices.getUserMedia({ video: true });
 
     // 2. Permission localisation
     await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject)
-    })
+      navigator.geolocation.getCurrentPosition(resolve, reject);
+    });
 
     // Si tout est ok
-    emit('permissions-granted')
+    emit('permissions-granted');
   } catch (err) {
-    errorMessage.value = "Impossible d'obtenir les permissions. Vérifie les réglages."
+    errorMessage.value = "Impossible d'obtenir les permissions. Vérifie les réglages.";
   }
 }
 
-const emit = defineEmits(['permissions-granted'])
+const emit = defineEmits(['permissions-granted']);
 </script>
 
 <template>
@@ -30,25 +30,17 @@ const emit = defineEmits(['permissions-granted'])
     <h1>Permissions nécessaires</h1>
 
     <p>
-      Pour utiliser SnapTrack, nous avons besoin d’accéder à la caméra
-      et à ta localisation. Ces permissions sont nécessaires pour
-      capturer des lieux et vérifier les positions.
+      Pour utiliser SnapTrack, nous avons besoin d’accéder à la caméra et à ta localisation. Ces
+      permissions sont nécessaires pour capturer des lieux et vérifier les positions.
     </p>
 
-    <v-alert
-      type="error"
-      v-if="errorMessage"
-      class="mb-4"
-    >
+    <v-alert type="error" v-if="errorMessage" class="mb-4">
       {{ errorMessage }}
     </v-alert>
 
-    <v-btn color="primary" block @click="requestPermissions">
-      Continuer
-    </v-btn>
+    <v-btn color="primary" block @click="requestPermissions"> Continuer </v-btn>
   </div>
 </template>
-
 
 <style scoped>
 .permissions {

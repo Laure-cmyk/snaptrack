@@ -17,7 +17,6 @@ const showNavigation = computed(() => {
 </script>
 
 <template>
-
   <v-app>
     <!--     <nav>
       <RouterLink to="/">Home</RouterLink>

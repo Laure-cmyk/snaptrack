@@ -81,36 +81,32 @@ router.get('/summary', async (req, res) => {
           _id: '$userId',
           totalScore: { $sum: { $ifNull: ['$score', 0] } },
           totalDistance: { $sum: { $ifNull: ['$distance', 0] } },
-          totalTime: { $sum: { $ifNull: ['$time', 0] } },
-        },
-      },
+          totalTime: { $sum: { $ifNull: ['$time', 0] } }
+        }
+      }
     ]);
 
     // Récupérer les infos des utilisateurs
-    const userIds = aggregation.map((item) => item._id);
-    const users = await User.find({ _id: { $in: userIds } }).select(
-      'username'
-    );
-    const userMap = new Map(
-      users.map((u) => [u._id.toString(), u])
-    );
+    const userIds = aggregation.map(item => item._id);
+    const users = await User.find({ _id: { $in: userIds } }).select('username');
+    const userMap = new Map(users.map(u => [u._id.toString(), u]));
 
     // Construire la réponse finale
-    const summary = aggregation.map((item) => {
+    const summary = aggregation.map(item => {
       const userDoc = userMap.get(item._id.toString());
 
       // Structure de base avec toutes les catégories
       const categoriesAll = {
         score: item.totalScore,
         distance: item.totalDistance,
-        time: item.totalTime,
+        time: item.totalTime
       };
 
       // Si ?category est fourni, on ne renvoie que cette clé
       let categories;
       if (category && ['score', 'distance', 'time'].includes(category)) {
         categories = {
-          [category]: categoriesAll[category],
+          [category]: categoriesAll[category]
         };
       } else {
         categories = categoriesAll;
@@ -119,15 +115,15 @@ router.get('/summary', async (req, res) => {
       return {
         user: {
           id: item._id,
-          username: userDoc ? userDoc.username : 'Unknown',
+          username: userDoc ? userDoc.username : 'Unknown'
         },
-        categories,
+        categories
       };
     });
 
     res.json({
       message: 'Score summary generated',
-      summary,
+      summary
     });
   } catch (error) {
     console.error('Error in GET /scores/summary:', error);
@@ -161,22 +157,22 @@ router.get('/totals', async (req, res) => {
           _id: null,
           totalScore: { $sum: { $ifNull: ['$score', 0] } },
           totalDistance: { $sum: { $ifNull: ['$distance', 0] } },
-          totalTime: { $sum: { $ifNull: ['$time', 0] } },
-        },
-      },
+          totalTime: { $sum: { $ifNull: ['$time', 0] } }
+        }
+      }
     ]);
 
     let totals = {
       score: 0,
       distance: 0,
-      time: 0,
+      time: 0
     };
 
     if (aggregation.length > 0) {
       totals = {
         score: aggregation[0].totalScore,
         distance: aggregation[0].totalDistance,
-        time: aggregation[0].totalTime,
+        time: aggregation[0].totalTime
       };
     }
 
@@ -200,12 +196,12 @@ router.get('/journey/:journeyId', async (req, res) => {
       .populate('userId', 'username')
       .sort({ score: -1 });
 
-    const result = scores.map((s) => ({
+    const result = scores.map(s => ({
       scoreId: s._id,
       userId: s.userId._id,
       username: s.userId.username,
       journeyId: s.journeyId,
-      score: s.score,
+      score: s.score
     }));
 
     res.json(result);
@@ -226,12 +222,12 @@ router.get('/user/:userId', async (req, res) => {
       .populate('journeyId', 'title')
       .sort({ createdAt: -1 });
 
-    const result = scores.map((s) => ({
+    const result = scores.map(s => ({
       scoreId: s._id,
       journeyId: s.journeyId._id,
       journeyTitle: s.journeyId.title,
       score: s.score,
-      createdAt: s.createdAt,
+      createdAt: s.createdAt
     }));
 
     res.json(result);
@@ -249,9 +245,7 @@ router.post('/', async (req, res) => {
     const { userId, journeyId, score, distance, time } = req.body;
 
     if (!userId || !journeyId) {
-      return res
-        .status(400)
-        .json({ error: 'userId et journeyId sont requis' });
+      return res.status(400).json({ error: 'userId et journeyId sont requis' });
     }
 
     // On autorise à ne remplir que certains champs (score/distance/time)
@@ -264,7 +258,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({
       message: 'Score created',
-      score: newScore,
+      score: newScore
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -297,11 +291,10 @@ router.get('/:id', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const score = await Score.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const score = await Score.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
 
     if (!score) {
       return res.status(404).json({ error: 'Score not found' });

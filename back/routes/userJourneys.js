@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
     // On regroupe par journeyId
     const journeyMap = new Map();
 
-    userJourneys.forEach((uj) => {
+    userJourneys.forEach(uj => {
       if (!uj.journeyId || !uj.userId) return;
 
       const jId = uj.journeyId._id.toString();
@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
         journeyMap.set(jId, {
           journeyId: uj.journeyId._id,
           journeyName: uj.journeyId.name || uj.journeyId.title || '',
-          users: [],
+          users: []
         });
       }
 
@@ -65,7 +65,7 @@ router.get('/', async (req, res) => {
 
       group.users.push({
         userId: uj.userId._id,
-        username: uj.userId.username,
+        username: uj.userId.username
       });
     });
 
@@ -123,11 +123,10 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const userJourney = await UserJourney.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const userJourney = await UserJourney.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
     if (!userJourney) {
       return res.status(404).json({ error: 'UserJourney not found' });
     }

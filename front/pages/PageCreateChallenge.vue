@@ -19,13 +19,13 @@ const loggedInUserId = ref(null)
 
 // Dynamic header title based on the current view
 const headerTitle = computed(() => {
-    const titles = {
-        list: 'Mes parcours',
-        location: 'Ajouter un lieu',
-        trail: currentTrail.value?.isNew ? 'Créer un parcours' : 'Modifier le parcours'
-    }
-    return titles[currentView.value] || 'Mes parcours'
-})
+  const titles = {
+    list: 'Mes parcours',
+    location: 'Ajouter un lieu',
+    trail: currentTrail.value?.isNew ? 'Créer un parcours' : 'Modifier le parcours'
+  };
+  return titles[currentView.value] || 'Mes parcours';
+});
 
 // Load data when the page is mounted or activated
 onMounted(loadMyTrails)
@@ -129,7 +129,9 @@ async function loadMyTrails() {
     } finally {
         loading.value = false
     }
-}
+    throw err;
+  }
+
 
 // Trail actions
 function createNewTrail() {
@@ -152,8 +154,8 @@ function editTrail(trail) {
 }
 
 function confirmDelete(trail) {
-    trailToDelete.value = trail
-    deleteDialog.value = true
+  trailToDelete.value = trail;
+  deleteDialog.value = true;
 }
 
 async function deleteTrail() {
@@ -185,8 +187,8 @@ async function deleteTrail() {
 }
 
 async function saveTrail() {
-    resetMessages()
-    submitting.value = true
+  resetMessages();
+  submitting.value = true;
 
     try {
         const isNew = currentTrail.value.isNew
@@ -325,17 +327,17 @@ async function saveTrail() {
 
 // Location actions
 function switchToLocationForm() {
-    currentView.value = 'location'
+  currentView.value = 'location';
 }
 
 function cancelLocationForm() {
-    currentView.value = 'trail'
-    resetMessages()
+  currentView.value = 'trail';
+  resetMessages();
 }
 
 async function saveLocation(location) {
-    resetMessages()
-    submitting.value = true
+  resetMessages();
+  submitting.value = true;
 
     try {
         // Clone the location data to avoid reference issues
@@ -355,20 +357,20 @@ async function saveLocation(location) {
         currentTrail.value.locations.push(newLocation)
         successMessage.value = 'Lieu ajouté avec succès !'
 
-        setTimeout(() => {
-            currentView.value = 'trail'
-            successMessage.value = ''
-        }, 1000)
-    } catch (err) {
-        console.error('Erreur ajout lieu:', err)
-        errorMessage.value = 'Erreur lors de l\'ajout du lieu.'
-    } finally {
-        submitting.value = false
-    }
+    setTimeout(() => {
+      currentView.value = 'trail';
+      successMessage.value = '';
+    }, 1000);
+  } catch (err) {
+    console.error('Erreur ajout lieu:', err);
+    errorMessage.value = "Erreur lors de l'ajout du lieu.";
+  } finally {
+    submitting.value = false;
+  }
 }
 
 function handleLocationError(error) {
-    errorMessage.value = error
+  errorMessage.value = error;
 }
 
 // Delete a location/step from the database
@@ -390,26 +392,26 @@ async function deleteLocation(location) {
 
 // Navigation
 function handleBack() {
-    if (currentView.value === 'location') {
-        cancelLocationForm()
-    } else if (currentView.value === 'trail') {
-        currentView.value = 'list'
-        currentTrail.value = null
-    }
-    resetMessages()
+  if (currentView.value === 'location') {
+    cancelLocationForm();
+  } else if (currentView.value === 'trail') {
+    currentView.value = 'list';
+    currentTrail.value = null;
+  }
+  resetMessages();
 }
 
 function resetMessages() {
-    errorMessage.value = ''
-    successMessage.value = ''
+  errorMessage.value = '';
+  successMessage.value = '';
 }
 </script>
 
 <template>
-    <!-- Main Content -->
-    <v-main class="bg-grey-lighten-4 main-content">
-        <!-- Header avec BaseHeader -->
-        <BaseHeader :title="headerTitle" :show-back="currentView !== 'list'" @back="handleBack" />
+  <!-- Main Content -->
+  <v-main class="bg-grey-lighten-4 main-content">
+    <!-- Header avec BaseHeader -->
+    <BaseHeader :title="headerTitle" :show-back="currentView !== 'list'" @back="handleBack" />
 
         <!-- Content Container -->
         <v-container fluid class="px-0 pb-24 pt-6">
@@ -427,38 +429,57 @@ function resetMessages() {
                 :error-message="errorMessage" :success-message="successMessage" @add-location="switchToLocationForm"
                 @save="saveTrail" @cancel="currentView = 'list'" @delete-location="deleteLocation" />
 
-            <!-- Formulaire de lieu -->
-            <CreateLocation v-else-if="currentView === 'location'" :loading="submitting" :error-message="errorMessage"
-                :success-message="successMessage" @save="saveLocation" @cancel="cancelLocationForm"
-                @error="handleLocationError" />
-        </v-container>
+      <!-- Formulaire de lieu -->
+      <CreateLocation
+        v-else-if="currentView === 'location'"
+        :loading="submitting"
+        :error-message="errorMessage"
+        :success-message="successMessage"
+        @save="saveLocation"
+        @cancel="cancelLocationForm"
+        @error="handleLocationError"
+      />
+    </v-container>
 
-        <!-- Delete Confirmation Dialog -->
-        <v-dialog v-model="deleteDialog" max-width="400">
-            <v-card rounded="xl" class="pa-4">
-                <v-card-title class="text-h6 font-weight-bold text-center pa-4">
-                    Supprimer le parcours ?
-                </v-card-title>
-                <v-card-text class="text-center text-body-1 px-6 py-4">
-                    Cette action est irréversible. Le parcours "{{ trailToDelete?.title }}" et tous ses lieux seront
-                    supprimés.
-                </v-card-text>
-                <v-card-actions class="pa-4 pt-2 flex-column ga-3">
-                    <v-btn block color="red-darken-1" size="large" rounded="lg" variant="flat" @click="deleteTrail">
-                        Supprimer
-                    </v-btn>
-                    <v-btn block color="grey-darken-1" size="large" rounded="lg" variant="text"
-                        @click="deleteDialog = false">
-                        Annuler
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-    </v-main>
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="deleteDialog" max-width="400">
+      <v-card rounded="xl" class="pa-4">
+        <v-card-title class="text-h6 font-weight-bold text-center pa-4">
+          Supprimer le parcours ?
+        </v-card-title>
+        <v-card-text class="text-center text-body-1 px-6 py-4">
+          Cette action est irréversible. Le parcours "{{ trailToDelete?.title }}" et tous ses lieux
+          seront supprimés.
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-2 flex-column ga-3">
+          <v-btn
+            block
+            color="red-darken-1"
+            size="large"
+            rounded="lg"
+            variant="flat"
+            @click="deleteTrail"
+          >
+            Supprimer
+          </v-btn>
+          <v-btn
+            block
+            color="grey-darken-1"
+            size="large"
+            rounded="lg"
+            variant="text"
+            @click="deleteDialog = false"
+          >
+            Annuler
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-main>
 </template>
 
 <style scoped>
 .main-content {
-    padding-bottom: 80px;
+  padding-bottom: 80px;
 }
 </style>

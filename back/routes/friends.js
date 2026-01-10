@@ -67,7 +67,7 @@ router.post('/requests', async (req, res) => {
     const friendship = await Friends.create({
       userId,
       friendId: friendUserId,
-      status: 'pending',
+      status: 'pending'
     });
 
     res.status(201).json({
@@ -76,8 +76,8 @@ router.post('/requests', async (req, res) => {
         id: friendship._id,
         userId: friendship.userId,
         friendUserId: friendship.friendId,
-        status: friendship.status,
-      },
+        status: friendship.status
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -92,11 +92,7 @@ router.post('/requests/:id/accept', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const friendship = await Friends.findByIdAndUpdate(
-      id,
-      { status: 'accepted' },
-      { new: true }
-    );
+    const friendship = await Friends.findByIdAndUpdate(id, { status: 'accepted' }, { new: true });
 
     if (!friendship) {
       return res.status(404).json({ error: 'Friendship not found' });
@@ -108,8 +104,8 @@ router.post('/requests/:id/accept', async (req, res) => {
         id: friendship._id,
         userId: friendship.userId,
         friendUserId: friendship.friendId,
-        status: friendship.status,
-      },
+        status: friendship.status
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -124,11 +120,7 @@ router.post('/requests/:id/refuse', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const friendship = await Friends.findByIdAndUpdate(
-      id,
-      { status: 'refused' },
-      { new: true }
-    );
+    const friendship = await Friends.findByIdAndUpdate(id, { status: 'refused' }, { new: true });
 
     if (!friendship) {
       return res.status(404).json({ error: 'Friendship not found' });
@@ -140,8 +132,8 @@ router.post('/requests/:id/refuse', async (req, res) => {
         id: friendship._id,
         userId: friendship.userId,
         friendUserId: friendship.friendId,
-        status: friendship.status,
-      },
+        status: friendship.status
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -168,7 +160,6 @@ router.get('/requests/pending/:userId', async (req, res) => {
       friendId: userObjId,
       status: 'pending',
     });
-    console.log('Pending friend requests found:', pendingRequests.length);
 
     // Manual lookup since userId might be stored as string
     const result = await Promise.all(
@@ -212,7 +203,6 @@ router.get('/requests/sent/:userId', async (req, res) => {
       userId: userObjId,
       status: 'pending',
     });
-    console.log('Sent pending requests found:', sentRequests.length);
 
     // Manual lookup to get recipient info
     const result = await Promise.all(
@@ -243,28 +233,27 @@ router.get('/requests/sent/:userId', async (req, res) => {
 router.get('/unfriends/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log('Fetching unfriends for userId:', userId);
 
     const relations = await Friends.find({
-      $or: [{ userId }, { friendId: userId }],
+      $or: [{ userId }, { friendId: userId }]
     });
 
     const linkedIds = new Set();
     linkedIds.add(userId);
 
-    relations.forEach((rel) => {
+    relations.forEach(rel => {
       linkedIds.add(rel.userId.toString());
       linkedIds.add(rel.friendId.toString());
     });
 
     const unfriends = await User.find({
-      _id: { $nin: Array.from(linkedIds) },
+      _id: { $nin: Array.from(linkedIds) }
     }).select('username email');
 
-    const result = unfriends.map((u) => ({
+    const result = unfriends.map(u => ({
       userId: u._id,
       username: u.username,
-      email: u.email,
+      email: u.email
     }));
 
     res.json(result);
@@ -276,26 +265,23 @@ router.get('/unfriends/:userId', async (req, res) => {
 /**
  * 5b. List pending friend requests (invitations recues)
  * GET /friends/:userId/pending
- * 
+ *
  * MUST BE BEFORE /:userId to avoid matching "pending" as part of userId
  */
 router.get('/:userId/pending', async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log('Fetching pending friend requests for userId:', userId);
 
     const pendingRequests = await Friends.find({
       status: 'pending',
-      friendId: userId,
+      friendId: userId
     }).populate('userId', 'username');
 
-    console.log('Found pending requests:', pendingRequests.length);
-
-    const result = pendingRequests.map((f) => ({
+    const result = pendingRequests.map(f => ({
       friendshipId: f._id,
       senderId: f.userId._id,
       senderName: f.userId.username,
-      status: f.status,
+      status: f.status
     }));
 
     res.json(result);
@@ -316,11 +302,9 @@ router.get('/:userId/pending', async (req, res) => {
 router.get('/list/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log('GET /friends/list - Looking for userId:', userId);
 
     // Convert string to ObjectId for proper querying
     const userObjId = toObjectId(userId);
-    console.log('Converted to ObjectId:', userObjId);
 
     if (!userObjId) {
       return res.status(400).json({ error: 'Invalid userId format' });
@@ -330,7 +314,6 @@ router.get('/list/:userId', async (req, res) => {
       status: 'accepted',
       $or: [{ userId: userObjId }, { friendId: userObjId }],
     });
-    console.log('Matched friendships:', friendships.length);
 
     // Manual lookup since userId/friendId might be strings instead of ObjectIds
     const result = await Promise.all(
@@ -374,7 +357,7 @@ router.delete('/:id', async (req, res) => {
     }
     res.json({
       message: 'Friend deleted',
-      id: req.params.id,
+      id: req.params.id
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

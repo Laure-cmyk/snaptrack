@@ -3,55 +3,44 @@ import { Rating } from '../models/index.js';
 
 const router = express.Router();
 
-// GET all ratings
-router.get('/', async (req, res) => {
-  try {
-    const ratings = await Rating.find()
-      .populate('userId', 'username email')
-      .populate('journeyId', 'title');
-    res.json(ratings);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 /**
  * 1. Create Rating
  * POST /api/ratings
  *
  * Body JSON :
  * {
- *   "userId": "101",
- *   "targetId": "701",
- *   "value": 5
+ *   "userId": "...",
+ *   "journeyId": "...",
+ *   "rating": 5
  * }
  */
 router.post('/', async (req, res) => {
   try {
-    const { userId, targetId, value } = req.body;
+    const { userId, journeyId, rating: ratingValue } = req.body;
 
     // Vérifications simples
-    if (!userId || !targetId || typeof value !== 'number') {
+    if (!userId || !journeyId || typeof ratingValue !== 'number') {
       return res.status(400).json({
-        error: 'userId, targetId et value (number) sont requis',
+        error: 'userId, journeyId et rating (number) sont requis'
       });
     }
 
-    const rating = await Rating.create({
-      userId,
-      targetId,
-      value,
-    });
+    // Upsert: update if exists, create if not
+    const rating = await Rating.findOneAndUpdate(
+      { userId, journeyId },
+      { rating: ratingValue },
+      { upsert: true, new: true, runValidators: true }
+    );
 
     res.status(201).json({
-      message: 'Rating created',
+      message: 'Rating saved',
       rating: {
         id: rating._id,
         userId: rating.userId,
-        targetId: rating.targetId,
-        value: rating.value,
-        createdAt: rating.createdAt,
-      },
+        journeyId: rating.journeyId,
+        rating: rating.rating,
+        createdAt: rating.createdAt
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -60,19 +49,19 @@ router.post('/', async (req, res) => {
 
 /**
  * 2. Read Ratings
- * GET /api/ratings?targetId=701&userId=101 (userId optionnel)
+ * GET /api/ratings?journeyId=...&userId=... (userId optionnel)
  *
- * Objectif : récupérer tous les ratings pour un élément (targetId),
+ * Objectif : récupérer tous les ratings pour un élément (journeyId),
  * éventuellement filtrés par userId.
  */
 router.get('/', async (req, res) => {
   try {
-    const { targetId, userId } = req.query;
+    const { journeyId, userId } = req.query;
 
-    // On attend au minimum un targetId pour filtrer
+    // On attend au minimum un journeyId pour filtrer
     const filter = {};
-    if (targetId) {
-      filter.targetId = targetId;
+    if (journeyId) {
+      filter.journeyId = journeyId;
     }
     if (userId) {
       filter.userId = userId;
@@ -83,12 +72,12 @@ router.get('/', async (req, res) => {
       .sort({ createdAt: -1 });
 
     // On formate la réponse comme dans ton exemple
-    const result = ratings.map((r) => ({
+    const result = ratings.map(r => ({
       id: r._id,
       userId: r.userId?._id ?? r.userId,
       username: r.userId?.username ?? null,
-      value: r.value,
-      createdAt: r.createdAt,
+      rating: r.rating,
+      createdAt: r.createdAt
     }));
 
     res.json(result);
@@ -97,6 +86,31 @@ router.get('/', async (req, res) => {
   }
 });
 
+/**
+ * 3. Get Average Rating for a Journey
+ * GET /api/ratings/average/:journeyId
+ */
+router.get('/average/:journeyId', async (req, res) => {
+  try {
+    const { journeyId } = req.params;
 
+    const result = await Rating.aggregate([
+      { $match: { journeyId: new (await import('mongoose')).default.Types.ObjectId(journeyId) } },
+      { $group: { _id: '$journeyId', averageRating: { $avg: '$rating' }, count: { $sum: 1 } } }
+    ]);
+
+    if (result.length === 0) {
+      return res.json({ journeyId, averageRating: 0, count: 0 });
+    }
+
+    res.json({
+      journeyId,
+      averageRating: Math.round(result[0].averageRating * 10) / 10,
+      count: result[0].count
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 export default router;

@@ -33,7 +33,27 @@ router.get('/', async (req, res) => {
       .select('name image time description town')
       .limit(Number(limit))
       .skip(Number(offset))
-      .sort(sortQuery);
+      .sort(sortQuery)
+      .lean();
+
+    // Fetch average ratings for all journeys
+    const journeyIds = journeys.map(j => j._id);
+    const ratingsAgg = await Rating.aggregate([
+      { $match: { journeyId: { $in: journeyIds } } },
+      { $group: { _id: '$journeyId', averageRating: { $avg: '$rating' }, count: { $sum: 1 } } }
+    ]);
+
+    // Map ratings to journeys
+    const ratingsMap = {};
+    ratingsAgg.forEach(r => {
+      ratingsMap[r._id.toString()] = Math.round(r.averageRating * 10) / 10;
+    });
+
+    // Add averageRating to each journey
+    const journeysWithRatings = journeys.map(j => ({
+      ...j,
+      averageRating: ratingsMap[j._id.toString()] || 0
+    }));
 
     // Total pour pagination
     const total = await Journey.countDocuments(filter);
@@ -41,7 +61,7 @@ router.get('/', async (req, res) => {
     res.json({
       message: 'Journeys fetched',
       total,
-      journeys,
+      journeys: journeysWithRatings
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -86,11 +106,10 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const journey = await Journey.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const journey = await Journey.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
     if (!journey) {
       return res.status(404).json({ error: 'Journey not found' });
     }
@@ -216,7 +235,7 @@ router.get('/:journeyId/steps/count', async (req, res) => {
     res.json({
       message: 'Step amount fetched',
       journeyId,
-      totalSteps,
+      totalSteps
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -247,20 +266,19 @@ router.get('/:journeyId/rating', async (req, res) => {
         message: 'No ratings for this journey',
         journeyId,
         averageRating: null,
-        totalRatings: 0,
+        totalRatings: 0
       });
     }
 
     // Calculer la moyenne
     const totalRatings = ratings.length;
-    const averageRating =
-      ratings.reduce((acc, r) => acc + r.rating, 0) / totalRatings;
+    const averageRating = ratings.reduce((acc, r) => acc + r.rating, 0) / totalRatings;
 
     res.json({
       message: 'Journey rating fetched',
       journeyId,
       averageRating: Number(averageRating.toFixed(2)),
-      totalRatings,
+      totalRatings
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

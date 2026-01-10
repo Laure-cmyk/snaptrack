@@ -13,7 +13,7 @@ const scoreSchema = new mongoose.Schema(
     participationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Participation',
-      required: false 
+      required: false
     },
     journeyId: {
       type: mongoose.Schema.Types.ObjectId,

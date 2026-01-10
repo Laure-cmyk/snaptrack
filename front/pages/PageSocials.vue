@@ -43,8 +43,6 @@ async function loadData() {
   // First load user from localStorage
   loadStoredUser();
 
-  console.log('PageSocials: Loading data for user:', userId.value);
-
   if (!userId.value) {
     console.warn('PageSocials: No userId found');
     loading.value = false;
@@ -62,13 +60,11 @@ async function loadData() {
     }
 
     // Fetch friends
-    console.log('Fetching friends...');
     const friendsRes = await fetch(`/friends/list/${userId.value}`);
     if (!friendsRes.ok) {
       console.warn('Friends API error:', friendsRes.status);
     }
     const friendsData = await friendsRes.json();
-    console.log('Friends data:', friendsData);
 
     if (Array.isArray(friendsData)) {
       friends.value = friendsData.map(f => ({
@@ -81,24 +77,20 @@ async function loadData() {
     }
 
     // Fetch pending friend requests
-    console.log('Fetching pending friend requests...');
     const pendingFriendsRes = await fetch(`/friends/requests/pending/${userId.value}`);
     if (!pendingFriendsRes.ok) {
       console.warn('Pending friends API error:', pendingFriendsRes.status);
     }
     const pendingFriendsData = await pendingFriendsRes.json();
-    console.log('Pending friend requests:', pendingFriendsData);
 
     if (Array.isArray(pendingFriendsData)) {
       friendInvite.value = pendingFriendsData;
     }
 
     // Fetch sent pending friend requests (requests I sent that are still pending)
-    console.log('Fetching sent pending friend requests...');
     const sentPendingRes = await fetch(`/friends/requests/sent/${userId.value}`);
     if (sentPendingRes.ok) {
       const sentPendingData = await sentPendingRes.json();
-      console.log('Sent pending requests:', sentPendingData);
       if (Array.isArray(sentPendingData)) {
         sentPendingRequests.value = sentPendingData.map(r => ({
           id: r.id,
@@ -110,13 +102,11 @@ async function loadData() {
     }
 
     // Fetch user groups
-    console.log('Fetching groups...');
     const groupsRes = await fetch(`/groups/user/${userId.value}`);
     if (!groupsRes.ok) {
       console.warn('Groups API error:', groupsRes.status);
     }
     const groupsData = await groupsRes.json();
-    console.log('Groups data:', groupsData);
 
     if (Array.isArray(groupsData)) {
       groups.value = groupsData.map(g => ({
@@ -128,13 +118,11 @@ async function loadData() {
     }
 
     // Fetch pending group invites
-    console.log('Fetching pending group invites...');
     const pendingGroupsRes = await fetch(`/user-groups/pending/${userId.value}`);
     if (!pendingGroupsRes.ok) {
       console.warn('Pending groups API error:', pendingGroupsRes.status);
     }
     const pendingGroupsData = await pendingGroupsRes.json();
-    console.log('Pending group invites:', pendingGroupsData);
 
     if (Array.isArray(pendingGroupsData)) {
       groupInvite.value = pendingGroupsData;
@@ -243,7 +231,6 @@ onUnmounted(() => {
 });
 
 async function onAction(payload) {
-  console.log('Received action:', payload);
   const { item, result } = payload;
 
   if (result === 'success' && item.type === 'invite') {
@@ -456,8 +443,10 @@ async function sendFriendInvite(user) {
   <v-card v-else-if="loading" class="d-flex justify-center align-center pa-8">
     <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
   </v-card>
-  <v-card v-else>
-    <v-tabs v-model="tab" direction="horizontal">
+
+  <!-- Tabs -->
+  <v-card v-else rounded="0">
+    <v-tabs v-model="tab" direction="horizontal" fixed-tabs>
       <v-badge v-if="friendInvite.length > 0" inline location="top-right" color="error" :content="friendInvite.length">
         <v-tab prepend-icon="mdi-account" text="Amis" value="friends"></v-tab>
       </v-badge>
@@ -465,7 +454,7 @@ async function sendFriendInvite(user) {
       <v-badge v-if="groupInvite.length > 0" inline location="top-right" color="error" :content="groupInvite.length">
         <v-tab prepend-icon="mdi-lock" text="Groupes" value="groups"></v-tab>
       </v-badge>
-      <v-tab v-else prepend-icon="mdi-lock" text="Groupes" value="groups"></v-tab>
+      <v-tab v-else prepend-icon="mdi-account-group" text="Groupes" value="groups"></v-tab>
     </v-tabs>
 
     <v-tabs-window v-model="tab">
@@ -480,7 +469,7 @@ async function sendFriendInvite(user) {
             </v-card-text>
 
             <!-- All Users List when search is active -->
-            <v-card-text v-if="showSearchResults" class="pt-6">
+            <v-card-text v-if="showSearchResults" class="pt-6" style="max-height: 60vh; overflow-y: auto;">
               <div class="text-subtitle-2 text-grey-darken-1 mb-2">
                 {{ searchQuery ? `Résultats pour "${searchQuery}"` : 'Tous les utilisateurs' }}
               </div>
@@ -500,10 +489,12 @@ async function sendFriendInvite(user) {
                       @click="removeFriend({ id: user._id, name: user.username })">
                       Supprimer
                     </v-btn>
-                    <v-btn v-else size="small" variant="outlined" color="primary" :loading="sendingInvites[user._id]"
+                    <v-btn v-else size="small" variant="outlined" 
+                      :color="sendingInvites[user._id] ? 'grey' : 'primary'"
+                      :loading="sendingInvites[user._id]"
                       :disabled="sendingInvites[user._id]"
                       @click="sendFriendInvite({ id: user._id, name: user.username })">
-                      Inviter
+                      {{ sendingInvites[user._id] ? 'En attente' : 'Inviter' }}
                     </v-btn>
                   </template>
                 </v-list-item>
@@ -539,11 +530,9 @@ async function sendFriendInvite(user) {
 
               <div v-if="friends.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">Mes amis
               </div>
-              <TheListSocials v-if="friends.length > 0" :items="friends" @action="onAction"
-                @click="handleFriendClick" />
-
-              <div v-if="friendInvite.length === 0 && sentPendingRequests.length === 0 && friends.length === 0"
-                class="text-center text-grey py-4">
+              <TheListSocials v-if="friends.length > 0" :items="friends" @action="onAction" @click="handleFriendClick" />
+              
+              <div v-if="friendInvite.length === 0 && sentPendingRequests.length === 0 && friends.length === 0" class="text-center text-grey py-4">
                 Aucun ami pour le moment
               </div>
             </v-card-text>
@@ -571,4 +560,24 @@ async function sendFriendInvite(user) {
     </v-btn>
   </v-card>
 </template>
-<style scoped></style>
+
+<style scoped>
+  :deep(.v-tabs) {
+  background: linear-gradient(135deg, #3948ab 0%, #3948ab 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  height: 10vh;
+  position: sticky;
+  top: 0;
+  align-items: flex-end;
+  z-index: 10;
+  border-radius: 0 !important;
+}
+
+:deep(.v-tab) {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:deep(.v-tab--selected) {
+  color: white;
+}
+</style>

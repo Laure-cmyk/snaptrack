@@ -1,27 +1,27 @@
 <script setup>
 defineProps({
-    title: {
-        type: String,
-        required: true
-    },
-    showBack: {
-        type: Boolean,
-        default: true
-    },
-    showActions: {
-        type: Boolean,
-        default: false
-    }
-})
+  title: {
+    type: String,
+    required: true
+  },
+  showBack: {
+    type: Boolean,
+    default: true
+  },
+  showActions: {
+    type: Boolean,
+    default: false
+  }
+});
 
-const emit = defineEmits(['back', 'action'])
+const emit = defineEmits(['back', 'action']);
 
 function handleBack() {
-    emit('back')
+  emit('back');
 }
 
 function handleAction() {
-    emit('action')
+  emit('action');
 }
 </script>
 
@@ -50,10 +50,10 @@ function handleAction() {
 
 <style scoped>
 .header-section {
-    background: linear-gradient(135deg, #3948ab 0%, #3948ab 100%);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    position: sticky;
-    top: 0;
-    z-index: 10;
+  background: linear-gradient(135deg, #3948ab 0%, #3948ab 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 </style>
