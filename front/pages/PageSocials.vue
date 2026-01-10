@@ -526,7 +526,7 @@ async function sendFriendInvite(user) {
               
               <div v-if="friends.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">Mes amis
               </div>
-              <TheListSocials v-if="friends.length > 0" :items="friends" @action="onAction" />
+              <TheListSocials v-if="friends.length > 0" :items="friends" @action="onAction" @click="handleFriendClick" />
               
               <div v-if="friendInvite.length === 0 && sentPendingRequests.length === 0 && friends.length === 0" class="text-center text-grey py-4">
                 Aucun ami pour le moment
