@@ -68,8 +68,14 @@ onMounted(async () => {
       roomName.value = journeyId; // Fallback to journey ID
     }
 
-    // WebSocket on port 443
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:443';
+    // WebSocket URL - auto-detect based on current hostname
+    // Production: use wss:// with same hostname (Render)
+    // Development: use ws://localhost:3000
+    const isProduction = window.location.hostname !== 'localhost';
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = isProduction 
+      ? `${wsProtocol}//${window.location.host}`
+      : (import.meta.env.VITE_WS_URL || 'ws://localhost:3000');
     const ws = new WSClientRoom(wsUrl);
 
     console.log('Connecting to WebSocket:', wsUrl);

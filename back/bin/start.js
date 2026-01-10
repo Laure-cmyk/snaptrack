@@ -20,9 +20,8 @@ await connectDB();
 // Create HTTP server
 const httpServer = http.createServer(app);
 
-// WebSocket Server - starts on port 443 (separate from HTTP server)
+// WebSocket Server - attached to HTTP server for Render compatibility (single port)
 const wsServer = new WSServerRoomManager({
-  port: 443,
   origins: '*',
   maxUsersByRoom: 50,
   roomClass: class extends WSServerRoom {
@@ -41,7 +40,8 @@ const wsServer = new WSServerRoomManager({
   usersCanCreateRoom: true
 });
 
-wsServer.start();
+// Attach WebSocket to HTTP server (same port)
+wsServer.start({ server: httpServer });
 
 // Listen on provided port, on all network interfaces
 httpServer.listen(port);
