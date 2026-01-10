@@ -30,11 +30,14 @@ const wsServer = new WSServerRoomManager({
     }
 
     onCmdLocation(data, clientMeta) {
-      return {
+      // Broadcast location as a command to all room members
+      this.broadcastCmd('location', {
         username: clientMeta.username,
         lat: data.lat,
         lng: data.lng
-      };
+      });
+      // Return null to prevent default message broadcast
+      return null;
     }
   },
   usersCanCreateRoom: true

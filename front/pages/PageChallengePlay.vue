@@ -30,6 +30,14 @@ function getUserId() {
     return user?.id || user?._id || null
 }
 
+// Get username from stored user object
+function getUsername() {
+    const userData = localStorage.getItem('user')
+    if (!userData) return 'Player'
+    const user = JSON.parse(userData)
+    return user?.username || 'Player'
+}
+
 // Fetch user's existing rating for this journey
 async function fetchUserRating() {
     try {
@@ -154,7 +162,7 @@ async function fetchChallengeData() {
 async function connectWebSocket() {
     try {
         const journeyId = route.params.id
-        const username = localStorage.getItem('username') || 'Player'
+        const username = getUsername()
         
         // WebSocket URL - auto-detect based on current hostname
         const isProduction = window.location.hostname !== 'localhost'
@@ -182,10 +190,13 @@ function startLocationSharing() {
         return
     }
     
+    const username = getUsername()
+    
     locationWatchId = navigator.geolocation.watchPosition(
         (position) => {
             if (wsRoom.value) {
-                wsRoom.value.cmd('location', {
+                wsRoom.value.sendCmd('location', {
+                    username,
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 })
