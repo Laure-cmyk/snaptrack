@@ -469,7 +469,7 @@ async function sendFriendInvite(user) {
             </v-card-text>
 
             <!-- All Users List when search is active -->
-            <v-card-text v-if="showSearchResults" class="pt-6">
+            <v-card-text v-if="showSearchResults" class="pt-6" style="max-height: 60vh; overflow-y: auto;">
               <div class="text-subtitle-2 text-grey-darken-1 mb-2">
                 {{ searchQuery ? `Résultats pour "${searchQuery}"` : 'Tous les utilisateurs' }}
               </div>
