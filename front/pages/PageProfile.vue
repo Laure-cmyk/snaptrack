@@ -309,9 +309,10 @@ async function deleteAccount() {
                             <div class="text-body-1 flex-grow-1">
                                 {{ user.bio || 'Aucune bio' }}
                             </div>
-                            <v-btn icon size="x-small" variant="text" color="indigo-darken-1" @click="startEditingBio"
-                                class="flex-shrink-0">
-                                <v-icon size="small">mdi-pencil</v-icon>
+                            <v-btn size="x-small" variant="outlined" color="indigo-darken-1" @click="startEditingBio"
+                                class="flex-shrink-0" rounded="lg"
+                                style="min-width: 32px; width: 32px; height: 32px; padding: 0;">
+                                <v-icon>mdi-pencil</v-icon>
                             </v-btn>
                         </div>
 

@@ -27,20 +27,21 @@ function handleAction() {
 
 <template>
     <div class="header-section">
-        <div class="pa-6 pt-10 d-flex align-center justify-center position-relative">
+        <div class="pa-5 d-flex align-center justify-center position-relative" style="min-height: 64px;">
             <!-- Back Button -->
             <v-btn v-if="showBack" icon variant="text" @click="handleBack" class="position-absolute"
-                style="left: 24px;">
+                style="left: 16px; top: 50%; transform: translateY(-50%);">
                 <v-icon color="white">mdi-close</v-icon>
             </v-btn>
 
             <!-- Title -->
             <div class="text-center">
-                <div class="text-h5 font-weight-bold text-white">{{ title }}</div>
+                <div class="text-h6 font-weight-bold text-white">{{ title }}</div>
             </div>
 
             <!-- Action Slot -->
-            <div v-if="showActions" class="position-absolute" style="right: 24px;">
+            <div v-if="showActions" class="position-absolute"
+                style="right: 16px; top: 50%; transform: translateY(-50%);">
                 <slot name="actions"></slot>
             </div>
         </div>

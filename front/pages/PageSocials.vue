@@ -518,8 +518,10 @@ async function sendFriendInvite(user) {
               <div v-if="friendInvite.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2">Invitations reçues
               </div>
               <TheListSocials v-if="friendInvite.length > 0" :items="friendInvite" @action="onAction" />
-              
-              <div v-if="sentPendingRequests.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">Invitations envoyées (en attente)
+
+              <div v-if="sentPendingRequests.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">
+                Invitations envoyées
+                (en attente)
               </div>
               <v-list v-if="sentPendingRequests.length > 0" lines="one">
                 <v-list-item v-for="request in sentPendingRequests" :key="request.id" :title="request.name">
@@ -534,12 +536,14 @@ async function sendFriendInvite(user) {
                   </template>
                 </v-list-item>
               </v-list>
-              
+
               <div v-if="friends.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">Mes amis
               </div>
-              <TheListSocials v-if="friends.length > 0" :items="friends" @action="onAction" />
-              
-              <div v-if="friendInvite.length === 0 && sentPendingRequests.length === 0 && friends.length === 0" class="text-center text-grey py-4">
+              <TheListSocials v-if="friends.length > 0" :items="friends" @action="onAction"
+                @click="handleFriendClick" />
+
+              <div v-if="friendInvite.length === 0 && sentPendingRequests.length === 0 && friends.length === 0"
+                class="text-center text-grey py-4">
                 Aucun ami pour le moment
               </div>
             </v-card-text>

@@ -49,12 +49,12 @@ defineEmits(['add-location', 'quit'])
         <!-- Boutons d'action -->
         <div class="d-flex flex-column ga-3">
             <v-btn block size="x-large" color="indigo-darken-1" rounded="lg" elevation="2" variant="flat"
-                prepend-icon="mdi-map-marker-plus" @click="$emit('add-location')">
+                @click="$emit('add-location')">
                 Ajouter la localisation
             </v-btn>
 
             <v-btn block size="x-large" color="red-darken-1" rounded="lg" variant="outlined"
-                prepend-icon="mdi-exit-to-app" @click="$emit('quit')">
+                @click="$emit('quit')">
                 Quitter le challenge
             </v-btn>
         </div>

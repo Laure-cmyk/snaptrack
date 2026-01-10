@@ -32,24 +32,24 @@ const trail = ref({
 async function fetchChallengeData() {
     loading.value = true
     error.value = null
-    
+
     try {
         const journeyId = route.params.id
-        
+
         // Fetch journey details
         const journeyRes = await fetch(`/journeys/${journeyId}`)
         if (!journeyRes.ok) {
             throw new Error(`Journey not found (${journeyRes.status})`)
         }
         const journeyData = await journeyRes.json()
-        
+
         // Fetch steps for this journey
         const stepsRes = await fetch(`/steps/journey/${journeyId}`)
         if (!stepsRes.ok) {
             throw new Error(`Steps not found (${stepsRes.status})`)
         }
         const stepsData = await stepsRes.json()
-        
+
         // Map to our trail format
         trail.value = {
             id: journeyData._id,
@@ -107,7 +107,12 @@ function quitChallenge() {
 
 function completeChallenge() {
     // TODO: Enregistrer la completion du challenge et la note
-    console.log('Note attribuée:', rating.value)
+    if (rating.value > 0) {
+        console.log('Note attribuée:', rating.value)
+        // Enregistrer le vote seulement si une note a été donnée
+    } else {
+        console.log('Aucune note attribuée')
+    }
     completeDialog.value = false
     router.push('/')
 }
@@ -181,8 +186,8 @@ function completeChallenge() {
         </BaseModal>
 
         <!-- Complete Challenge Dialog -->
-        <BaseModal v-model="completeDialog" title="Challenge terminé !" confirm-text="Retour à l'accueil"
-            :cancel-text="''" confirm-color="indigo-darken-1" @confirm="completeChallenge">
+        <BaseModal v-model="completeDialog" title="Challenge terminé !" confirm-text="Terminer" :cancel-text="''"
+            confirm-color="indigo-darken-1" @confirm="completeChallenge">
             <div class="text-center">
                 <img :src="victoryImage" alt="Victory" style="width: 120px; height: auto; margin: 0 auto;" />
                 <h3 class="text-h6 font-weight-bold mt-4 mb-3">Félicitations !</h3>
@@ -193,8 +198,10 @@ function completeChallenge() {
                 <!-- Rating -->
                 <div class="mt-6">
                     <p class="text-subtitle-2 font-weight-bold mb-3">Notez ce parcours :</p>
-                    <v-rating v-model="rating" color="yellow-darken-2" active-color="yellow-darken-2" size="large"
-                        hover />
+                    <div class="d-flex justify-center ga-1">
+                        <v-rating v-model="rating" color="yellow-darken-2" active-color="yellow-darken-2" size="large"
+                            hover density="compact" />
+                    </div>
                 </div>
             </div>
         </BaseModal>
