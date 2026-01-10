@@ -67,6 +67,8 @@ async function handleDelete(item, index) {
 function handleClick(item) {
   if (item.type === 'group') {
     emit('click', item);
+  } else if (item.type === 'friend') {
+    emit('click', item);
   }
 }
 </script>

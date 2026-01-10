@@ -3,12 +3,17 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import TheListSocials from '../components/socials/TheListSocials.vue';
 import TheGroup from '../components/socials/TheGroup.vue';
 import CreateGroup from '../components/socials/CreateGroup.vue';
+import AddMember from '../components/socials/AddMember.vue';
+import UserProfile from '../components/socials/UserProfile.vue';
 import TheSearchBar from '../components/TheSearchBar.vue';
 import { fetchJson } from '@/utils/fetchJson';
 
 const tab = ref('friends');
 const selectedGroupId = ref(null);
+const selectedUserId = ref(null);
 const isCreatingGroup = ref(false);
+const isAddingMember = ref(false);
+const currentGroupMembers = ref([]);
 const searchQuery = ref('');
 const showSearchResults = ref(false);
 const allUsers = ref([]);
@@ -286,6 +291,18 @@ function handleCloseGroup() {
   selectedGroupId.value = null;
 }
 
+function handleMemberClick(member) {
+  selectedUserId.value = member.id;
+}
+
+function handleFriendClick(friend) {
+  selectedUserId.value = friend.friendId || friend.id;
+}
+
+function handleCloseUserProfile() {
+  selectedUserId.value = null;
+}
+
 async function handleLeaveGroup(groupData) {
   try {
     await fetch(`/groups/${groupData.id}/members/${userId.value}`, { method: 'DELETE' });
@@ -302,6 +319,47 @@ function openCreateGroup() {
 
 function closeCreateGroup() {
   isCreatingGroup.value = false;
+}
+
+async function handleAddMemberToGroup(groupData) {
+  // Charger les membres actuels du groupe
+  try {
+    const res = await fetch(`/groups/${groupData.id}/members`);
+    const data = await res.json();
+    currentGroupMembers.value = data.members.map(m => ({
+      id: m._id,
+      name: m.username
+    }));
+    isAddingMember.value = true;
+  } catch (err) {
+    console.error('Error loading group members:', err);
+  }
+}
+
+function closeAddMember() {
+  isAddingMember.value = false;
+  currentGroupMembers.value = [];
+}
+
+async function handleAddMember(friendUserId) {
+  try {
+    // Ajouter le membre au groupe avec status pending
+    await fetch('/user-groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: friendUserId,
+        groupId: selectedGroupId.value,
+        status: 'pending'
+      })
+    });
+
+    await loadData();
+    isAddingMember.value = false;
+    currentGroupMembers.value = [];
+  } catch (err) {
+    console.error('Error adding member:', err);
+  }
 }
 
 async function handleCreateGroup(groupData) {
@@ -375,6 +433,9 @@ async function sendFriendInvite(user) {
 </script>
 <template>
   <CreateGroup v-if="isCreatingGroup" :friends="friends" @close="closeCreateGroup" @create="handleCreateGroup" />
+  <AddMember v-else-if="isAddingMember" :friends="friends" :current-members="currentGroupMembers"
+    @close="closeAddMember" @add="handleAddMember" />
+  <UserProfile v-else-if="selectedUserId" :user-id="selectedUserId" @close="handleCloseUserProfile" />
   <v-card v-else-if="loading" class="d-flex justify-center align-center pa-8">
     <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
   </v-card>
@@ -439,7 +500,7 @@ async function sendFriendInvite(user) {
             <v-card-text v-else>
               <div v-if="friendInvite.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2">Invitations en attente
               </div>
-              <TheListSocials :items="[...friendInvite, ...friends]" @action="onAction" />
+              <TheListSocials :items="[...friendInvite, ...friends]" @action="onAction" @click="handleFriendClick" />
             </v-card-text>
           </div>
         </v-card>
@@ -447,8 +508,10 @@ async function sendFriendInvite(user) {
 
       <v-tabs-window-item value="groups">
         <v-card flat>
-          <TheGroup v-if="selectedGroupId" :group-id="selectedGroupId" @close="handleCloseGroup"
-            @leave="handleLeaveGroup" />
+          <UserProfile v-if="selectedUserId && tab === 'groups'" :user-id="selectedUserId"
+            @close="handleCloseUserProfile" />
+          <TheGroup v-else-if="selectedGroupId" :group-id="selectedGroupId" @close="handleCloseGroup"
+            @leave="handleLeaveGroup" @click="handleMemberClick" @add-member="handleAddMemberToGroup" />
           <div v-else>
             <TheListSocials :items="[...groupInvite, ...groups]" @action="onAction" @click="handleGroupClick" />
           </div>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { getDeleteLabel, getDeleteResult } from '../../utils/negativeAction';
 
 const props = defineProps({
@@ -8,6 +8,7 @@ const props = defineProps({
 
 const isLeaving = ref(false);
 const loading = ref(true);
+const MAX_MEMBERS = 4;
 
 const group = ref({
   id: props.groupId,
@@ -16,7 +17,11 @@ const group = ref({
   members: []
 });
 
-const emit = defineEmits(['close', 'leave']);
+const emit = defineEmits(['close', 'leave', 'click', 'add-member']);
+
+const canAddMembers = computed(() => {
+  return group.value.members.length < MAX_MEMBERS;
+});
 
 async function loadGroup() {
   loading.value = true;
@@ -39,6 +44,10 @@ async function loadGroup() {
   } finally {
     loading.value = false;
   }
+}
+
+function handleAddMember() {
+  emit('add-member', group.value);
 }
 
 async function handleLeave() {
@@ -74,7 +83,8 @@ watch(
     <v-card-subtitle>{{ group.members.length }} membres</v-card-subtitle>
     <v-card-text>
       <v-list lines="two">
-        <v-list-item v-for="member in group.members" :key="member.id" :title="member.name">
+        <v-list-item v-for="member in group.members" :key="member.id" :title="member.name"
+          @click="emit('click', member)" style="cursor: pointer;">
           <template v-slot:prepend>
             <v-avatar color="grey-lighten-1">
               <v-img v-if="member.profilePicture" :src="member.profilePicture" cover />
@@ -86,7 +96,11 @@ watch(
     </v-card-text>
 
     <v-card-actions class="justify-end">
-      <v-btn color="error" variant="outlined" :disabled="isLeaving" :loading="isLeaving" @click="handleLeave">
+      <v-btn color="primary" variant="outlined" :disabled="!canAddMembers" @click="handleAddMember">
+        Ajouter membre
+      </v-btn>
+      <v-btn color="error" variant="outlined" :disabled="isLeaving" :loading="isLeaving" @click="handleLeave"
+        class="ml-2">
         {{ getDeleteLabel(group) }}
       </v-btn>
     </v-card-actions>
