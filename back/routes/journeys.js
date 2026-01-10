@@ -33,7 +33,27 @@ router.get('/', async (req, res) => {
       .select('name image time description town')
       .limit(Number(limit))
       .skip(Number(offset))
-      .sort(sortQuery);
+      .sort(sortQuery)
+      .lean();
+
+    // Fetch average ratings for all journeys
+    const journeyIds = journeys.map(j => j._id);
+    const ratingsAgg = await Rating.aggregate([
+      { $match: { journeyId: { $in: journeyIds } } },
+      { $group: { _id: '$journeyId', averageRating: { $avg: '$rating' }, count: { $sum: 1 } } }
+    ]);
+
+    // Map ratings to journeys
+    const ratingsMap = {};
+    ratingsAgg.forEach(r => {
+      ratingsMap[r._id.toString()] = Math.round(r.averageRating * 10) / 10;
+    });
+
+    // Add averageRating to each journey
+    const journeysWithRatings = journeys.map(j => ({
+      ...j,
+      averageRating: ratingsMap[j._id.toString()] || 0
+    }));
 
     // Total pour pagination
     const total = await Journey.countDocuments(filter);
@@ -41,7 +61,7 @@ router.get('/', async (req, res) => {
     res.json({
       message: 'Journeys fetched',
       total,
-      journeys
+      journeys: journeysWithRatings
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
