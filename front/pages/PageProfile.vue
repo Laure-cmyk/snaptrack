@@ -2,7 +2,6 @@
 import { ref, onMounted, onActivated } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
-import avatarDefault from '@/assets/avatar.jpeg'
 
 // State
 const loading = ref(true)
@@ -262,10 +261,12 @@ async function deleteAccount() {
 
                 <div class="position-relative d-inline-block">
                     <!-- Avatar -->
-                    <v-avatar size="120" class="mb-4" style="cursor: pointer;" @click="triggerPhotoUpload">
+                    <v-avatar size="120" class="mb-4" style="cursor: pointer;" @click="triggerPhotoUpload"
+                        color="grey-lighten-1">
                         <v-progress-circular v-if="uploadingPhoto" indeterminate color="white"
                             size="40"></v-progress-circular>
-                        <v-img v-else :src="user.profilePicture || avatarDefault" cover />
+                        <v-img v-else-if="user.profilePicture" :src="user.profilePicture" cover />
+                        <span v-else class="text-h3">{{ user.username?.charAt(0).toUpperCase() }}</span>
                     </v-avatar>
 
                     <!-- Edit button -->
@@ -289,7 +290,7 @@ async function deleteAccount() {
                 <v-card-text class="pa-4">
                     <!-- Pseudo -->
                     <div class="mb-4">
-                        <div class="text-caption text-grey-darken-1 mb-1">Pseudo</div>
+                        <div class="text-caption text-grey-darken-1 mb-1">Nom d'utilisateur</div>
                         <div class="text-body-1 font-weight-medium">{{ user.username }}</div>
                     </div>
 
