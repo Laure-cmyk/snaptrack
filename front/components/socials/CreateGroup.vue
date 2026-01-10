@@ -143,7 +143,7 @@ onUnmounted(() => {
             Vous n'avez pas encore d'amis. Ajoutez-en pour créer un groupe.
           </v-alert>
 
-          <v-list v-else lines="one" class="mb-4">
+          <v-list v-else lines="one" density="compact" class="mb-4">
             <v-list-item v-for="friend in filteredFriends" :key="friend.id" :title="friend.name"
               @click="() => toggleFriend(friend.id)"
               :disabled="isCreating || (!isFriendSelected(friend.id) && selectedFriends.length >= 3)">
@@ -154,8 +154,10 @@ onUnmounted(() => {
                 </v-avatar>
               </template>
               <template v-slot:append>
-                <v-checkbox :model-value="isFriendSelected(friend.id)" :disabled="isCreating || (!isFriendSelected(friend.id) && selectedFriends.length >= 3)
-                  " @click.stop="() => toggleFriend(friend.id)"></v-checkbox>
+                <div class="d-flex align-center" style="height: 100%;">
+                  <v-checkbox :model-value="isFriendSelected(friend.id)" :disabled="isCreating || (!isFriendSelected(friend.id) && selectedFriends.length >= 3)
+                    " @click.stop="() => toggleFriend(friend.id)" hide-details density="compact"></v-checkbox>
+                </div>
               </template>
             </v-list-item>
           </v-list>
