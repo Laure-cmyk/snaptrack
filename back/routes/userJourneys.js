@@ -77,10 +77,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-/**
- * 2. GET user-journey by ID (détail brut d’une relation)
- * GET /api/user-journeys/:id
- */
+/* 2. GET user-journey by ID (détail brut d’une relation)
+ * GET /api/user-journeys/:id */
 router.get('/:id', async (req, res) => {
   try {
     const userJourney = await UserJourney.findById(req.params.id)

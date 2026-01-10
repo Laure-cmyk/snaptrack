@@ -184,7 +184,7 @@ router.get('/totals', async (req, res) => {
 });
 
 /**
- * 3. (Optionnel) Leaderboard d’une journey
+ * 3. (Optionnel) 
  * GET /scores/journey/:journeyId
  * -> tu peux garder ou supprimer selon ton besoin
  */
