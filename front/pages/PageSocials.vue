@@ -443,8 +443,10 @@ async function sendFriendInvite(user) {
   <v-card v-else-if="loading" class="d-flex justify-center align-center pa-8">
     <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
   </v-card>
-  <v-card v-else>
-    <v-tabs v-model="tab" direction="horizontal">
+
+  <!-- Tabs -->
+  <v-card v-else rounded="0">
+    <v-tabs v-model="tab" direction="horizontal" fixed-tabs>
       <v-badge v-if="friendInvite.length > 0" inline location="top-right" color="error" :content="friendInvite.length">
         <v-tab prepend-icon="mdi-account" text="Amis" value="friends"></v-tab>
       </v-badge>
@@ -452,7 +454,7 @@ async function sendFriendInvite(user) {
       <v-badge v-if="groupInvite.length > 0" inline location="top-right" color="error" :content="groupInvite.length">
         <v-tab prepend-icon="mdi-lock" text="Groupes" value="groups"></v-tab>
       </v-badge>
-      <v-tab v-else prepend-icon="mdi-lock" text="Groupes" value="groups"></v-tab>
+      <v-tab v-else prepend-icon="mdi-account-group" text="Groupes" value="groups"></v-tab>
     </v-tabs>
 
     <v-tabs-window v-model="tab">
@@ -554,4 +556,24 @@ async function sendFriendInvite(user) {
     </v-btn>
   </v-card>
 </template>
-<style scoped></style>
+
+<style scoped>
+  :deep(.v-tabs) {
+  background: linear-gradient(135deg, #3948ab 0%, #3948ab 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  height: 10vh;
+  position: sticky;
+  top: 0;
+  align-items: flex-end;
+  z-index: 10;
+  border-radius: 0 !important;
+}
+
+:deep(.v-tab) {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:deep(.v-tab--selected) {
+  color: white;
+}
+</style>
