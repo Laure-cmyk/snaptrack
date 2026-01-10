@@ -1,9 +1,5 @@
 <script setup>
-<<<<<<< HEAD
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-=======
 import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
->>>>>>> origin/test-Prod
 import { useRouter, useRoute } from 'vue-router'
 import { WSClientRoom } from 'wsmini/client'
 import BaseHeader from '@/components/BaseHeader.vue'
@@ -154,20 +150,12 @@ async function fetchChallengeData() {
     }
 }
 
-<<<<<<< HEAD
 // Connect to WebSocket and start sharing location
 async function connectWebSocket() {
     try {
         const journeyId = route.params.id
         const username = localStorage.getItem('username') || 'Player'
         
-=======
-async function initWebSocket() {
-    try {
-        const journeyId = route.params.id
-        const username = localStorage.getItem('username') || 'Player'
-
->>>>>>> origin/test-Prod
         // WebSocket URL - auto-detect based on current hostname
         const isProduction = window.location.hostname !== 'localhost'
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -176,7 +164,6 @@ async function initWebSocket() {
             : (import.meta.env.VITE_WS_URL || 'ws://localhost:3000')
         
         const ws = new WSClientRoom(wsUrl)
-<<<<<<< HEAD
         await ws.connect()
         
         wsRoom.value = await ws.roomCreateOrJoin(`journey-${journeyId}`, { username })
@@ -235,48 +222,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     stopLocationSharing()
-=======
-        
-        console.log('Connecting to WebSocket:', wsUrl)
-        await ws.connect()
-        console.log('WebSocket connected!')
-
-        room.value = await ws.roomCreateOrJoin(`journey-${journeyId}`, { username })
-        console.log('Joined room:', room.value)
-
-        // Location updates every 2 seconds
-        locationInterval = setInterval(() => {
-            if (room.value && 'geolocation' in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    position => {
-                        const { latitude, longitude } = position.coords
-                        room.value.sendCmd('location', { lat: latitude, lng: longitude })
-                        console.log('Sent location:', latitude, longitude)
-                    },
-                    error => {
-                        console.error('Geolocation error:', error)
-                    }
-                )
-            }
-        }, 2000)
-    } catch (error) {
-        console.error('WebSocket connection failed:', error)
-    }
-}
-
-onMounted(async () => {
-    await fetchChallengeData();
-    await initWebSocket();
-});
-
-onBeforeUnmount(() => {
-    if (locationInterval) {
-        clearInterval(locationInterval);
-    }
-    if (room.value) {
-        room.value.leave();
-    }
->>>>>>> origin/test-Prod
 })
 
 // Fonctions
