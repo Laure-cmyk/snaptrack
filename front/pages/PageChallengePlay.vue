@@ -111,12 +111,22 @@ function completeChallenge() {
     completeDialog.value = false
     router.push('/')
 }
+
+function goToLive() {
+    router.push({ name: 'challenge-live', params: { id: route.params.id } })
+}
 </script>
 
 <template>
     <v-main class="bg-grey-lighten-4">
         <!-- Header -->
-        <BaseHeader title="Challenge" :show-back="true" @back="goBack" />
+        <BaseHeader title="Challenge" :show-back="true" :show-actions="true" @back="goBack">
+            <template #actions>
+                <v-btn icon variant="text" @click="goToLive" title="Voir les joueurs en direct">
+                    <v-icon color="white">mdi-map-marker-multiple</v-icon>
+                </v-btn>
+            </template>
+        </BaseHeader>
 
         <!-- Loading State -->
         <v-container v-if="loading" fluid class="d-flex justify-center align-center" style="min-height: 50vh;">

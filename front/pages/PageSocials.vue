@@ -43,8 +43,6 @@ async function loadData() {
   // First load user from localStorage
   loadStoredUser();
 
-  console.log('PageSocials: Loading data for user:', userId.value);
-
   if (!userId.value) {
     console.warn('PageSocials: No userId found');
     loading.value = false;
@@ -62,13 +60,11 @@ async function loadData() {
     }
 
     // Fetch friends
-    console.log('Fetching friends...');
     const friendsRes = await fetch(`/friends/list/${userId.value}`);
     if (!friendsRes.ok) {
       console.warn('Friends API error:', friendsRes.status);
     }
     const friendsData = await friendsRes.json();
-    console.log('Friends data:', friendsData);
 
     if (Array.isArray(friendsData)) {
       friends.value = friendsData.map(f => ({
@@ -81,24 +77,20 @@ async function loadData() {
     }
 
     // Fetch pending friend requests
-    console.log('Fetching pending friend requests...');
     const pendingFriendsRes = await fetch(`/friends/requests/pending/${userId.value}`);
     if (!pendingFriendsRes.ok) {
       console.warn('Pending friends API error:', pendingFriendsRes.status);
     }
     const pendingFriendsData = await pendingFriendsRes.json();
-    console.log('Pending friend requests:', pendingFriendsData);
 
     if (Array.isArray(pendingFriendsData)) {
       friendInvite.value = pendingFriendsData;
     }
 
     // Fetch sent pending friend requests (requests I sent that are still pending)
-    console.log('Fetching sent pending friend requests...');
     const sentPendingRes = await fetch(`/friends/requests/sent/${userId.value}`);
     if (sentPendingRes.ok) {
       const sentPendingData = await sentPendingRes.json();
-      console.log('Sent pending requests:', sentPendingData);
       if (Array.isArray(sentPendingData)) {
         sentPendingRequests.value = sentPendingData.map(r => ({
           id: r.id,
@@ -110,13 +102,11 @@ async function loadData() {
     }
 
     // Fetch user groups
-    console.log('Fetching groups...');
     const groupsRes = await fetch(`/groups/user/${userId.value}`);
     if (!groupsRes.ok) {
       console.warn('Groups API error:', groupsRes.status);
     }
     const groupsData = await groupsRes.json();
-    console.log('Groups data:', groupsData);
 
     if (Array.isArray(groupsData)) {
       groups.value = groupsData.map(g => ({
@@ -128,13 +118,11 @@ async function loadData() {
     }
 
     // Fetch pending group invites
-    console.log('Fetching pending group invites...');
     const pendingGroupsRes = await fetch(`/user-groups/pending/${userId.value}`);
     if (!pendingGroupsRes.ok) {
       console.warn('Pending groups API error:', pendingGroupsRes.status);
     }
     const pendingGroupsData = await pendingGroupsRes.json();
-    console.log('Pending group invites:', pendingGroupsData);
 
     if (Array.isArray(pendingGroupsData)) {
       groupInvite.value = pendingGroupsData;
@@ -243,7 +231,6 @@ onUnmounted(() => {
 });
 
 async function onAction(payload) {
-  console.log('Received action:', payload);
   const { item, result } = payload;
 
   if (result === 'success' && item.type === 'invite') {

@@ -85,13 +85,6 @@ function goToTrail(courseId) {
                 <TheSearchBar v-model="searchQuery" />
             </div>
         </div>
-      </div>
-
-      <!-- Search Bar -->
-      <div class="search-bar px-6 pb-8 pt-0">
-        <TheSearchBar v-model="searchQuery" />
-      </div>
-    </div>
 
     <!-- Course Cards -->
     <v-container fluid class="px-6 pb-24 pt-14">
@@ -99,14 +92,6 @@ function goToTrail(courseId) {
       <v-row v-if="loading" justify="center" class="py-8">
         <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
       </v-row>
-
-            <!-- Results -->
-            <v-row v-else-if="filteredCourses.length > 0">
-                <v-col cols="12" v-for="course in filteredCourses" :key="course.id">
-                    <BaseCard :title="course.title" :description="course.description" :rating="course.rating"
-                        :image="course.image" :city="course.city" @click="goToTrail(course.id)" />
-                </v-col>
-            </v-row>
 
       <!-- Results -->
       <v-row v-else-if="filteredCourses.length > 0">
@@ -118,6 +103,7 @@ function goToTrail(courseId) {
             :image="course.image"
             :city="course.city"
             :show-rating="true"
+            @click="goToTrail(course.id)"
           />
         </v-col>
       </v-row>

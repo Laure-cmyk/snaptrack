@@ -51,7 +51,12 @@ const simulateFakeParticipants = () => {
 
 onMounted(async () => {
   try {
-    const journeyId = route.query.journeyId || 'default';
+    const journeyId = route.params.id;
+    if (!journeyId) {
+      console.error('No journey ID provided');
+      router.push('/');
+      return;
+    }
     const username = localStorage.getItem('username') || 'TestUser';
 
     // Get the journeys id

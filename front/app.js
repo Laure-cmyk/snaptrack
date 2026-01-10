@@ -24,14 +24,13 @@ const routes = [
   { path: '/socials', component: () => import('./pages/PageSocials.vue'), meta: { requiresAuth: true } },
   { path: '/trail/:id', name: 'trail', component: () => import('./pages/PageTrail.vue'), meta: { requiresAuth: true } },
   { path: '/challenge/play/:id', name: 'challenge-play', component: () => import('./pages/PageChallengePlay.vue'), meta: { requiresAuth: true } },
-  { path: '/challenge/live/:id', name: 'challenge-live', component: () => import('./pages/PageHome.vue'), meta: { requiresAuth: true } },
+  { path: '/live/:id', name: 'challenge-live', component: () => import('./pages/PageLive.vue'), meta: { requiresAuth: true } },
   { path: '/imateapot', component: () => import('./pages/PageError418.vue'), meta: { requiresAuth: true } },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('./pages/PageError404.vue')
-  },
-  { path: '/live', component: () => import('./pages/PageLive.vue')}
+  }
 ];
 
 const router = createRouter({

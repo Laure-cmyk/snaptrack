@@ -160,7 +160,6 @@ router.get('/requests/pending/:userId', async (req, res) => {
       friendId: userObjId,
       status: 'pending',
     });
-    console.log('Pending friend requests found:', pendingRequests.length);
 
     // Manual lookup since userId might be stored as string
     const result = await Promise.all(
@@ -204,7 +203,6 @@ router.get('/requests/sent/:userId', async (req, res) => {
       userId: userObjId,
       status: 'pending',
     });
-    console.log('Sent pending requests found:', sentRequests.length);
 
     // Manual lookup to get recipient info
     const result = await Promise.all(
@@ -235,7 +233,6 @@ router.get('/requests/sent/:userId', async (req, res) => {
 router.get('/unfriends/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log('Fetching unfriends for userId:', userId);
 
     const relations = await Friends.find({
       $or: [{ userId }, { friendId: userId }]
@@ -274,14 +271,11 @@ router.get('/unfriends/:userId', async (req, res) => {
 router.get('/:userId/pending', async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log('Fetching pending friend requests for userId:', userId);
 
     const pendingRequests = await Friends.find({
       status: 'pending',
       friendId: userId
     }).populate('userId', 'username');
-
-    console.log('Found pending requests:', pendingRequests.length);
 
     const result = pendingRequests.map(f => ({
       friendshipId: f._id,
@@ -308,11 +302,9 @@ router.get('/:userId/pending', async (req, res) => {
 router.get('/list/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log('GET /friends/list - Looking for userId:', userId);
 
     // Convert string to ObjectId for proper querying
     const userObjId = toObjectId(userId);
-    console.log('Converted to ObjectId:', userObjId);
 
     if (!userObjId) {
       return res.status(400).json({ error: 'Invalid userId format' });
@@ -322,7 +314,6 @@ router.get('/list/:userId', async (req, res) => {
       status: 'accepted',
       $or: [{ userId: userObjId }, { friendId: userObjId }],
     });
-    console.log('Matched friendships:', friendships.length);
 
     // Manual lookup since userId/friendId might be strings instead of ObjectIds
     const result = await Promise.all(

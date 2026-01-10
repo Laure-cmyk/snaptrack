@@ -131,7 +131,7 @@ async function loadMyTrails() {
     }
     throw err;
   }
-}
+
 
 // Trail actions
 function createNewTrail() {
