@@ -490,7 +490,8 @@ async function sendFriendInvite(user) {
                       Supprimer
                     </v-btn>
                     <v-btn v-else size="small" variant="outlined" 
-                      :loading="sendingInvites[user._id] ? 'grey' : 'primary'"
+                      :color="sendingInvites[user._id] ? 'grey' : 'primary'"
+                      :loading="sendingInvites[user._id]"
                       :disabled="sendingInvites[user._id]"
                       @click="sendFriendInvite({ id: user._id, name: user.username })">
                       {{ sendingInvites[user._id] ? 'En attente' : 'Inviter' }}
