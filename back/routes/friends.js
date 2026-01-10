@@ -193,6 +193,50 @@ router.get('/requests/pending/:userId', async (req, res) => {
 });
 
 /**
+ * 3c. List sent pending friend requests for a user
+ * GET /friends/requests/sent/:userId
+ *
+ * Returns all pending friend requests where the user is the sender (userId)
+ */
+router.get('/requests/sent/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Convert string to ObjectId for proper querying
+    const userObjId = toObjectId(userId);
+    if (!userObjId) {
+      return res.status(400).json({ error: 'Invalid userId format' });
+    }
+
+    const sentRequests = await Friends.find({
+      userId: userObjId,
+      status: 'pending',
+    });
+    console.log('Sent pending requests found:', sentRequests.length);
+
+    // Manual lookup to get recipient info
+    const result = await Promise.all(
+      sentRequests.map(async (f) => {
+        const recipientObjId = toObjectId(f.friendId);
+        const recipient = recipientObjId ? await User.findById(recipientObjId).select('username profilePicture') : null;
+
+        return {
+          id: f._id,
+          name: recipient?.username || 'Unknown',
+          recipientId: f.friendId,
+          profilePicture: recipient?.profilePicture,
+          type: 'pending-sent',
+        };
+      })
+    );
+
+    res.json(result.filter(r => r.name !== 'Unknown'));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * 4. Delete friend (supprimer un ami)
  * DELETE /friends/:id
  */

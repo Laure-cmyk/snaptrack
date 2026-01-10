@@ -28,6 +28,7 @@ const userId = computed(() => storedUser.value?.id || storedUser.value?._id);
 // API calls
 const friends = ref([]);
 const friendInvite = ref([]);
+const sentPendingRequests = ref([]);
 const groupInvite = ref([]);
 const groups = ref([]);
 const loading = ref(true);
@@ -85,6 +86,22 @@ async function loadData() {
 
     if (Array.isArray(pendingFriendsData)) {
       friendInvite.value = pendingFriendsData;
+    }
+
+    // Fetch sent pending friend requests (requests I sent that are still pending)
+    console.log('Fetching sent pending friend requests...');
+    const sentPendingRes = await fetch(`/friends/requests/sent/${userId.value}`);
+    if (sentPendingRes.ok) {
+      const sentPendingData = await sentPendingRes.json();
+      console.log('Sent pending requests:', sentPendingData);
+      if (Array.isArray(sentPendingData)) {
+        sentPendingRequests.value = sentPendingData.map(r => ({
+          id: r.id,
+          name: r.name,
+          profilePicture: r.profilePicture,
+          type: 'pending-sent'
+        }));
+      }
     }
 
     // Fetch user groups
@@ -359,8 +376,8 @@ async function sendFriendInvite(user) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        requesterId: userId.value,
-        recipientId: user.id
+        userId: userId.value,
+        friendUserId: user.id
       })
     });
 
@@ -437,9 +454,33 @@ async function sendFriendInvite(user) {
 
             <!-- Friends List when search is not active -->
             <v-card-text v-else>
-              <div v-if="friendInvite.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2">Invitations en attente
+              <div v-if="friendInvite.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2">Invitations reçues
               </div>
-              <TheListSocials :items="[...friendInvite, ...friends]" @action="onAction" />
+              <TheListSocials v-if="friendInvite.length > 0" :items="friendInvite" @action="onAction" />
+              
+              <div v-if="sentPendingRequests.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">Invitations envoyées (en attente)
+              </div>
+              <v-list v-if="sentPendingRequests.length > 0" lines="one">
+                <v-list-item v-for="request in sentPendingRequests" :key="request.id" :title="request.name">
+                  <template v-slot:prepend>
+                    <v-avatar color="grey-lighten-1">
+                      <v-img v-if="request.profilePicture" :src="request.profilePicture" cover />
+                      <span v-else class="text-h6">{{ request.name?.charAt(0).toUpperCase() }}</span>
+                    </v-avatar>
+                  </template>
+                  <template v-slot:append>
+                    <v-chip size="small" color="warning" variant="outlined">En attente</v-chip>
+                  </template>
+                </v-list-item>
+              </v-list>
+              
+              <div v-if="friends.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">Mes amis
+              </div>
+              <TheListSocials v-if="friends.length > 0" :items="friends" @action="onAction" />
+              
+              <div v-if="friendInvite.length === 0 && sentPendingRequests.length === 0 && friends.length === 0" class="text-center text-grey py-4">
+                Aucun ami pour le moment
+              </div>
             </v-card-text>
           </div>
         </v-card>
