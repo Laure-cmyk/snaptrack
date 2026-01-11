@@ -85,7 +85,7 @@ async function saveRating(newRating) {
                 body: JSON.stringify({
                     userId,
                     journeyId,
-                    rating: Number(newRating)
+                    value: Number(newRating)
                 })
             })
 
