@@ -1,4 +1,4 @@
-// Express
+//Express
 import 'dotenv/config';
 import express from 'express';
 import createError from 'http-errors';
@@ -7,9 +7,14 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// --- 1. Imports Swagger ---
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Vos imports de routes existants
 import indexRouter from '../back/routes/index.js';
 import usersRouter from '../back/routes/users.js';
 import friendsRouter from '../back/routes/friends.js';
@@ -24,6 +29,29 @@ import scoresRouter from '../back/routes/scores.js';
 
 const app = express();
 
+// --- 2. Configuration Swagger ---
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'API SnapTrack',
+      version: '1.0.0',
+      description: "Documentation de l'API"
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000', // Assurez-vous que c'est le bon port
+        description: 'Serveur local'
+      }
+    ]
+  },
+  // IMPORTANT : Le chemin doit correspondre à la structure de vos dossiers.
+  // Vu vos imports, vos routes semblent être dans "../back/routes/"
+  apis: ['../back/routes/friends.js']
+};
+
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+
 // CORS configuration
 app.use(
   cors({
@@ -35,6 +63,10 @@ app.use(
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// --- 3. Route pour l'interface Swagger ---
+// Accessible via http://localhost:3000/api-docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Routes REST API
 app.use('/api', indexRouter);
@@ -67,7 +99,8 @@ if (process.env.NODE_ENV === 'production') {
       req.path.startsWith('/scores') ||
       req.path.startsWith('/user-groups') ||
       req.path.startsWith('/user-journeys') ||
-      req.path.startsWith('/api')
+      req.path.startsWith('/api') ||
+      req.path.startsWith('/api-docs') // On ajoute api-docs ici pour ne pas être redirigé
     ) {
       return next();
     }
