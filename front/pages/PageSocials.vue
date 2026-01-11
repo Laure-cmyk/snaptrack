@@ -379,7 +379,7 @@ async function sendFriendInvite(user) {
   </v-card>
 
   <!-- Tabs -->
-  <v-card v-else rounded="0">
+  <v-card v-else rounded="0" class="page-container">
     <v-tabs v-model="tab" direction="horizontal" fixed-tabs>
       <v-badge v-if="friendInvite.length > 0" inline location="top-right" color="error" :content="friendInvite.length">
         <v-tab prepend-icon="mdi-account" text="Amis" value="friends"></v-tab>
@@ -391,7 +391,7 @@ async function sendFriendInvite(user) {
       <v-tab v-else prepend-icon="mdi-account-group" text="Groupes" value="groups"></v-tab>
     </v-tabs>
 
-    <v-tabs-window v-model="tab">
+    <v-tabs-window v-model="tab" class="tabs-window-container">
       <v-tabs-window-item value="friends">
         <v-card flat>
           <!-- Search Component -->
@@ -410,7 +410,6 @@ async function sendFriendInvite(user) {
           />
 
           <!-- Friend Invites and Friends List -->
-          <v-card-text>
             <div v-if="friendInvite.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2">Invitations reçues</div>
             <TheListSocials v-if="friendInvite.length > 0" :items="friendInvite" @action="onAction" />
 
@@ -423,7 +422,6 @@ async function sendFriendInvite(user) {
               class="text-center text-grey py-4">
               Aucun ami pour le moment
             </div>
-          </v-card-text>
         </v-card>
       </v-tabs-window-item>
 
@@ -449,6 +447,19 @@ async function sendFriendInvite(user) {
 </template>
 
 <style scoped>
+.page-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tabs-window-container {
+  flex: 1;
+  overflow-y: auto;
+  height: calc(100vh - 10vh); /* 10vh is the tab height */
+}
+
 :deep(.v-tabs) {
   background: linear-gradient(135deg, #3948ab 0%, #3948ab 100%);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
