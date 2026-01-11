@@ -4,17 +4,138 @@ import { Rating } from '../models/index.js';
 
 const router = express.Router();
 
+// ==========================================
+// DÉFINITION DES SCHÉMAS SWAGGER (COMPONENTS)
+// ==========================================
+
 /**
- * 1. Create or Update Rating
- * POST /api/ratings
+ * @swagger
+ * {
+ * "components": {
+ * "schemas": {
+ * "Rating": {
+ * "type": "object",
+ * "properties": {
+ * "id": { "type": "string", "description": "ID unique du vote" },
+ * "userId": { "type": "string", "description": "ID de l'utilisateur" },
+ * "username": { "type": "string", "description": "Nom de l'utilisateur (si peuplé)" },
+ * "journeyId": { "type": "string", "description": "ID du parcours" },
+ * "rating": { "type": "number", "description": "La note donnée" },
+ * "createdAt": { "type": "string", "format": "date-time" }
+ * }
+ * },
+ * "RatingInput": {
+ * "type": "object",
+ * "required": ["userId", "journeyId", "value"],
+ * "properties": {
+ * "userId": { "type": "string", "example": "60d5ecb8b4..." },
+ * "journeyId": { "type": "string", "example": "60d5ecb9c5..." },
+ * "value": { "type": "number", "description": "Valeur de la note (ex: 1 à 5)", "example": 4 }
+ * }
+ * },
+ * "AverageRatingResponse": {
+ * "type": "object",
+ * "properties": {
+ * "journeyId": { "type": "string" },
+ * "averageRating": { "type": "number", "example": 4.5 },
+ * "count": { "type": "integer", "example": 12 }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
+
+// ==========================================
+// ROUTES
+// ==========================================
+
+/**
+ * @swagger
+ * {
+ * "paths": {
+ * "/ratings": {
+ * "post": {
+ * "summary": "Créer ou mettre à jour une note (Upsert)",
+ * "description": "Si l'utilisateur a déjà noté ce parcours, la note est mise à jour. Sinon, elle est créée.",
+ * "tags": ["Ratings"],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/RatingInput" }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "201": {
+ * "description": "Note enregistrée avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "rating": {
+ * "type": "object",
+ * "properties": {
+ * "id": { "type": "string" },
+ * "value": { "type": "number" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "400": { "description": "Données manquantes, format d'ID invalide ou valeur non numérique" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "get": {
+ * "summary": "Lister les notes",
+ * "description": "Récupère les notes, filtrables par parcours ou utilisateur.",
+ * "tags": ["Ratings"],
+ * "parameters": [
+ * {
+ * "in": "query",
+ * "name": "journeyId",
+ * "schema": { "type": "string", "example": "695e41d5f42f536195f29c7e" },
+ * "description": "Filtrer par ID de parcours"
+ * },
+ * {
+ * "in": "query",
+ * "name": "userId",
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cb0" },
+ * "description": "Filtrer par ID d'utilisateur"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Liste des notes récupérée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/Rating" }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ */
+
 router.post('/', async (req, res) => {
   try {
     // 1. Récupération des données (on accepte 'value' car c'est ce que Postman envoie)
     let { userId, journeyId, value } = req.body;
 
     // 2. Nettoyage des espaces vides (Trim)
-    // Cela corrige l'erreur "Cast to ObjectId failed" si un espace traîne dans Postman
     if (userId) userId = userId.trim();
     if (journeyId) journeyId = journeyId.trim();
 
@@ -33,7 +154,7 @@ router.post('/', async (req, res) => {
     // 4. Upsert : Met à jour si existe, sinon crée
     const rating = await Rating.findOneAndUpdate(
       { userId, journeyId }, // Critère de recherche
-      { rating: value },     // Mise à jour (on enregistre 'value' dans le champ 'rating')
+      { rating: value }, // Mise à jour (on enregistre 'value' dans le champ 'rating')
       { upsert: true, new: true, runValidators: true } // Options
     );
 
@@ -53,10 +174,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-/**
- * 2. Read Ratings
- * GET /api/ratings?journeyId=...
- */
 router.get('/', async (req, res) => {
   try {
     const { journeyId, userId } = req.query;
@@ -84,8 +201,38 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * 3. Get Average Rating
- * GET /api/ratings/average/:journeyId
+ * @swagger
+ * {
+ * "paths": {
+ * "/ratings/average/{journeyId}": {
+ * "get": {
+ * "summary": "Obtenir la moyenne des notes d'un parcours",
+ * "tags": ["Ratings"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "journeyId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d5f42f536195f29c8f" },
+ * "description": "ID du parcours"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Moyenne calculée avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/AverageRatingResponse" }
+ * }
+ * }
+ * },
+ * "400": { "description": "Format d'ID invalide" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/average/:journeyId', async (req, res) => {
   try {
@@ -93,7 +240,7 @@ router.get('/average/:journeyId', async (req, res) => {
 
     // Vérification du format ID
     if (!mongoose.Types.ObjectId.isValid(journeyId)) {
-        return res.status(400).json({ error: "Invalid journeyId format" });
+      return res.status(400).json({ error: 'Invalid journeyId format' });
     }
 
     const result = await Rating.aggregate([

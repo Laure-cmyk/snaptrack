@@ -1,4 +1,4 @@
-// Express
+//Express
 import 'dotenv/config';
 import express from 'express';
 import createError from 'http-errors';
@@ -13,6 +13,7 @@ import swaggerUi from 'swagger-ui-express';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Vos imports de routes existants
 import indexRouter from '../back/routes/index.js';
 import usersRouter from '../back/routes/users.js';
 import friendsRouter from '../back/routes/friends.js';
@@ -89,6 +90,29 @@ for (const file of openapiFiles) {
 }
 
 const app = express();
+
+// --- 2. Configuration Swagger ---
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'API SnapTrack',
+      version: '1.0.0',
+      description: "Documentation de l'API"
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Serveur local'
+      }
+    ]
+  },
+  // ICI : On utilise path.join pour être sûr à 100% de trouver le fichier
+  // Cela reprend la même logique que votre import : '../back/routes/friends.js'
+  apis: [path.join(__dirname, '../back/routes/*.js')]
+};
+
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
 
 // CORS configuration
 app.use(

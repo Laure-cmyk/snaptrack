@@ -5,12 +5,44 @@ import { Score, User } from '../models/index.js';
 const router = express.Router();
 
 /**
- * 1. SUMMARY : GET /scores/summary
- * (DÉPLACÉ EN HAUT POUR ÉVITER LE CONFLIT AVEC /:id)
- *
- * Objectif :
- * Récupérer les points / distances / temps obtenus par tous les utilisateurs,
- * classés par catégorie, avec filtres possibles.
+ * @swagger
+ * {
+ * "paths": {
+ * "/scores/summary": {
+ * "get": {
+ * "summary": "Obtenir un résumé des performances (Agrégation)",
+ * "tags": ["Scores"],
+ * "parameters": [
+ * { "in": "query", "name": "userId", "schema": { "type": "string" } },
+ * { "in": "query", "name": "journeyId", "schema": { "type": "string" } },
+ * { "in": "query", "name": "category", "schema": { "type": "string", "enum": ["score", "distance", "time"] } },
+ * { "in": "query", "name": "from", "schema": { "type": "string", "format": "date" } },
+ * { "in": "query", "name": "to", "schema": { "type": "string", "format": "date" } }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Résumé généré avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "summary": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/ScoreSummary" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/summary', async (req, res) => {
   try {
@@ -99,8 +131,43 @@ router.get('/summary', async (req, res) => {
 });
 
 /**
- * 2. TOTALS : GET /scores/totals
- * (DÉPLACÉ EN HAUT AUSSI POUR LA MÊME RAISON)
+ * @swagger
+ * {
+ * "paths": {
+ * "/scores/totals": {
+ * "get": {
+ * "summary": "Obtenir les totaux globaux pour un utilisateur",
+ * "tags": ["Scores"],
+ * "parameters": [
+ * { "in": "query", "name": "userId", "schema": { "type": "string" }, "required": true }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Totaux calculés",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "totals": {
+ * "type": "object",
+ * "properties": {
+ * "score": { "type": "number" },
+ * "distance": { "type": "number" },
+ * "time": { "type": "number" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/totals', async (req, res) => {
   try {
@@ -344,9 +411,42 @@ router.delete('/:id', async (req, res) => {
 });
 
 /**
- * 9. GET leaderboard - Top players and user position
- * GET /scores/leaderboard/global?userId=...&friendId=...
- * Returns top 3 players + the user's position + friend's position if not in top 3
+ * @swagger
+ * {
+ * "paths": {
+ * "/scores/leaderboard/global": {
+ * "get": {
+ * "summary": "Classement global (Top 3 + position utilisateur/ami)",
+ * "tags": ["Scores"],
+ * "parameters": [
+ * { "in": "query", "name": "userId", "schema": { "type": "string" } },
+ * { "in": "query", "name": "friendId", "schema": { "type": "string" } }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Classement récupéré",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "top3": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/LeaderboardEntry" }
+ * },
+ * "userPosition": { "$ref": "#/components/schemas/LeaderboardEntry" },
+ * "friendPosition": { "$ref": "#/components/schemas/LeaderboardEntry" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/leaderboard/global', async (req, res) => {
   try {

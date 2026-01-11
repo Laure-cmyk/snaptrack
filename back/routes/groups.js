@@ -14,9 +14,127 @@ function toObjectId(id) {
   return null;
 }
 
+// ==========================================
+// DÉFINITION DES SCHÉMAS (COMPONENTS)
+// ==========================================
+
 /**
- * 0. GET /groups
- * -> liste de tous les groupes (pour admin / debug)
+ * @swagger
+ * {
+ * "components": {
+ * "schemas": {
+ * "Group": {
+ * "type": "object",
+ * "properties": {
+ * "_id": { "type": "string", "description": "ID unique du groupe" },
+ * "name": { "type": "string", "description": "Nom du groupe" },
+ * "createdBy": {
+ * "type": "object",
+ * "properties": {
+ * "_id": { "type": "string" },
+ * "username": { "type": "string" },
+ * "email": { "type": "string" }
+ * }
+ * },
+ * "createdAt": { "type": "string", "format": "date-time" },
+ * "updatedAt": { "type": "string", "format": "date-time" }
+ * }
+ * },
+ * "GroupInput": {
+ * "type": "object",
+ * "required": ["name"],
+ * "properties": {
+ * "name": { "type": "string", "example": "Team Bleu" },
+ * "size": { "type": "string", "description": "ID de l'utilisateur créateur (optionnel)", "example": "5" }
+ * }
+ * },
+ * "GroupMember": {
+ * "type": "object",
+ * "properties": {
+ * "_id": { "type": "string" },
+ * "username": { "type": "string" },
+ * "profilePicture": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ */
+
+// ==========================================
+// ROUTES
+// ==========================================
+
+/**
+ * @swagger
+ * {
+ * "paths": {
+ * "/groups": {
+ * "get": {
+ * "summary": "Lister tous les groupes (Admin/Debug)",
+ * "tags": ["Groups"],
+ * "responses": {
+ * "200": {
+ * "description": "Liste de tous les groupes existants",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/Group" }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "post": {
+ * "summary": "Créer un nouveau groupe",
+ * "tags": ["Groups"],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "$ref": "#/components/schemas/GroupInput",
+ * "example": {
+ * "name": "Explorateurs",
+ * "ownerId": "695e75de8f7bb279fd390dde"
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "201": {
+ * "description": "Groupe créé avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "group": {
+ * "type": "object",
+ * "properties": {
+ * "_id": { "type": "string" },
+ * "name": { "type": "string" },
+ * "ownerId": { "type": "string" },
+ * "createdAt": { "type": "string", "format": "date-time" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "400": { "description": "Nom du groupe manquant ou invalide" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/', async (req, res) => {
   try {
@@ -27,20 +145,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-/**
- * 1. Create group
- * POST /groups
- *
- * Body JSON :
- * {
- *   "name": "Team Bleu",
- *   "ownerId": "681ff9a3d2..."  // optionnel
- * }
- *
- * On suppose que dans ton modèle Group, le champ s'appelle "createdBy".
- */
 router.post('/', async (req, res) => {
   try {
+    // On récupère "ownerId" (l'ID de l'utilisateur) au lieu de "size"
     const { name, ownerId } = req.body;
 
     if (!name) {
@@ -49,8 +156,9 @@ router.post('/', async (req, res) => {
 
     const groupData = { name };
 
+    // Si un ownerId est fourni, on l'assigne à createdBy
     if (ownerId) {
-      groupData.createdBy = ownerId; // mapping ownerId -> createdBy
+      groupData.createdBy = ownerId;
     }
 
     const group = await Group.create(groupData);
@@ -70,12 +178,50 @@ router.post('/', async (req, res) => {
 });
 
 /**
- * 2. List groups (groupes d’un utilisateur)
- *
- * GET /groups/user/:userId
- *
- * Objectif : retourner tous les groupes dans lesquels un utilisateur est associé.
- * On passe par la table de liaison UserGroup (userId, groupId, status).
+ * @swagger
+ * {
+ * "paths": {
+ * "/groups/user/{userId}": {
+ * "get": {
+ * "summary": "Lister les groupes d'un utilisateur",
+ * "tags": ["Groups"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "userId",
+ * "required": true,
+ * "schema": {
+ * "type": "string",
+ * "example": "695e76888f7bb279fd390e18"
+ * },
+ * "description": "ID de l'utilisateur"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Liste des groupes rejoints par l'utilisateur",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": {
+ * "type": "object",
+ * "properties": {
+ * "_id": { "type": "string" },
+ * "name": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "400": { "description": "Format d'ID invalide" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/user/:userId', async (req, res) => {
   try {
@@ -88,10 +234,7 @@ router.get('/user/:userId', async (req, res) => {
     }
 
     // 1. On récupère toutes les liaisons UserGroup pour cet utilisateur
-    const userGroups = await UserGroup.find({ userId: userObjId }).populate(
-      'groupId',
-      'name'
-    );
+    const userGroups = await UserGroup.find({ userId: userObjId }).populate('groupId', 'name');
 
     // 2. On extrait la liste des groupes
     const groups = userGroups
@@ -108,11 +251,51 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 /**
- * 3. Detail group (membres d’un groupe)
- *
- * GET /groups/:groupId/members
- *
- * Objectif : retourner le groupe + la liste des membres.
+ * @swagger
+ * {
+ * "paths": {
+ * "/groups/{groupId}/members": {
+ * "get": {
+ * "summary": "Détails d'un groupe et ses membres",
+ * "tags": ["Groups"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "groupId",
+ * "required": true,
+ * "schema": {
+ * "type": "string",
+ * "example": "695e42d15d4ecaf8cf4a1f6d"
+ * },
+ * "description": "ID du groupe"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Détails du groupe et liste des membres",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "groupId": { "type": "string" },
+ * "groupName": { "type": "string" },
+ * "members": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/GroupMember" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Groupe introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/:groupId/members', async (req, res) => {
   try {
@@ -136,7 +319,7 @@ router.get('/:groupId/members', async (req, res) => {
       .map(ug => ({
         _id: ug.userId._id,
         username: ug.userId.username,
-        profilePicture: ug.userId.profilePicture,
+        profilePicture: ug.userId.profilePicture
       }));
 
     res.json({
@@ -150,12 +333,93 @@ router.get('/:groupId/members', async (req, res) => {
 });
 
 /**
- * 4. Update group (modifier le nom du groupe)
- *
- * PUT /groups/:groupId
- *
- * Body JSON :
- * { "name": "Nouveau nom" }
+ * @swagger
+ * {
+ * "paths": {
+ * "/groups/{groupId}": {
+ * "put": {
+ * "summary": "Modifier le nom d'un groupe",
+ * "tags": ["Groups"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "groupId",
+ * "required": true,
+ * "schema": {
+ * "type": "string",
+ * "example": "695e42d15d4ecaf8cf4a1f6d"
+ * }
+ * }
+ * ],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "required": ["name"],
+ * "properties": {
+ * "name": { "type": "string", "example": "Nouveau nom" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "200": {
+ * "description": "Groupe mis à jour",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "group": { "$ref": "#/components/schemas/Group" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Groupe introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "delete": {
+ * "summary": "Supprimer un groupe",
+ * "tags": ["Groups"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "groupId",
+ * "required": true,
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d6f42f536195f29c9e"
+ * }
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Groupe supprimé",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "groupId": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Groupe introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.put('/:groupId', async (req, res) => {
   try {
@@ -184,13 +448,6 @@ router.put('/:groupId', async (req, res) => {
   }
 });
 
-/**
- * 5. Delete group (supprimer un groupe)
- *
- * DELETE /groups/:groupId
- *
- * On supprime le groupe, et éventuellement toutes les entrées UserGroup associées.
- */
 router.delete('/:groupId', async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -213,11 +470,58 @@ router.delete('/:groupId', async (req, res) => {
 });
 
 /**
- * 6. Remove user from group (retirer un utilisateur d’un groupe)
- *
- * DELETE /groups/:groupId/members/:userId
- *
- * On supprime l’entrée correspondante dans UserGroup.
+ * @swagger
+ * {
+ * "paths": {
+ * "/groups/{groupId}/members/{userId}": {
+ * "delete": {
+ * "summary": "Retirer un utilisateur d'un groupe",
+ * "tags": ["Groups"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "groupId",
+ * "required": true,
+ * "schema": {
+ * "type": "string",
+ * "example": "69623940bee8d98d13b55864"
+ * },
+ * "description": "ID du groupe"
+ * },
+ * {
+ * "in": "path",
+ * "name": "userId",
+ * "required": true,
+ * "schema": {
+ * "type": "string",
+ * "example": "695e76888f7bb279fd390e18"
+ * },
+ * "description": "ID de l'utilisateur à retirer"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Utilisateur retiré du groupe",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "groupId": { "type": "string" },
+ * "userId": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Utilisateur ou groupe introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.delete('/:groupId/members/:userId', async (req, res) => {
   try {
@@ -242,12 +546,40 @@ router.delete('/:groupId/members/:userId', async (req, res) => {
 });
 
 /**
- * 7. GET group by ID classique
- * (si tu en as encore besoin pour d’autres écrans)
- * GET /groups/:id
- *
- * ⚠️ Doit être APRÈS les routes plus spécifiques
- * comme '/:groupId/members' et '/:groupId/members/:userId'.
+ * @swagger
+ * {
+ * "paths": {
+ * "/groups/{id}": {
+ * "get": {
+ * "summary": "Récupérer un groupe par son ID",
+ * "tags": ["Groups"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d6f42f536195f29c9c"
+ * }
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Détails du groupe",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/Group" }
+ * }
+ * }
+ * },
+ * "404": { "description": "Groupe introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/:id', async (req, res) => {
   try {
