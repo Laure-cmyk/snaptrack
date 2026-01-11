@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import { Score, User } from '../models/index.js';
 
 const router = express.Router();
@@ -147,7 +148,8 @@ router.get('/totals', async (req, res) => {
 
     const match = {};
     if (userId) {
-      match.userId = userId;
+      // Convert string to ObjectId for MongoDB matching
+      match.userId = new mongoose.Types.ObjectId(userId);
     }
 
     const aggregation = await Score.aggregate([
@@ -239,6 +241,7 @@ router.get('/user/:userId', async (req, res) => {
 /**
  * 5. Ajouter / mettre à jour un score simple
  * POST /scores
+ * Si l'utilisateur a déjà un score pour ce parcours, on ne garde que le meilleur
  */
 router.post('/', async (req, res) => {
   try {
@@ -248,7 +251,42 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'userId et journeyId sont requis' });
     }
 
-    // On autorise à ne remplir que certains champs (score/distance/time)
+    // Vérifier s'il existe déjà un score pour cet utilisateur et ce parcours
+    const existingScore = await Score.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      journeyId: new mongoose.Types.ObjectId(journeyId)
+    });
+
+    if (existingScore) {
+      // Si le nouveau score est meilleur, on met à jour
+      const newScoreValue = typeof score === 'number' ? score : 0;
+
+      if (newScoreValue > existingScore.score) {
+        // Mettre à jour avec le meilleur score
+        existingScore.score = newScoreValue;
+        if (typeof distance === 'number') existingScore.distance = distance;
+        if (typeof time === 'number') existingScore.time = time;
+        existingScore.updatedAt = new Date();
+
+        await existingScore.save();
+
+        return res.status(200).json({
+          message: 'Score amélioré !',
+          score: existingScore,
+          improved: true,
+          previousScore: existingScore.score - (newScoreValue - existingScore.score)
+        });
+      } else {
+        // Le nouveau score n'est pas meilleur, on garde l'ancien
+        return res.status(200).json({
+          message: 'Score existant conservé (meilleur)',
+          score: existingScore,
+          improved: false
+        });
+      }
+    }
+
+    // Pas de score existant, on crée un nouveau
     const data = { userId, journeyId };
     if (typeof score === 'number') data.score = score;
     if (typeof distance === 'number') data.distance = distance;
@@ -258,7 +296,8 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({
       message: 'Score created',
-      score: newScore
+      score: newScore,
+      improved: false
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -318,6 +357,64 @@ router.delete('/:id', async (req, res) => {
     }
     res.json({ message: 'Score deleted successfully' });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 9. GET leaderboard - Top players and user position
+ * GET /scores/leaderboard?userId=...
+ * Returns top 3 players + the user's position if not in top 3
+ */
+router.get('/leaderboard/global', async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    // Aggregate scores by user - sum of best scores for each journey
+    const userScores = await Score.aggregate([
+      {
+        $group: {
+          _id: '$userId',
+          totalScore: { $sum: '$score' }
+        }
+      },
+      {
+        $sort: { totalScore: -1 }
+      }
+    ]);
+
+    // Get user details
+    const leaderboard = await Promise.all(
+      userScores.map(async (item, index) => {
+        const user = await User.findById(item._id).select('username profilePicture');
+        return {
+          rank: index + 1,
+          userId: item._id,
+          username: user?.username || 'Unknown',
+          profilePicture: user?.profilePicture || null,
+          totalScore: item.totalScore
+        };
+      })
+    );
+
+    // Get top 3
+    const top3 = leaderboard.slice(0, 3);
+
+    // Find current user position
+    let userPosition = null;
+    if (userId) {
+      const userIndex = leaderboard.findIndex(u => u.userId.toString() === userId);
+      if (userIndex !== -1 && userIndex >= 3) {
+        userPosition = leaderboard[userIndex];
+      }
+    }
+
+    res.json({
+      top3,
+      userPosition
+    });
+  } catch (error) {
+    console.error('Error in GET /scores/leaderboard/global:', error);
     res.status(500).json({ error: error.message });
   }
 });
