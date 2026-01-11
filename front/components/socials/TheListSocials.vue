@@ -156,7 +156,7 @@ function getButtonState(item, index) {
         @close="closeSearch" />
     </v-card-text>
 
-    <!-- All Users List when search is active -->
+    <!-- All user list when searching -->
     <v-card-text v-if="showSearchResults && showSearch" class="pt-6" style="max-height: 60vh; overflow-y: auto;">
       <div class="text-subtitle-2 text-grey-darken-1 mb-2">
         {{ searchQuery ? `Résultats pour "${searchQuery}"` : 'Tous les utilisateurs' }}
@@ -192,8 +192,8 @@ function getButtonState(item, index) {
       </div>
     </v-card-text>
 
-    <!-- Sent Pending Requests when search is not active -->
-    <v-card-text v-if="!showSearchResults && sentPendingRequests.length > 0" style="max-height: 60vh; overflow-y: auto;">
+    <!-- Friend requests -->
+    <v-card-text v-if="!showSearchResults && sentPendingRequests.length > 0">
       <div class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">
         Invitations envoyées (en attente)
       </div>
@@ -212,8 +212,8 @@ function getButtonState(item, index) {
       </v-list>
     </v-card-text>
 
-    <!-- Regular Items List when search is not active -->
-    <v-list v-if="!showSearchResults && items.length > 0" lines="two">
+    <!-- Friendlist -->
+    <v-list v-if="!showSearchResults && items.length > 0" lines="two" style="max-height: 60vh; overflow-y: auto;">
       <v-list-item v-for="(item, index) in items" :key="item?.id ?? index" @click="() => handleClick(item)"
         :title="item?.name ?? item?.title ?? 'User ' + (index + 1)">
         <template v-slot:prepend>
