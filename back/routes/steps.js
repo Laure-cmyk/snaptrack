@@ -191,7 +191,7 @@ router.delete('/:id', async (req, res) => {
 
 /**
  * 6. Upload Step Image
- * POST /api/steps/:id/upload-image
+ * POST /steps/:id/upload-image
  */
 router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
   try {
