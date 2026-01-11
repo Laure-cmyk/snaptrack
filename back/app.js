@@ -6,6 +6,9 @@ import logger from 'morgan';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import swaggerUi from 'swagger-ui-express';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,6 +25,69 @@ import ratingsRouter from '../back/routes/ratings.js';
 import participationsRouter from '../back/routes/participations.js';
 import scoresRouter from '../back/routes/scores.js';
 
+// Load and merge OpenAPI documentation
+const docsPath = path.join(__dirname, 'docs');
+const openapiFiles = fs.readdirSync(docsPath).filter(file => file.startsWith('openapi-') && file.endsWith('.json'));
+
+// Base OpenAPI document
+const swaggerDocument = {
+  openapi: '3.0.3',
+  info: {
+    title: 'SnapTrack API',
+    description: 'Complete API documentation for SnapTrack application.',
+    version: '1.0.0',
+    contact: {
+      name: 'SnapTrack Team'
+    }
+  },
+  servers: [
+    {
+      url: 'http://localhost:3000',
+      description: 'Development server'
+    },
+    {
+      url: 'https://snaptrack-nd9h.onrender.com',
+      description: 'Production server'
+    }
+  ],
+  tags: [],
+  paths: {},
+  components: {
+    schemas: {},
+    responses: {},
+    securitySchemes: {}
+  }
+};
+
+// Merge all OpenAPI files
+for (const file of openapiFiles) {
+  const filePath = path.join(docsPath, file);
+  const doc = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  
+  // Merge tags
+  if (doc.tags) {
+    swaggerDocument.tags.push(...doc.tags);
+  }
+  
+  // Merge paths
+  if (doc.paths) {
+    Object.assign(swaggerDocument.paths, doc.paths);
+  }
+  
+  // Merge components
+  if (doc.components) {
+    if (doc.components.schemas) {
+      Object.assign(swaggerDocument.components.schemas, doc.components.schemas);
+    }
+    if (doc.components.responses) {
+      Object.assign(swaggerDocument.components.responses, doc.components.responses);
+    }
+    if (doc.components.securitySchemes) {
+      Object.assign(swaggerDocument.components.securitySchemes, doc.components.securitySchemes);
+    }
+  }
+}
+
 const app = express();
 
 // CORS configuration
@@ -35,6 +101,9 @@ app.use(
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Swagger UI documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes REST API
 app.use('/api', indexRouter);
@@ -67,6 +136,7 @@ if (process.env.NODE_ENV === 'production') {
       req.path.startsWith('/scores') ||
       req.path.startsWith('/user-groups') ||
       req.path.startsWith('/user-journeys') ||
+      req.path.startsWith('/api-docs') ||
       req.path.startsWith('/api')
     ) {
       return next();

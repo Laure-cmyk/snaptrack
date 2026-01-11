@@ -1,0 +1,365 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SnapTrack Ratings API",
+    "description": "API for managing journey ratings in SnapTrack application.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "SnapTrack Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://snaptrack-nd9h.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Ratings",
+      "description": "Journey rating management endpoints"
+    }
+  ],
+  "paths": {
+    "/ratings": {
+      "get": {
+        "tags": ["Ratings"],
+        "summary": "Get all ratings",
+        "description": "Returns a list of ratings, optionally filtered by journey ID and/or user ID.",
+        "operationId": "getRatings",
+        "parameters": [
+          {
+            "name": "journeyId",
+            "in": "query",
+            "description": "Filter ratings by journey ID",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Filter ratings by user ID",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RatingListItem"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Ratings"],
+        "summary": "Create or update a rating",
+        "description": "Creates a new rating or updates an existing one if the user has already rated the journey (upsert behavior).",
+        "operationId": "createOrUpdateRating",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rating saved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatingCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/ratings/average/{journeyId}": {
+      "get": {
+        "tags": ["Ratings"],
+        "summary": "Get average rating for a journey",
+        "description": "Returns the average rating and total count of ratings for a specific journey.",
+        "operationId": "getAverageRating",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JourneyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AverageRatingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidJourneyId"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ObjectId": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "description": "MongoDB ObjectId (24 character hex string)",
+        "example": "681ff9a3d2c8f4b5e6a12345"
+      },
+      "Timestamps": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "RatingValue": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 5,
+        "description": "Rating value from 1 to 5",
+        "example": 4
+      },
+      "Rating": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/RatingValue"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Timestamps"
+          }
+        ],
+        "required": ["_id", "userId", "journeyId", "rating"]
+      },
+      "RatingListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true,
+            "description": "Username of the rating author",
+            "example": "johndoe"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/RatingValue"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RatingCreateInput": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ObjectId"
+              }
+            ],
+            "description": "ID of the user submitting the rating"
+          },
+          "journeyId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ObjectId"
+              }
+            ],
+            "description": "ID of the journey being rated"
+          },
+          "value": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Rating value from 1 to 5",
+            "example": 4
+          }
+        },
+        "required": ["userId", "journeyId", "value"],
+        "additionalProperties": false,
+        "example": {
+          "userId": "681ff9a3d2c8f4b5e6a12345",
+          "journeyId": "682aa0b4e3d9g5c6f7b23456",
+          "value": 5
+        }
+      },
+      "RatingCreateResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Rating saved"
+          },
+          "rating": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "userId": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "journeyId": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "value": {
+                "$ref": "#/components/schemas/RatingValue"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "AverageRatingResponse": {
+        "type": "object",
+        "properties": {
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "averageRating": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "maximum": 5,
+            "description": "Average rating rounded to one decimal place (0 if no ratings)",
+            "example": 4.2
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total number of ratings",
+            "example": 15
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "parameters": {
+      "JourneyId": {
+        "name": "journeyId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the journey",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request - missing or invalid parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "userId, journeyId et value (nombre) sont requis"
+            }
+          }
+        }
+      },
+      "InvalidJourneyId": {
+        "description": "Invalid journey ID format",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Invalid journeyId format"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "An unexpected error occurred"
+            }
+          }
+        }
+      }
+    }
+  }
+}

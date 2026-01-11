@@ -1,0 +1,691 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SnapTrack User Groups API",
+    "description": "API for managing user-group relationships and memberships in SnapTrack application.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "SnapTrack Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://snaptrack-nd9h.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "User Groups",
+      "description": "User-group relationship management endpoints"
+    },
+    {
+      "name": "Group Invitations",
+      "description": "Group invitation management endpoints"
+    }
+  ],
+  "paths": {
+    "/user-groups": {
+      "get": {
+        "tags": ["User Groups"],
+        "summary": "Get all user-group relationships",
+        "description": "Returns a list of all user-group relationships with populated user and group data. Intended for admin/debug purposes.",
+        "operationId": "getAllUserGroups",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserGroupPopulated"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": ["User Groups"],
+        "summary": "Create a user-group relationship",
+        "description": "Creates a new relationship between a user and a group with a specified status.",
+        "operationId": "createUserGroup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserGroupCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User-group relationship created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/user-groups/members/{groupId}": {
+      "get": {
+        "tags": ["User Groups"],
+        "summary": "Get group members with status",
+        "description": "Returns the group details along with the list of all members and their status.",
+        "operationId": "getGroupMembersWithStatus",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/GroupId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupMembersWithStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/GroupNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/user-groups/pending/{userId}": {
+      "get": {
+        "tags": ["Group Invitations"],
+        "summary": "Get pending group invitations",
+        "description": "Returns all pending group invitations for a specific user.",
+        "operationId": "getPendingGroupInvitations",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingGroupInvitation"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidUserId"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/user-groups/{id}/accept": {
+      "post": {
+        "tags": ["Group Invitations"],
+        "summary": "Accept a group invitation",
+        "description": "Accepts a pending group invitation, changing the user's status to 'member'.",
+        "operationId": "acceptGroupInvitation",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserGroupId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invitation accepted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationAcceptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/InvitationNotFound"
+          }
+        }
+      }
+    },
+    "/user-groups/{id}/decline": {
+      "post": {
+        "tags": ["Group Invitations"],
+        "summary": "Decline a group invitation",
+        "description": "Declines a pending group invitation by deleting the user-group relationship.",
+        "operationId": "declineGroupInvitation",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserGroupId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invitation declined successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationDeclineResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/InvitationNotFound"
+          }
+        }
+      }
+    },
+    "/user-groups/{id}": {
+      "get": {
+        "tags": ["User Groups"],
+        "summary": "Get user-group relationship by ID",
+        "description": "Returns a single user-group relationship by its ID with populated user and group data.",
+        "operationId": "getUserGroupById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserGroupId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserGroupPopulated"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/UserGroupNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "put": {
+        "tags": ["User Groups"],
+        "summary": "Update a user-group relationship",
+        "description": "Updates an existing user-group relationship (e.g., change role or status).",
+        "operationId": "updateUserGroup",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserGroupId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserGroupUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User-group relationship updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/UserGroupNotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["User Groups"],
+        "summary": "Delete a user-group relationship",
+        "description": "Removes a user from a group by deleting the user-group relationship.",
+        "operationId": "deleteUserGroup",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserGroupId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User-group relationship deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/UserGroupNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ObjectId": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "description": "MongoDB ObjectId (24 character hex string)",
+        "example": "681ff9a3d2c8f4b5e6a12345"
+      },
+      "Timestamps": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "UserGroupRole": {
+        "type": "string",
+        "enum": ["admin", "member", "moderator"],
+        "default": "member",
+        "description": "Role of the user in the group",
+        "example": "member"
+      },
+      "UserGroupStatus": {
+        "type": "string",
+        "enum": ["pending", "member", "admin"],
+        "description": "Status of the user in the group",
+        "example": "member"
+      },
+      "UserBasic": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "description": "User's username",
+            "example": "johndoe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address",
+            "example": "john@example.com"
+          }
+        },
+        "required": ["_id", "username"]
+      },
+      "GroupBasic": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Group name",
+            "example": "Team Bleu"
+          },
+          "description": {
+            "type": "string",
+            "description": "Group description"
+          }
+        },
+        "required": ["_id", "name"]
+      },
+      "UserGroup": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "groupId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserGroupRole"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Timestamps"
+          }
+        ],
+        "required": ["_id", "userId", "groupId"]
+      },
+      "UserGroupPopulated": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/UserBasic"
+          },
+          "groupId": {
+            "$ref": "#/components/schemas/GroupBasic"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserGroupRole"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserGroupCreateInput": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "groupId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UserGroupStatus"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserGroupRole"
+          }
+        },
+        "required": ["userId", "groupId"],
+        "additionalProperties": false,
+        "example": {
+          "userId": "681ff9a3d2c8f4b5e6a12345",
+          "groupId": "682aa0b4e3d9g5c6f7b23456",
+          "status": "member"
+        }
+      },
+      "UserGroupUpdateInput": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/UserGroupStatus"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserGroupRole"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupMemberWithStatus": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "example": "johndoe"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UserGroupStatus"
+          }
+        },
+        "required": ["userId", "username"]
+      },
+      "GroupMembersWithStatusResponse": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "groupName": {
+            "type": "string",
+            "example": "Team Bleu"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupMemberWithStatus"
+            }
+          }
+        }
+      },
+      "PendingGroupInvitation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "description": "Group name",
+            "example": "Team Bleu"
+          },
+          "groupId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["invite"],
+            "example": "invite"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["group"],
+            "example": "group"
+          }
+        }
+      },
+      "InvitationAcceptResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Group invitation accepted"
+          },
+          "userGroup": {
+            "$ref": "#/components/schemas/UserGroupPopulated"
+          }
+        }
+      },
+      "InvitationDeclineResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Group invitation declined"
+          }
+        }
+      },
+      "DeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "UserGroup deleted successfully"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "parameters": {
+      "UserGroupId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the user-group relationship",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      },
+      "GroupId": {
+        "name": "groupId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the group",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      },
+      "UserId": {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the user",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request - missing or invalid parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Validation failed"
+            }
+          }
+        }
+      },
+      "InvalidUserId": {
+        "description": "Invalid user ID format",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Invalid userId format"
+            }
+          }
+        }
+      },
+      "UserGroupNotFound": {
+        "description": "User-group relationship not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "UserGroup not found"
+            }
+          }
+        }
+      },
+      "GroupNotFound": {
+        "description": "Group not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Group not found"
+            }
+          }
+        }
+      },
+      "InvitationNotFound": {
+        "description": "Invitation not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Invitation not found"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "An unexpected error occurred"
+            }
+          }
+        }
+      }
+    }
+  }
+}

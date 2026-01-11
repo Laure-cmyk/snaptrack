@@ -1,0 +1,730 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SnapTrack Journeys API",
+    "description": "API for managing journeys (trails/challenges) in SnapTrack application.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "SnapTrack Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://snaptrack-nd9h.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Journeys",
+      "description": "Journey management endpoints"
+    },
+    {
+      "name": "Journey Images",
+      "description": "Journey image upload/delete endpoints"
+    },
+    {
+      "name": "Journey Stats",
+      "description": "Journey statistics endpoints"
+    }
+  ],
+  "paths": {
+    "/journeys": {
+      "get": {
+        "tags": ["Journeys"],
+        "summary": "List all journeys",
+        "description": "Returns a paginated list of journeys with optional filtering and sorting. Includes average ratings for each journey.",
+        "operationId": "listJourneys",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search term to filter journeys by name (case-insensitive)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "Paris"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of journeys to return",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50,
+              "example": 20
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of journeys to skip for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "example": 0
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort order for the results",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["alphabetical", "recent"],
+              "example": "recent"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JourneyListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Journeys"],
+        "summary": "Create a new journey",
+        "description": "Creates a new journey with the provided details.",
+        "operationId": "createJourney",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JourneyCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Journey created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Journey"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/journeys/{id}": {
+      "get": {
+        "tags": ["Journeys"],
+        "summary": "Get journey by ID",
+        "description": "Returns a single journey by its ID.",
+        "operationId": "getJourneyById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JourneyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Journey"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/JourneyNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Journeys"],
+        "summary": "Update a journey",
+        "description": "Updates an existing journey with the provided details.",
+        "operationId": "updateJourney",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JourneyId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JourneyUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Journey updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Journey"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/JourneyNotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Journeys"],
+        "summary": "Delete a journey",
+        "description": "Deletes a journey and its associated image from Cloudinary if exists.",
+        "operationId": "deleteJourney",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JourneyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Journey deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/JourneyNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/journeys/{id}/upload-image": {
+      "post": {
+        "tags": ["Journey Images"],
+        "summary": "Upload journey image",
+        "description": "Uploads an image for a journey. Replaces existing image if one exists.",
+        "operationId": "uploadJourneyImage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JourneyId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageUploadInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/NoImageProvided"
+          },
+          "404": {
+            "$ref": "#/components/responses/JourneyNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/journeys/{id}/image": {
+      "delete": {
+        "tags": ["Journey Images"],
+        "summary": "Delete journey image",
+        "description": "Deletes the image associated with a journey from Cloudinary.",
+        "operationId": "deleteJourneyImage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JourneyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageDeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/JourneyNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/journeys/{journeyId}/steps/count": {
+      "get": {
+        "tags": ["Journey Stats"],
+        "summary": "Count steps in a journey",
+        "description": "Returns the total number of steps associated with a journey.",
+        "operationId": "countJourneySteps",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JourneyIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepCountResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/JourneyNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/journeys/{journeyId}/rating": {
+      "get": {
+        "tags": ["Journey Stats"],
+        "summary": "Get journey rating",
+        "description": "Returns the average rating and total number of ratings for a journey.",
+        "operationId": "getJourneyRating",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JourneyIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JourneyRatingResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/JourneyNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ObjectId": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "description": "MongoDB ObjectId (24 character hex string)",
+        "example": "681ff9a3d2c8f4b5e6a12345"
+      },
+      "Timestamps": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "Journey": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Name of the journey",
+            "example": "Paris Discovery Tour"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL of the journey's cover image"
+          },
+          "town": {
+            "type": "string",
+            "description": "Town/city where the journey takes place",
+            "example": "Paris"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Detailed description of the journey",
+            "example": "Explore the hidden gems of Paris through this exciting treasure hunt."
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Timestamps"
+          }
+        ],
+        "required": ["_id", "name", "description"]
+      },
+      "JourneyListItem": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "Paris Discovery Tour"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "time": {
+            "type": "integer",
+            "description": "Estimated time in minutes",
+            "example": 60
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "town": {
+            "type": "string",
+            "example": "Paris"
+          },
+          "averageRating": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "maximum": 5,
+            "description": "Average rating of the journey (0 if no ratings)",
+            "example": 4.5
+          }
+        }
+      },
+      "JourneyListResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Journeys fetched"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total number of journeys matching the filter",
+            "example": 42
+          },
+          "journeys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JourneyListItem"
+            }
+          }
+        }
+      },
+      "JourneyCreateInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Name of the journey",
+            "example": "Paris Discovery Tour"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Detailed description of the journey",
+            "example": "Explore the hidden gems of Paris through this exciting treasure hunt."
+          },
+          "town": {
+            "type": "string",
+            "description": "Town/city where the journey takes place",
+            "example": "Paris"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the journey's cover image"
+          }
+        },
+        "required": ["name", "description"],
+        "additionalProperties": false
+      },
+      "JourneyUpdateInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Name of the journey"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Detailed description of the journey"
+          },
+          "town": {
+            "type": "string",
+            "description": "Town/city where the journey takes place"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL of the journey's cover image"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImageUploadInput": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "description": "Image file to upload"
+          }
+        },
+        "required": ["image"]
+      },
+      "ImageUploadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Journey image uploaded successfully"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the uploaded image"
+          }
+        }
+      },
+      "ImageDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Journey image deleted successfully"
+          }
+        }
+      },
+      "DeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Journey deleted successfully"
+          }
+        }
+      },
+      "StepCountResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Step amount fetched"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "totalSteps": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total number of steps in the journey",
+            "example": 5
+          }
+        }
+      },
+      "JourneyRatingResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Journey rating fetched"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "averageRating": {
+            "type": "number",
+            "format": "float",
+            "minimum": 1,
+            "maximum": 5,
+            "nullable": true,
+            "description": "Average rating (null if no ratings)",
+            "example": 4.25
+          },
+          "totalRatings": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total number of ratings",
+            "example": 12
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "parameters": {
+      "JourneyId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the journey",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      },
+      "JourneyIdParam": {
+        "name": "journeyId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the journey",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request - missing or invalid parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Validation failed"
+            }
+          }
+        }
+      },
+      "NoImageProvided": {
+        "description": "No image file was provided in the request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "No image file provided"
+            }
+          }
+        }
+      },
+      "JourneyNotFound": {
+        "description": "Journey not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Journey not found"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "An unexpected error occurred"
+            }
+          }
+        }
+      }
+    }
+  }
+}

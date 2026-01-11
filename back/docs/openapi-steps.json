@@ -1,0 +1,784 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SnapTrack Steps API",
+    "description": "API for managing journey steps (locations/checkpoints) in SnapTrack application.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "SnapTrack Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://snaptrack-nd9h.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Steps",
+      "description": "Step management endpoints"
+    },
+    {
+      "name": "Step Images",
+      "description": "Step image upload/delete endpoints"
+    }
+  ],
+  "paths": {
+    "/steps": {
+      "get": {
+        "tags": ["Steps"],
+        "summary": "Get all steps",
+        "description": "Returns a list of all steps in the system. Intended for admin/debug purposes.",
+        "operationId": "getAllSteps",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Step"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Steps"],
+        "summary": "Create a new step",
+        "description": "Creates a new step for a journey with location data and optional riddle.",
+        "operationId": "createStep",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Step created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/steps/journey/{journeyId}": {
+      "get": {
+        "tags": ["Steps"],
+        "summary": "Get steps for a journey",
+        "description": "Returns all steps associated with a specific journey, sorted by timestamp.",
+        "operationId": "getJourneySteps",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JourneyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StepListItem"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/steps/{id}": {
+      "get": {
+        "tags": ["Steps"],
+        "summary": "Get step by ID",
+        "description": "Returns a single step by its ID.",
+        "operationId": "getStepById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/StepId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/StepNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Steps"],
+        "summary": "Update a step",
+        "description": "Updates an existing step with the provided details.",
+        "operationId": "updateStep",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/StepId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Step updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepUpdateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/StepNotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Steps"],
+        "summary": "Delete a step",
+        "description": "Deletes a step and its associated image from Cloudinary if exists.",
+        "operationId": "deleteStep",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/StepId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Step deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepDeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/StepNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/steps/{id}/upload-image": {
+      "post": {
+        "tags": ["Step Images"],
+        "summary": "Upload step image",
+        "description": "Uploads an image for a step. Replaces existing image if one exists.",
+        "operationId": "uploadStepImage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/StepId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageUploadInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/NoImageProvided"
+          },
+          "404": {
+            "$ref": "#/components/responses/StepNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/steps/{id}/image": {
+      "delete": {
+        "tags": ["Step Images"],
+        "summary": "Delete step image",
+        "description": "Deletes the image associated with a step from Cloudinary.",
+        "operationId": "deleteStepImage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/StepId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageDeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/StepNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ObjectId": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "description": "MongoDB ObjectId (24 character hex string)",
+        "example": "681ff9a3d2c8f4b5e6a12345"
+      },
+      "Timestamps": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "GeoJSONPoint": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["Point"],
+            "default": "Point",
+            "description": "GeoJSON type"
+          },
+          "coordinates": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "Coordinates as [longitude, latitude]",
+            "example": [2.3522, 48.8566]
+          }
+        },
+        "required": ["type", "coordinates"]
+      },
+      "Step": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "location": {
+            "$ref": "#/components/schemas/GeoJSONPoint"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "minimum": -90,
+            "maximum": 90,
+            "nullable": true,
+            "description": "Latitude coordinate",
+            "example": 48.8566
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "minimum": -180,
+            "maximum": 180,
+            "nullable": true,
+            "description": "Longitude coordinate",
+            "example": 2.3522
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL of the step's image"
+          },
+          "riddle": {
+            "type": "string",
+            "maxLength": 500,
+            "default": "",
+            "description": "Riddle or hint for finding this step",
+            "example": "Find the hidden statue near the fountain"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp for ordering steps"
+          },
+          "accuracy": {
+            "type": "number",
+            "nullable": true,
+            "description": "GPS accuracy in meters",
+            "example": 10
+          },
+          "altitude": {
+            "type": "number",
+            "nullable": true,
+            "description": "Altitude in meters",
+            "example": 35
+          },
+          "speed": {
+            "type": "number",
+            "nullable": true,
+            "description": "Speed in meters per second",
+            "example": 1.5
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "default": "",
+            "description": "Additional notes for the step"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Timestamps"
+          }
+        ],
+        "required": ["_id", "journeyId"]
+      },
+      "StepListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "riddle": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Find the hidden statue near the fountain"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "minimum": -90,
+            "maximum": 90,
+            "nullable": true,
+            "example": 48.8566
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "minimum": -180,
+            "maximum": 180,
+            "nullable": true,
+            "example": 2.3522
+          },
+          "accuracy": {
+            "type": "number",
+            "nullable": true,
+            "example": 10
+          },
+          "altitude": {
+            "type": "number",
+            "nullable": true,
+            "example": 35
+          },
+          "speed": {
+            "type": "number",
+            "nullable": true,
+            "example": 1.5
+          }
+        }
+      },
+      "StepDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "title": {
+            "type": "string",
+            "description": "Step title",
+            "example": "Starting Point"
+          },
+          "description": {
+            "type": "string",
+            "description": "Step description"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Order of the step in the journey",
+            "example": 1
+          }
+        }
+      },
+      "StepCreateInput": {
+        "type": "object",
+        "properties": {
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "riddle": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Riddle or hint for finding this step",
+            "example": "Find the hidden statue near the fountain"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "minimum": -90,
+            "maximum": 90,
+            "description": "Latitude coordinate",
+            "example": 48.8566
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "minimum": -180,
+            "maximum": 180,
+            "description": "Longitude coordinate",
+            "example": 2.3522
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the step's image"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Additional notes for the step"
+          },
+          "accuracy": {
+            "type": "number",
+            "description": "GPS accuracy in meters",
+            "example": 10
+          },
+          "altitude": {
+            "type": "number",
+            "description": "Altitude in meters",
+            "example": 35
+          },
+          "speed": {
+            "type": "number",
+            "description": "Speed in meters per second",
+            "example": 1.5
+          }
+        },
+        "required": ["journeyId"],
+        "additionalProperties": false,
+        "example": {
+          "journeyId": "681ff9a3d2c8f4b5e6a12345",
+          "riddle": "Find the hidden statue near the fountain",
+          "latitude": 48.8566,
+          "longitude": 2.3522
+        }
+      },
+      "StepUpdateInput": {
+        "type": "object",
+        "properties": {
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "title": {
+            "type": "string",
+            "description": "Step title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Step description"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Order of the step in the journey"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StepCreateResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Step created"
+          },
+          "step": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "journeyId": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "riddle": {
+                "type": "string"
+              },
+              "latitude": {
+                "type": "number",
+                "format": "double"
+              },
+              "longitude": {
+                "type": "number",
+                "format": "double"
+              },
+              "accuracy": {
+                "type": "number"
+              },
+              "altitude": {
+                "type": "number"
+              },
+              "speed": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "StepUpdateResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Step updated"
+          },
+          "step": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "journeyId": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "order": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "StepDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Step deleted"
+          },
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          }
+        }
+      },
+      "ImageUploadInput": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "description": "Image file to upload"
+          }
+        },
+        "required": ["image"]
+      },
+      "ImageUploadResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Step image uploaded successfully"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the uploaded image"
+          }
+        }
+      },
+      "ImageDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Step image deleted successfully"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "parameters": {
+      "StepId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the step",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      },
+      "JourneyId": {
+        "name": "journeyId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the journey",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request - missing or invalid parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "journeyId is required"
+            }
+          }
+        }
+      },
+      "NoImageProvided": {
+        "description": "No image file was provided in the request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "No image file provided"
+            }
+          }
+        }
+      },
+      "StepNotFound": {
+        "description": "Step not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Step not found"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "An unexpected error occurred"
+            }
+          }
+        }
+      }
+    }
+  }
+}

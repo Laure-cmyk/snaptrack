@@ -1,0 +1,54 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SnapTrack Index API",
+    "description": "Root API endpoint for SnapTrack application health check.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "SnapTrack Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://snaptrack-nd9h.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health",
+      "description": "API health check endpoint"
+    }
+  ],
+  "paths": {
+    "/api": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "description": "Returns a simple message to verify the API is running.",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "API is running",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Ignition!"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "responses": {}
+  }
+}

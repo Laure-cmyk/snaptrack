@@ -1,0 +1,964 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SnapTrack Scores API",
+    "description": "API for managing user scores, leaderboards, and score summaries in SnapTrack application.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "SnapTrack Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://snaptrack-nd9h.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Scores",
+      "description": "Score management endpoints"
+    },
+    {
+      "name": "Leaderboard",
+      "description": "Leaderboard and ranking endpoints"
+    },
+    {
+      "name": "Score Summary",
+      "description": "Score aggregation and summary endpoints"
+    }
+  ],
+  "paths": {
+    "/scores": {
+      "get": {
+        "tags": ["Scores"],
+        "summary": "Get all scores",
+        "description": "Returns a list of all scores, optionally filtered by journey ID and/or user ID.",
+        "operationId": "getAllScores",
+        "parameters": [
+          {
+            "name": "journeyId",
+            "in": "query",
+            "description": "Filter scores by journey ID",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Filter scores by user ID",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScorePopulated"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Scores"],
+        "summary": "Create or update a score",
+        "description": "Creates a new score or updates an existing one if the new score is better. Only keeps the best score per user per journey.",
+        "operationId": "createOrUpdateScore",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoreCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Existing score kept (new score was not better) or score improved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreUpdateResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "New score created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/scores/summary": {
+      "get": {
+        "tags": ["Score Summary"],
+        "summary": "Get score summary",
+        "description": "Returns aggregated scores grouped by user, with totals for score, distance, and time. Supports filtering by user, journey, category, and date range.",
+        "operationId": "getScoreSummary",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Filter by user ID",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          },
+          {
+            "name": "journeyId",
+            "in": "query",
+            "description": "Filter by journey ID",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Return only a specific category",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["score", "distance", "time"]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Start date for filtering (ISO 8601 format)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-01-01"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "End date for filtering (ISO 8601 format)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-12-31"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreSummaryResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/scores/totals": {
+      "get": {
+        "tags": ["Score Summary"],
+        "summary": "Get score totals",
+        "description": "Returns the total score, distance, and time for all scores or for a specific user.",
+        "operationId": "getScoreTotals",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Filter totals by user ID",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreTotalsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/scores/journey/{journeyId}": {
+      "get": {
+        "tags": ["Leaderboard"],
+        "summary": "Get journey leaderboard",
+        "description": "Returns the leaderboard (scores ranked by highest) for a specific journey.",
+        "operationId": "getJourneyLeaderboard",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JourneyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JourneyLeaderboardItem"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/scores/user/{userId}": {
+      "get": {
+        "tags": ["Scores"],
+        "summary": "Get user score history",
+        "description": "Returns all scores for a specific user, sorted by most recent first.",
+        "operationId": "getUserScoreHistory",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserScoreHistoryItem"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/scores/leaderboard/global": {
+      "get": {
+        "tags": ["Leaderboard"],
+        "summary": "Get global leaderboard",
+        "description": "Returns the top 3 players globally, plus the requesting user's position and optionally a friend's position if not in top 3.",
+        "operationId": "getGlobalLeaderboard",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Current user's ID to get their position",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          },
+          {
+            "name": "friendId",
+            "in": "query",
+            "description": "Friend's ID to get their position",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalLeaderboardResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/scores/{id}": {
+      "get": {
+        "tags": ["Scores"],
+        "summary": "Get score by ID",
+        "description": "Returns a single score by its ID with populated user and journey data.",
+        "operationId": "getScoreById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ScoreId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScorePopulated"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ScoreNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Scores"],
+        "summary": "Update a score",
+        "description": "Updates an existing score by its ID.",
+        "operationId": "updateScore",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ScoreId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoreUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Score updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Score"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/ScoreNotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Scores"],
+        "summary": "Delete a score",
+        "description": "Deletes a score by its ID.",
+        "operationId": "deleteScore",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ScoreId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Score deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ScoreNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ObjectId": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "description": "MongoDB ObjectId (24 character hex string)",
+        "example": "681ff9a3d2c8f4b5e6a12345"
+      },
+      "Timestamps": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "UserBasic": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "description": "User's username",
+            "example": "johndoe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address",
+            "example": "john@example.com"
+          }
+        },
+        "required": ["_id", "username"]
+      },
+      "JourneyBasic": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "title": {
+            "type": "string",
+            "description": "Journey title",
+            "example": "Paris Discovery Tour"
+          }
+        },
+        "required": ["_id"]
+      },
+      "Score": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "participationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ObjectId"
+              }
+            ],
+            "nullable": true,
+            "description": "Optional reference to participation"
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Score points",
+            "example": 1500
+          },
+          "time": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Time in seconds",
+            "example": 3600
+          },
+          "distance": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Distance in meters",
+            "example": 5000
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Timestamps"
+          }
+        ],
+        "required": ["_id", "userId", "journeyId"]
+      },
+      "ScorePopulated": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/UserBasic"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/JourneyBasic"
+          },
+          "participationId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 1500
+          },
+          "time": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 3600
+          },
+          "distance": {
+            "type": "number",
+            "minimum": 0,
+            "example": 5000
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ScoreCreateInput": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Score points",
+            "example": 1500
+          },
+          "distance": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Distance in meters",
+            "example": 5000
+          },
+          "time": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Time in seconds",
+            "example": 3600
+          }
+        },
+        "required": ["userId", "journeyId"],
+        "additionalProperties": false,
+        "example": {
+          "userId": "681ff9a3d2c8f4b5e6a12345",
+          "journeyId": "682aa0b4e3d9g5c6f7b23456",
+          "score": 1500,
+          "distance": 5000,
+          "time": 3600
+        }
+      },
+      "ScoreUpdateInput": {
+        "type": "object",
+        "properties": {
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Score points"
+          },
+          "distance": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Distance in meters"
+          },
+          "time": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Time in seconds"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScoreCreateResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Score created"
+          },
+          "score": {
+            "$ref": "#/components/schemas/Score"
+          },
+          "improved": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "ScoreUpdateResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Score amélioré !"
+          },
+          "score": {
+            "$ref": "#/components/schemas/Score"
+          },
+          "improved": {
+            "type": "boolean",
+            "description": "Whether the score was improved",
+            "example": true
+          },
+          "previousScore": {
+            "type": "integer",
+            "description": "Previous score value (only if improved)",
+            "example": 1000
+          }
+        }
+      },
+      "ScoreSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Score summary generated"
+          },
+          "summary": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScoreSummaryItem"
+            }
+          }
+        }
+      },
+      "ScoreSummaryItem": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "username": {
+                "type": "string",
+                "example": "johndoe"
+              }
+            }
+          },
+          "categories": {
+            "type": "object",
+            "properties": {
+              "score": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Total score points",
+                "example": 5000
+              },
+              "distance": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Total distance in meters",
+                "example": 25000
+              },
+              "time": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Total time in seconds",
+                "example": 18000
+              }
+            }
+          }
+        }
+      },
+      "ScoreTotalsResponse": {
+        "type": "object",
+        "properties": {
+          "totals": {
+            "type": "object",
+            "properties": {
+              "score": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Total score points",
+                "example": 10000
+              },
+              "distance": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Total distance in meters",
+                "example": 50000
+              },
+              "time": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Total time in seconds",
+                "example": 36000
+              }
+            }
+          }
+        }
+      },
+      "JourneyLeaderboardItem": {
+        "type": "object",
+        "properties": {
+          "scoreId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "username": {
+            "type": "string",
+            "example": "johndoe"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 1500
+          }
+        }
+      },
+      "UserScoreHistoryItem": {
+        "type": "object",
+        "properties": {
+          "scoreId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "journeyId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "journeyTitle": {
+            "type": "string",
+            "example": "Paris Discovery Tour"
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 1500
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GlobalLeaderboardResponse": {
+        "type": "object",
+        "properties": {
+          "top3": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardEntry"
+            }
+          },
+          "userPosition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LeaderboardEntry"
+              }
+            ],
+            "nullable": true,
+            "description": "Current user's position (null if in top 3 or not found)"
+          },
+          "friendPosition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LeaderboardEntry"
+              }
+            ],
+            "nullable": true,
+            "description": "Friend's position (null if in top 3 or not found)"
+          }
+        }
+      },
+      "LeaderboardEntry": {
+        "type": "object",
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Position in the leaderboard",
+            "example": 1
+          },
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "username": {
+            "type": "string",
+            "example": "johndoe"
+          },
+          "profilePicture": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL of the user's profile picture"
+          },
+          "totalScore": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Sum of all user's scores",
+            "example": 15000
+          }
+        }
+      },
+      "DeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Score deleted successfully"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "parameters": {
+      "ScoreId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the score",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      },
+      "JourneyId": {
+        "name": "journeyId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the journey",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      },
+      "UserId": {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the user",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request - missing or invalid parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "userId et journeyId sont requis"
+            }
+          }
+        }
+      },
+      "ScoreNotFound": {
+        "description": "Score not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Score not found"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "An unexpected error occurred"
+            }
+          }
+        }
+      }
+    }
+  }
+}

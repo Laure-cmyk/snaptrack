@@ -1,0 +1,666 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SnapTrack Groups API",
+    "description": "API for managing groups and group memberships in SnapTrack application.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "SnapTrack Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://snaptrack-nd9h.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Groups",
+      "description": "Group management endpoints"
+    },
+    {
+      "name": "Group Members",
+      "description": "Group membership management endpoints"
+    }
+  ],
+  "paths": {
+    "/groups": {
+      "get": {
+        "tags": ["Groups"],
+        "summary": "Get all groups",
+        "description": "Returns a list of all groups in the system. Intended for admin/debug purposes.",
+        "operationId": "getAllGroups",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupPopulated"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Groups"],
+        "summary": "Create a new group",
+        "description": "Creates a new group with the specified name and optional owner.",
+        "operationId": "createGroup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Group created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/groups/user/{userId}": {
+      "get": {
+        "tags": ["Groups"],
+        "summary": "Get groups for a user",
+        "description": "Returns all groups that a specific user is a member of.",
+        "operationId": "getGroupsByUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupBasic"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidUserId"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/groups/{groupId}/members": {
+      "get": {
+        "tags": ["Group Members"],
+        "summary": "Get group members",
+        "description": "Returns the group details along with the list of all members.",
+        "operationId": "getGroupMembers",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/GroupId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupMembersResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/GroupNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/groups/{groupId}": {
+      "get": {
+        "tags": ["Groups"],
+        "summary": "Get group by ID",
+        "description": "Returns a single group by its ID with populated creator information.",
+        "operationId": "getGroupById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/GroupId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupPopulated"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/GroupNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Groups"],
+        "summary": "Update a group",
+        "description": "Updates the name of an existing group.",
+        "operationId": "updateGroup",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/GroupId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Group updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupUpdateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/GroupNotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Groups"],
+        "summary": "Delete a group",
+        "description": "Deletes a group and all associated UserGroup relationships.",
+        "operationId": "deleteGroup",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/GroupId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Group deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupDeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/GroupNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/groups/{groupId}/members/{userId}": {
+      "delete": {
+        "tags": ["Group Members"],
+        "summary": "Remove user from group",
+        "description": "Removes a user from a group by deleting the UserGroup relationship.",
+        "operationId": "removeUserFromGroup",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/GroupId"
+          },
+          {
+            "$ref": "#/components/parameters/UserIdInPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User removed from group successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemoveMemberResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/MemberNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ObjectId": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "description": "MongoDB ObjectId (24 character hex string)",
+        "example": "681ff9a3d2c8f4b5e6a12345"
+      },
+      "Timestamps": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "UserBasic": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "description": "User's username",
+            "example": "johndoe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address",
+            "example": "john@example.com"
+          }
+        },
+        "required": ["_id", "username"]
+      },
+      "Group": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Name of the group",
+            "example": "Team Bleu"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Number of members in the group"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/ObjectId"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Timestamps"
+          }
+        ],
+        "required": ["_id", "name"]
+      },
+      "GroupPopulated": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "Team Bleu"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/UserBasic"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GroupBasic": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "Team Bleu"
+          }
+        },
+        "required": ["_id", "name"]
+      },
+      "GroupCreateInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Name of the group to create",
+            "example": "Team Bleu"
+          },
+          "ownerId": {
+            "$ref": "#/components/schemas/ObjectId"
+          }
+        },
+        "required": ["name"],
+        "additionalProperties": false,
+        "example": {
+          "name": "Team Bleu",
+          "ownerId": "681ff9a3d2c8f4b5e6a12345"
+        }
+      },
+      "GroupCreateResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Group created"
+          },
+          "group": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "name": {
+                "type": "string",
+                "example": "Team Bleu"
+              },
+              "ownerId": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "GroupUpdateInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "New name for the group",
+            "example": "New Team Name"
+          }
+        },
+        "required": ["name"],
+        "additionalProperties": false
+      },
+      "GroupUpdateResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Group updated"
+          },
+          "group": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "name": {
+                "type": "string",
+                "example": "New Team Name"
+              }
+            }
+          }
+        }
+      },
+      "GroupDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Group deleted"
+          },
+          "groupId": {
+            "$ref": "#/components/schemas/ObjectId"
+          }
+        }
+      },
+      "GroupMember": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "example": "johndoe"
+          },
+          "profilePicture": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL of the member's profile picture"
+          }
+        },
+        "required": ["_id", "username"]
+      },
+      "GroupMembersResponse": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "groupName": {
+            "type": "string",
+            "example": "Team Bleu"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupMember"
+            }
+          }
+        }
+      },
+      "RemoveMemberResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "User removed from group"
+          },
+          "groupId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "parameters": {
+      "GroupId": {
+        "name": "groupId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the group",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      },
+      "UserId": {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the user",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      },
+      "UserIdInPath": {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the user to remove from group",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request - missing or invalid parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Le champ \"name\" est requis"
+            }
+          }
+        }
+      },
+      "InvalidUserId": {
+        "description": "Invalid user ID format",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Invalid userId format"
+            }
+          }
+        }
+      },
+      "GroupNotFound": {
+        "description": "Group not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Group not found"
+            }
+          }
+        }
+      },
+      "MemberNotFound": {
+        "description": "User is not a member of the group",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "User is not a member of this group or relation not found"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "An unexpected error occurred"
+            }
+          }
+        }
+      }
+    }
+  }
+}

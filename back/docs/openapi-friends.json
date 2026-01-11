@@ -1,0 +1,750 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SnapTrack Friends API",
+    "description": "API for managing friend relationships, friend requests, and friend lists in SnapTrack application.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "SnapTrack Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://snaptrack-nd9h.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Friends",
+      "description": "Friend relationship management endpoints"
+    },
+    {
+      "name": "Friend Requests",
+      "description": "Friend request management endpoints"
+    }
+  ],
+  "paths": {
+    "/friends": {
+      "get": {
+        "tags": ["Friends"],
+        "summary": "Get all friend relationships",
+        "description": "Returns a list of all friend relationships in the system. Intended for admin/debug purposes.",
+        "operationId": "getAllFriends",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FriendRelationshipPopulated"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/friends/requests": {
+      "post": {
+        "tags": ["Friend Requests"],
+        "summary": "Send a friend request",
+        "description": "Creates a new pending friend request from one user to another.",
+        "operationId": "createFriendRequest",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FriendRequestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Friend request created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/friends/requests/{id}/accept": {
+      "post": {
+        "tags": ["Friend Requests"],
+        "summary": "Accept a friend request",
+        "description": "Accepts a pending friend request, changing its status to 'accepted'.",
+        "operationId": "acceptFriendRequest",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FriendshipId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Friend request accepted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestActionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/FriendshipNotFound"
+          }
+        }
+      }
+    },
+    "/friends/requests/{id}/refuse": {
+      "post": {
+        "tags": ["Friend Requests"],
+        "summary": "Refuse a friend request",
+        "description": "Refuses a pending friend request, changing its status to 'refused'.",
+        "operationId": "refuseFriendRequest",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FriendshipId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Friend request refused successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestActionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/FriendshipNotFound"
+          }
+        }
+      }
+    },
+    "/friends/requests/pending/{userId}": {
+      "get": {
+        "tags": ["Friend Requests"],
+        "summary": "Get pending friend requests for a user",
+        "description": "Returns all pending friend requests where the specified user is the recipient (friendId).",
+        "operationId": "getPendingFriendRequests",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingFriendRequest"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidUserId"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/friends/requests/sent/{userId}": {
+      "get": {
+        "tags": ["Friend Requests"],
+        "summary": "Get sent pending friend requests",
+        "description": "Returns all pending friend requests where the specified user is the sender.",
+        "operationId": "getSentFriendRequests",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SentFriendRequest"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidUserId"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/friends/unfriends/{userId}": {
+      "get": {
+        "tags": ["Friends"],
+        "summary": "Get users who are not friends",
+        "description": "Returns a list of all users who are not in any friend relationship with the specified user.",
+        "operationId": "getUnfriends",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnfriendUser"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/friends/{userId}/pending": {
+      "get": {
+        "tags": ["Friend Requests"],
+        "summary": "Get pending invitations received",
+        "description": "Returns all pending friend requests received by the specified user.",
+        "operationId": "getPendingInvitations",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingInvitation"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/friends/list/{userId}": {
+      "get": {
+        "tags": ["Friends"],
+        "summary": "Get user's friends list",
+        "description": "Returns all accepted friends for a specific user. Finds all relationships where the user appears as either userId or friendId with status 'accepted'.",
+        "operationId": "getFriendsList",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FriendListItem"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidUserId"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/friends/{id}": {
+      "delete": {
+        "tags": ["Friends"],
+        "summary": "Delete a friendship",
+        "description": "Removes a friend relationship by its ID.",
+        "operationId": "deleteFriendship",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FriendshipId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Friendship deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteFriendResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/FriendshipNotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ObjectId": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "description": "MongoDB ObjectId (24 character hex string)",
+        "example": "681ff9a3d2c8f4b5e6a12345"
+      },
+      "FriendshipStatus": {
+        "type": "string",
+        "enum": ["pending", "accepted", "blocked"],
+        "description": "Status of the friend relationship",
+        "example": "pending"
+      },
+      "Timestamps": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "UserBasic": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "description": "User's username",
+            "example": "johndoe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address",
+            "example": "john@example.com"
+          }
+        },
+        "required": ["_id", "username"]
+      },
+      "FriendRelationship": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "friendId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FriendshipStatus"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the friend request was sent"
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the friend request was accepted"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Timestamps"
+          }
+        ],
+        "required": ["_id", "userId", "friendId", "status"]
+      },
+      "FriendRelationshipPopulated": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/UserBasic"
+          },
+          "friendId": {
+            "$ref": "#/components/schemas/UserBasic"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FriendshipStatus"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FriendRequestInput": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "friendUserId": {
+            "$ref": "#/components/schemas/ObjectId"
+          }
+        },
+        "required": ["userId", "friendUserId"],
+        "additionalProperties": false,
+        "example": {
+          "userId": "681ff9a3d2c8f4b5e6a12345",
+          "friendUserId": "682aa0b4e3d9g5c6f7b23456"
+        }
+      },
+      "FriendRequestResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Friend request created"
+          },
+          "friendship": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "userId": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "friendUserId": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "status": {
+                "$ref": "#/components/schemas/FriendshipStatus"
+              }
+            }
+          }
+        }
+      },
+      "FriendRequestActionResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Friend request accepted"
+          },
+          "friendship": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "userId": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "friendUserId": {
+                "$ref": "#/components/schemas/ObjectId"
+              },
+              "status": {
+                "$ref": "#/components/schemas/FriendshipStatus"
+              }
+            }
+          }
+        }
+      },
+      "PendingFriendRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "description": "Username of the sender",
+            "example": "johndoe"
+          },
+          "senderId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["invite"],
+            "example": "invite"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["friend"],
+            "example": "friend"
+          }
+        }
+      },
+      "SentFriendRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "description": "Username of the recipient",
+            "example": "janedoe"
+          },
+          "recipientId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "profilePicture": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL of the recipient's profile picture"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["pending-sent"],
+            "example": "pending-sent"
+          }
+        }
+      },
+      "UnfriendUser": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "example": "newuser"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "newuser@example.com"
+          }
+        }
+      },
+      "PendingInvitation": {
+        "type": "object",
+        "properties": {
+          "friendshipId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "senderId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "senderName": {
+            "type": "string",
+            "example": "johndoe"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FriendshipStatus"
+          }
+        }
+      },
+      "FriendListItem": {
+        "type": "object",
+        "properties": {
+          "friendshipId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "friendId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "friendName": {
+            "type": "string",
+            "description": "Friend's username",
+            "example": "johndoe"
+          },
+          "profilePicture": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL of the friend's profile picture"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FriendshipStatus"
+          }
+        }
+      },
+      "DeleteFriendResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Friend deleted"
+          },
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "parameters": {
+      "FriendshipId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the friendship relationship",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      },
+      "UserId": {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "description": "The unique identifier of the user",
+        "schema": {
+          "$ref": "#/components/schemas/ObjectId"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request - missing or invalid parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "userId et friendUserId sont requis"
+            }
+          }
+        }
+      },
+      "InvalidUserId": {
+        "description": "Invalid user ID format",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Invalid userId format"
+            }
+          }
+        }
+      },
+      "FriendshipNotFound": {
+        "description": "Friendship relationship not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Friendship not found"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "An unexpected error occurred"
+            }
+          }
+        }
+      }
+    }
+  }
+}
