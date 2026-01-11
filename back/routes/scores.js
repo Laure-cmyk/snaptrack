@@ -345,12 +345,12 @@ router.delete('/:id', async (req, res) => {
 
 /**
  * 9. GET leaderboard - Top players and user position
- * GET /scores/leaderboard?userId=...
- * Returns top 3 players + the user's position if not in top 3
+ * GET /scores/leaderboard/global?userId=...&friendId=...
+ * Returns top 3 players + the user's position + friend's position if not in top 3
  */
 router.get('/leaderboard/global', async (req, res) => {
   try {
-    const { userId } = req.query;
+    const { userId, friendId } = req.query;
 
     // Aggregate scores by user - sum of best scores for each journey
     const userScores = await Score.aggregate([
@@ -388,12 +388,46 @@ router.get('/leaderboard/global', async (req, res) => {
       const userIndex = leaderboard.findIndex(u => u.userId.toString() === userId);
       if (userIndex !== -1 && userIndex >= 3) {
         userPosition = leaderboard[userIndex];
+      } else if (userIndex === -1) {
+        // L'utilisateur n'a aucun score, créer une position pour lui
+        const currentUser = await User.findById(userId).select('username profilePicture');
+        if (currentUser) {
+          userPosition = {
+            rank: leaderboard.length + 1,
+            userId: userId,
+            username: currentUser.username,
+            profilePicture: currentUser.profilePicture || null,
+            totalScore: 0
+          };
+        }
+      }
+    }
+
+    // Find friend position
+    let friendPosition = null;
+    if (friendId) {
+      const friendIndex = leaderboard.findIndex(u => u.userId.toString() === friendId);
+      if (friendIndex !== -1 && friendIndex >= 3) {
+        friendPosition = leaderboard[friendIndex];
+      } else if (friendIndex === -1) {
+        // L'ami n'a aucun score, créer une position pour lui
+        const friendUser = await User.findById(friendId).select('username profilePicture');
+        if (friendUser) {
+          friendPosition = {
+            rank: leaderboard.length + 1,
+            userId: friendId,
+            username: friendUser.username,
+            profilePicture: friendUser.profilePicture || null,
+            totalScore: 0
+          };
+        }
       }
     }
 
     res.json({
       top3,
-      userPosition
+      userPosition,
+      friendPosition
     });
   } catch (error) {
     console.error('Error in GET /scores/leaderboard/global:', error);
