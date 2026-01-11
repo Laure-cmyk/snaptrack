@@ -11,6 +11,12 @@ import '@mdi/font/css/materialdesignicons.css'
 
 // Components
 import App from './App.vue';
+import { setDefaultBaseUrl } from '@/utils/fetchJson';
+
+// Set API base URL for production (in dev, Vite proxy handles this)
+if (import.meta.env.PROD) {
+  setDefaultBaseUrl(import.meta.env.VITE_API_URL || 'https://snaptrack-nd9h.onrender.com');
+}
 
 /* 
 Routes need to always follow the template:

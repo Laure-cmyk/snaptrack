@@ -82,20 +82,18 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes REST API
-// Public routes (no auth required)
+// All routes public (no JWT required)
 app.use('/api', indexRouter);
-app.use('/users', usersRouter); // Login/signup handled inside, other routes may need auth
-app.use('/journeys', optionalAuth, journeysRouter); // Browsing is public, creating needs auth
-app.use('/steps', optionalAuth, stepsRouter); // Viewing is public
-
-// Protected routes (auth required)
-app.use('/friends', authenticateToken, friendsRouter);
-app.use('/groups', authenticateToken, groupsRouter);
-app.use('/user-groups', authenticateToken, userGroupsRouter);
-app.use('/user-journeys', authenticateToken, userJourneysRouter);
-app.use('/ratings', authenticateToken, ratingsRouter);
-app.use('/participations', authenticateToken, participationsRouter);
-app.use('/scores', authenticateToken, scoresRouter);
+app.use('/users', usersRouter);
+app.use('/journeys', journeysRouter);
+app.use('/steps', stepsRouter);
+app.use('/friends', friendsRouter);
+app.use('/groups', groupsRouter);
+app.use('/user-groups', userGroupsRouter);
+app.use('/user-journeys', userJourneysRouter);
+app.use('/ratings', ratingsRouter);
+app.use('/participations', participationsRouter);
+app.use('/scores', scoresRouter);
 
 // Serve static files and index.html in production
 if (process.env.NODE_ENV === 'production') {
