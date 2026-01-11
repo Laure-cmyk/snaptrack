@@ -63,44 +63,15 @@ async function loadUserData() {
             totalPoints.value = 0
         }
 
-        // Fetch leaderboard
+        // Fetch leaderboard with friend position
         try {
-            const leaderboardRes = await fetch(`/scores/leaderboard/global?userId=${currentUserId.value}`)
+            const leaderboardRes = await fetch(`/scores/leaderboard/global?userId=${currentUserId.value}&friendId=${props.userId}`)
             if (leaderboardRes.ok) {
                 const leaderboardData = await leaderboardRes.json()
-
-                // Find friend position in the full leaderboard
-                // We need to fetch all positions to find where the friend is
-                const allScoresRes = await fetch(`/scores/leaderboard/global`)
-                if (allScoresRes.ok) {
-                    const allData = await allScoresRes.json()
-                    // Combine top3 to create full list temporarily
-                    const fullLeaderboard = allData.top3 || []
-
-                    // Find friend in top 3
-                    const friendInTop3 = leaderboardData.top3.find(p => p.userId.toString() === props.userId)
-
-                    if (!friendInTop3) {
-                        // Friend not in top 3, need to find their position
-                        // For now, we'll fetch their total and create a position object
-                        const friendScoreRes = await fetch(`/scores/totals?userId=${props.userId}`)
-                        if (friendScoreRes.ok) {
-                            const friendScoreData = await friendScoreRes.json()
-                            // Calculate approximate rank (simplified)
-                            let rank = 4 // Assume at least 4th if not in top 3
-                            leaderboard.value.friendPosition = {
-                                rank,
-                                userId: props.userId,
-                                username: user.value.username,
-                                profilePicture: user.value.profilePicture,
-                                totalScore: friendScoreData.totals.score || 0
-                            }
-                        }
-                    }
-                }
-
+                
                 leaderboard.value.top3 = leaderboardData.top3
                 leaderboard.value.userPosition = leaderboardData.userPosition
+                leaderboard.value.friendPosition = leaderboardData.friendPosition
             }
         } catch (err) {
             console.error('Error fetching leaderboard:', err)
