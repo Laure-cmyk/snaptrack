@@ -5,46 +5,12 @@ import { Score, User } from '../models/index.js';
 const router = express.Router();
 
 /**
- * 0. GET /scores
- * -> liste de tous les scores
- * Option : ?journeyId=... ou ?userId=...
- *
- * Exemples :
- *   GET /api/scores
- *   GET /api/scores?journeyId=6820...
- *   GET /api/scores?userId=681f...
- */
-router.get('/', async (req, res) => {
-  try {
-    const { journeyId, userId } = req.query;
-
-    const filter = {};
-    if (journeyId) filter.journeyId = journeyId;
-    if (userId) filter.userId = userId;
-
-    const scores = await Score.find(filter)
-      .populate('userId', 'username email')
-      .populate('journeyId', 'title');
-
-    res.json(scores);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
  * 1. SUMMARY : GET /scores/summary
+ * (DÉPLACÉ EN HAUT POUR ÉVITER LE CONFLIT AVEC /:id)
  *
  * Objectif :
  * Récupérer les points / distances / temps obtenus par tous les utilisateurs,
  * classés par catégorie, avec filtres possibles.
- *
- * Query params :
- * - userId   -> filtrer sur un utilisateur
- * - journeyId -> filtrer sur un parcours
- * - category -> "score" | "distance" | "time" (optionnel)
- * - from     -> date min (YYYY-MM-DD)
- * - to       -> date max (YYYY-MM-DD)
  */
 router.get('/summary', async (req, res) => {
   try {
@@ -134,13 +100,7 @@ router.get('/summary', async (req, res) => {
 
 /**
  * 2. TOTALS : GET /scores/totals
- *
- * Objectif :
- * - Retourner les totaux globaux (tous utilisateurs)
- * - ou les totaux d’un utilisateur spécifique si ?userId=...
- *
- * Query params :
- * - userId (optionnel)
+ * (DÉPLACÉ EN HAUT AUSSI POUR LA MÊME RAISON)
  */
 router.get('/totals', async (req, res) => {
   try {
@@ -186,9 +146,30 @@ router.get('/totals', async (req, res) => {
 });
 
 /**
+ * 0. GET /scores
+ * -> liste de tous les scores
+ */
+router.get('/', async (req, res) => {
+  try {
+    const { journeyId, userId } = req.query;
+
+    const filter = {};
+    if (journeyId) filter.journeyId = journeyId;
+    if (userId) filter.userId = userId;
+
+    const scores = await Score.find(filter)
+      .populate('userId', 'username email')
+      .populate('journeyId', 'title');
+
+    res.json(scores);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * 3. (Optionnel) Leaderboard d’une journey
  * GET /scores/journey/:journeyId
- * -> tu peux garder ou supprimer selon ton besoin
  */
 router.get('/journey/:journeyId', async (req, res) => {
   try {
@@ -307,6 +288,7 @@ router.post('/', async (req, res) => {
 /**
  * 6. GET score by ID
  * GET /scores/:id
+ * IMPORTANT : Cette route doit être APRES /summary et /totals
  */
 router.get('/:id', async (req, res) => {
   try {
