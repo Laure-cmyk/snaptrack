@@ -1,4 +1,5 @@
 // Express
+import 'dotenv/config';
 import express from 'express';
 import createError from 'http-errors';
 import logger from 'morgan';
@@ -24,10 +25,12 @@ import scoresRouter from '../back/routes/scores.js';
 const app = express();
 
 // CORS configuration
-app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true
+  })
+);
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -49,21 +52,23 @@ app.use('/scores', scoresRouter);
 // Serve static files and index.html in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../dist')));
-  
+
   // Catch-all for SPA - but NOT for API routes
   app.get('{*path}', (req, res, next) => {
     // Skip API routes - let them fall through to 404 handler
-    if (req.path.startsWith('/users') || 
-        req.path.startsWith('/journeys') || 
-        req.path.startsWith('/steps') ||
-        req.path.startsWith('/friends') ||
-        req.path.startsWith('/groups') ||
-        req.path.startsWith('/ratings') ||
-        req.path.startsWith('/participations') ||
-        req.path.startsWith('/scores') ||
-        req.path.startsWith('/user-groups') ||
-        req.path.startsWith('/user-journeys') ||
-        req.path.startsWith('/api')) {
+    if (
+      req.path.startsWith('/users') ||
+      req.path.startsWith('/journeys') ||
+      req.path.startsWith('/steps') ||
+      req.path.startsWith('/friends') ||
+      req.path.startsWith('/groups') ||
+      req.path.startsWith('/ratings') ||
+      req.path.startsWith('/participations') ||
+      req.path.startsWith('/scores') ||
+      req.path.startsWith('/user-groups') ||
+      req.path.startsWith('/user-journeys') ||
+      req.path.startsWith('/api')
+    ) {
       return next();
     }
     res.sendFile(path.join(__dirname, '../dist/index.html'));
