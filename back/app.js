@@ -25,6 +25,7 @@ import stepsRouter from '../back/routes/steps.js';
 import ratingsRouter from '../back/routes/ratings.js';
 import participationsRouter from '../back/routes/participations.js';
 import scoresRouter from '../back/routes/scores.js';
+import { authenticateToken, optionalAuth } from './middleware/auth.js';
 
 // Load and merge OpenAPI documentation
 const docsPath = path.join(__dirname, 'docs');
@@ -91,29 +92,6 @@ for (const file of openapiFiles) {
 
 const app = express();
 
-// --- 2. Configuration Swagger ---
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'API SnapTrack',
-      version: '1.0.0',
-      description: "Documentation de l'API"
-    },
-    servers: [
-      {
-        url: 'http://localhost:3000',
-        description: 'Serveur local'
-      }
-    ]
-  },
-  // ICI : On utilise path.join pour être sûr à 100% de trouver le fichier
-  // Cela reprend la même logique que votre import : '../back/routes/friends.js'
-  apis: [path.join(__dirname, '../back/routes/*.js')]
-};
-
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
-
 // CORS configuration
 app.use(
   cors({
@@ -130,17 +108,20 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes REST API
+// Public routes (no auth required)
 app.use('/api', indexRouter);
-app.use('/users', usersRouter);
-app.use('/friends', friendsRouter);
-app.use('/groups', groupsRouter);
-app.use('/user-groups', userGroupsRouter);
-app.use('/journeys', journeysRouter);
-app.use('/user-journeys', userJourneysRouter);
-app.use('/steps', stepsRouter);
-app.use('/ratings', ratingsRouter);
-app.use('/participations', participationsRouter);
-app.use('/scores', scoresRouter);
+app.use('/users', usersRouter); // Login/signup handled inside, other routes may need auth
+app.use('/journeys', optionalAuth, journeysRouter); // Browsing is public, creating needs auth
+app.use('/steps', optionalAuth, stepsRouter); // Viewing is public
+
+// Protected routes (auth required)
+app.use('/friends', authenticateToken, friendsRouter);
+app.use('/groups', authenticateToken, groupsRouter);
+app.use('/user-groups', authenticateToken, userGroupsRouter);
+app.use('/user-journeys', authenticateToken, userJourneysRouter);
+app.use('/ratings', authenticateToken, ratingsRouter);
+app.use('/participations', authenticateToken, participationsRouter);
+app.use('/scores', authenticateToken, scoresRouter);
 
 // Serve static files and index.html in production
 if (process.env.NODE_ENV === 'production') {

@@ -59,6 +59,12 @@ export function fetchJson(options) {
 
   const allHeaders = { ...defaultHeaders, ...headers };
 
+  // Add JWT token if available
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('jwt') : null;
+  if (token) {
+    allHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   const signal = controller.signal;
