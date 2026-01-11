@@ -1,12 +1,10 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import TheListSocials from '../components/socials/TheListSocials.vue';
 import TheGroup from '../components/socials/TheGroup.vue';
 import CreateGroup from '../components/socials/CreateGroup.vue';
 import AddMember from '../components/socials/AddMember.vue';
 import UserProfile from '../components/socials/UserProfile.vue';
-import TheSearchBar from '../components/TheSearchBar.vue';
-import { fetchJson } from '@/utils/fetchJson';
 
 const tab = ref('friends');
 const selectedGroupId = ref(null);
@@ -14,11 +12,8 @@ const selectedUserId = ref(null);
 const isCreatingGroup = ref(false);
 const isAddingMember = ref(false);
 const currentGroupMembers = ref([]);
-const searchQuery = ref('');
-const showSearchResults = ref(false);
 const allUsers = ref([]);
-const sendingInvites = ref({});
-const searchContainerRef = ref(null);
+const sentInviteIds = ref(new Set());
 
 // Get current user from localStorage - use ref for reliability
 const storedUser = ref(null);
@@ -98,6 +93,14 @@ async function loadData() {
           profilePicture: r.profilePicture,
           type: 'pending-sent'
         }));
+        
+        // Update invites on current state
+        // For both the pending and the search
+        sentInviteIds.value.clear();
+        sentPendingData.forEach(r => {
+        const recipientUserId = r.recipientId || r._id || r.id;
+        sentInviteIds.value.add(recipientUserId);
+});
       }
     }
 
@@ -135,64 +138,7 @@ async function loadData() {
   }
 }
 
-// Computed for filtered search results
-const searchResults = computed(() => {
-  if (!searchQuery.value.trim()) {
-    return [];
-  }
-
-  const query = searchQuery.value.toLowerCase();
-  const existingFriendIds = friends.value.map(f => f.friendId);
-  const pendingRequestIds = friendInvite.value.map(f => f.requesterId || f.recipientId);
-
-  return allUsers.value
-    .filter(user => {
-      if (!user.username) return false;
-
-      const matchesSearch = user.username.toLowerCase().includes(query);
-      const isNotCurrentUser = user._id !== userId.value;
-      const isNotFriend = !existingFriendIds.includes(user._id);
-      const noPendingRequest = !pendingRequestIds.includes(user._id);
-
-      return matchesSearch && isNotCurrentUser && isNotFriend && noPendingRequest;
-    })
-    .map(user => ({
-      id: user._id,
-      name: user.username,
-      email: user.email
-    }));
-});
-
 onMounted(loadData);
-
-// Computed pour filtrer les utilisateurs affichés
-const filteredUsers = computed(() => {
-  if (!showSearchResults.value) return [];
-
-  let result = allUsers.value;
-
-  // Filtrer par username qui commence par la recherche
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(user =>
-      user.username && user.username.toLowerCase().startsWith(query)
-    );
-  }
-
-  // Trier : amis d'abord, puis les autres
-  return result.sort((a, b) => {
-    const aIsFriend = isFriend(a._id);
-    const bIsFriend = isFriend(b._id);
-
-    if (aIsFriend && !bIsFriend) return -1;
-    if (!aIsFriend && bIsFriend) return 1;
-    return 0;
-  });
-});
-
-function isFriend(userId) {
-  return friends.value.some(friend => friend.friendId === userId);
-}
 
 async function removeFriend(user) {
   const friendship = friends.value.find(f => f.friendId === user.id);
@@ -205,30 +151,6 @@ async function removeFriend(user) {
     console.error('Error removing friend:', err);
   }
 }
-
-function onSearchFocus() {
-  showSearchResults.value = true;
-}
-
-function closeSearch() {
-  showSearchResults.value = false;
-  searchQuery.value = '';
-}
-
-function handleClickOutside(event) {
-  if (searchContainerRef.value && !searchContainerRef.value.contains(event.target)) {
-    closeSearch();
-  }
-}
-
-onMounted(() => {
-  loadData();
-  document.addEventListener('mousedown', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('mousedown', handleClickOutside);
-});
 
 async function onAction(payload) {
   const { item, result } = payload;
@@ -413,9 +335,10 @@ async function handleCreateGroup(groupData) {
 
 // Send friend invite
 async function sendFriendInvite(user) {
-  if (sendingInvites.value[user.id]) return;
+  if (sentInviteIds.value.has(user.id)) return;
 
-  sendingInvites.value[user.id] = true;
+  sentInviteIds.value.add(user.id);
+  
   try {
     await fetch('/friends/requests', {
       method: 'POST',
@@ -426,15 +349,26 @@ async function sendFriendInvite(user) {
       })
     });
 
-    // Reload data to refresh the lists
-    await loadData();
+    // Updates requests label
+    const sentPendingRes = await fetch(`/friends/requests/sent/${userId.value}`);
+    if (sentPendingRes.ok) {
+      const sentPendingData = await sentPendingRes.json();
+      if (Array.isArray(sentPendingData)) {
+        sentPendingRequests.value = sentPendingData.map(r => ({
+          id: r.id,
+          name: r.name,
+          profilePicture: r.profilePicture,
+          type: 'pending-sent'
+        }));
+      }
+    }
   } catch (err) {
     console.error('Error sending friend invite:', err);
-  } finally {
-    delete sendingInvites.value[user.id];
+    sentInviteIds.value.delete(user.id);
   }
 }
 </script>
+
 <template>
   <CreateGroup v-if="isCreatingGroup" :friends="friends" @close="closeCreateGroup" @create="handleCreateGroup" />
   <AddMember v-else-if="isAddingMember" :friends="friends" :current-members="currentGroupMembers"
@@ -445,7 +379,7 @@ async function sendFriendInvite(user) {
   </v-card>
 
   <!-- Tabs -->
-  <v-card v-else rounded="0">
+  <v-card v-else rounded="0" class="page-container">
     <v-tabs v-model="tab" direction="horizontal" fixed-tabs>
       <v-badge v-if="friendInvite.length > 0" inline location="top-right" color="error" :content="friendInvite.length">
         <v-tab prepend-icon="mdi-account" text="Amis" value="friends"></v-tab>
@@ -457,86 +391,37 @@ async function sendFriendInvite(user) {
       <v-tab v-else prepend-icon="mdi-account-group" text="Groupes" value="groups"></v-tab>
     </v-tabs>
 
-    <v-tabs-window v-model="tab">
+    <v-tabs-window v-model="tab" class="tabs-window-container">
       <v-tabs-window-item value="friends">
         <v-card flat>
-          <!-- Zone de recherche -->
-          <div ref="searchContainerRef">
-            <!-- Search Bar -->
-            <v-card-text class="pb-0">
-              <TheSearchBar v-model="searchQuery" :show-clear-button="showSearchResults" @focus="onSearchFocus"
-                @close="closeSearch" />
-            </v-card-text>
+          <!-- Search Component -->
+          <TheListSocials 
+            :items="[]"
+            :all-users="allUsers" 
+            :current-user-id="userId" 
+            :friends="friends"
+            :sent-invite-ids="sentInviteIds"
+            :sent-pending-requests="sentPendingRequests"
+            :show-search="true"
+            @action="onAction" 
+            @click="handleFriendClick"
+            :on-invite="sendFriendInvite" 
+            :on-remove-friend="removeFriend" 
+          />
 
-            <!-- All Users List when search is active -->
-            <v-card-text v-if="showSearchResults" class="pt-6" style="max-height: 60vh; overflow-y: auto;">
-              <div class="text-subtitle-2 text-grey-darken-1 mb-2">
-                {{ searchQuery ? `Résultats pour "${searchQuery}"` : 'Tous les utilisateurs' }}
-              </div>
-              <v-list v-if="filteredUsers.length > 0" lines="one">
-                <v-list-item v-for="user in filteredUsers" :key="user._id" :title="user.username">
-                  <template v-slot:prepend>
-                    <v-avatar color="grey-lighten-1">
-                      <v-img v-if="user.profilePicture" :src="user.profilePicture" cover />
-                      <span v-else class="text-h6">{{ user.username?.charAt(0).toUpperCase() }}</span>
-                    </v-avatar>
-                  </template>
-                  <template v-slot:append>
-                    <v-btn v-if="user._id === userId" size="small" variant="text" disabled>
-                      Vous
-                    </v-btn>
-                    <v-btn v-else-if="isFriend(user._id)" size="small" variant="outlined" color="error"
-                      @click="removeFriend({ id: user._id, name: user.username })">
-                      Supprimer
-                    </v-btn>
-                    <v-btn v-else size="small" variant="outlined" 
-                      :color="sendingInvites[user._id] ? 'grey' : 'primary'"
-                      :loading="sendingInvites[user._id]"
-                      :disabled="sendingInvites[user._id]"
-                      @click="sendFriendInvite({ id: user._id, name: user.username })">
-                      {{ sendingInvites[user._id] ? 'En attente' : 'Inviter' }}
-                    </v-btn>
-                  </template>
-                </v-list-item>
-              </v-list>
-              <div v-else class="text-center text-grey py-4">
-                Aucun utilisateur trouvé
-              </div>
-            </v-card-text>
+          <!-- Friend Invites and Friends List -->
+            <div v-if="friendInvite.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2">Invitations reçues</div>
+            <TheListSocials v-if="friendInvite.length > 0" :items="friendInvite" @action="onAction" />
 
-            <!-- Friends List when search is not active -->
-            <v-card-text v-else>
-              <div v-if="friendInvite.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2">Invitations reçues
-              </div>
-              <TheListSocials v-if="friendInvite.length > 0" :items="friendInvite" @action="onAction" />
-
-              <div v-if="sentPendingRequests.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">
-                Invitations envoyées
-                (en attente)
-              </div>
-              <v-list v-if="sentPendingRequests.length > 0" lines="one">
-                <v-list-item v-for="request in sentPendingRequests" :key="request.id" :title="request.name">
-                  <template v-slot:prepend>
-                    <v-avatar color="grey-lighten-1">
-                      <v-img v-if="request.profilePicture" :src="request.profilePicture" cover />
-                      <span v-else class="text-h6">{{ request.name?.charAt(0).toUpperCase() }}</span>
-                    </v-avatar>
-                  </template>
-                  <template v-slot:append>
-                    <v-chip size="small" color="warning" variant="outlined">En attente</v-chip>
-                  </template>
-                </v-list-item>
-              </v-list>
-
-              <div v-if="friends.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">Mes amis
-              </div>
-              <TheListSocials v-if="friends.length > 0" :items="friends" @action="onAction" @click="handleFriendClick" />
-              
-              <div v-if="friendInvite.length === 0 && sentPendingRequests.length === 0 && friends.length === 0" class="text-center text-grey py-4">
-                Aucun ami pour le moment
-              </div>
-            </v-card-text>
-          </div>
+            <template v-if="friends.length > 0">
+              <div class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">Mes amis</div>
+              <TheListSocials :items="friends" @action="onAction" @click="handleFriendClick" />
+            </template>
+            
+            <div v-if="friendInvite.length === 0 && sentPendingRequests.length === 0 && friends.length === 0" 
+              class="text-center text-grey py-4">
+              Aucun ami pour le moment
+            </div>
         </v-card>
       </v-tabs-window-item>
 
@@ -562,7 +447,20 @@ async function sendFriendInvite(user) {
 </template>
 
 <style scoped>
-  :deep(.v-tabs) {
+.page-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tabs-window-container {
+  flex: 1;
+  overflow-y: auto;
+  height: calc(100vh - 10vh); /* 10vh is the tab height */
+}
+
+:deep(.v-tabs) {
   background: linear-gradient(135deg, #3948ab 0%, #3948ab 100%);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   height: 10vh;
@@ -574,7 +472,7 @@ async function sendFriendInvite(user) {
 }
 
 :deep(.v-tab) {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 8, 0.7);
 }
 
 :deep(.v-tab--selected) {

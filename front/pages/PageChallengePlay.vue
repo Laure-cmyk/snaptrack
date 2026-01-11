@@ -4,7 +4,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { WSClientRoom } from 'wsmini/client'
 import BaseHeader from '@/components/BaseHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
+import BaseScoreDisplay from '@/components/BaseScoreDisplay.vue'
 import ChallengeLocationCard from '@/components/challenge/ChallengeLocationCard.vue'
+import { calculateDistance, getScoreFromDistance, formatDistance } from '@/utils/scoring.js'
 import successImage from '@/assets/success.png'
 import failImage from '@/assets/fail.png'
 import victoryImage from '@/assets/victory.png'
@@ -17,10 +19,19 @@ const currentLocationIndex = ref(0)
 const quitDialog = ref(false)
 const successDialog = ref(false)
 const errorDialog = ref(false)
+const locationPermissionDialog = ref(false)
 const completeDialog = ref(false)
+const scoreImproved = ref(false)
+const previousScore = ref(0)
 const rating = ref(0)
 const ratingSaving = ref(false)
 const existingRatingLoaded = ref(false)
+
+// Scoring
+const locationScores = ref([])
+const currentScore = ref(null)
+const totalScore = computed(() => locationScores.value.reduce((sum, score) => sum + score.points, 0))
+const currentUserPosition = ref(null)
 
 // Get userId from stored user object
 function getUserId() {
@@ -43,9 +54,9 @@ async function fetchUserRating() {
     try {
         const userId = getUserId()
         const journeyId = route.params.id
-        
+
         if (!userId || !journeyId) return
-        
+
         const response = await fetch(`/ratings?journeyId=${journeyId}&userId=${userId}`)
         if (response.ok) {
             const ratings = await response.json()
@@ -67,17 +78,17 @@ async function saveRating(newRating) {
         try {
             const userId = getUserId()
             const journeyId = route.params.id
-            
+
             const response = await fetch('/ratings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     userId,
                     journeyId,
-                    rating: Number(newRating)
+                    value: Number(newRating)
                 })
             })
-            
+
             if (!response.ok) {
                 throw new Error('Failed to save rating')
             }
@@ -163,19 +174,19 @@ async function connectWebSocket() {
     try {
         const journeyId = route.params.id
         const username = getUsername()
-        
+
         // WebSocket URL - auto-detect based on current hostname
         const isProduction = window.location.hostname !== 'localhost'
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const wsUrl = isProduction 
+        const wsUrl = isProduction
             ? `${wsProtocol}//${window.location.host}`
             : (import.meta.env.VITE_WS_URL || 'ws://localhost:3000')
-        
+
         const ws = new WSClientRoom(wsUrl)
         await ws.connect()
-        
+
         wsRoom.value = await ws.roomCreateOrJoin(`journey-${journeyId}`, { username })
-        
+
         // Start watching and emitting location
         startLocationSharing()
     } catch (err) {
@@ -189,9 +200,9 @@ function startLocationSharing() {
         console.warn('Geolocation not supported')
         return
     }
-    
+
     const username = getUsername()
-    
+
     locationWatchId = navigator.geolocation.watchPosition(
         (position) => {
             if (wsRoom.value) {
@@ -206,9 +217,9 @@ function startLocationSharing() {
             console.warn('Geolocation error:', err.message)
         },
         {
-            enableHighAccuracy: true,
-            maximumAge: 5000,
-            timeout: 10000
+            enableHighAccuracy: false,
+            maximumAge: 30000,
+            timeout: 15000
         }
     )
 }
@@ -241,24 +252,72 @@ function goBack() {
 }
 
 function addLocation() {
-    // TODO: Vérifier la localisation GPS réelle
-    // Pour l'instant, simulation avec 80% de réussite
-    const isLocationCorrect = Math.random() > 0.2
+    // Check if geolocation is supported
+    if (!navigator.geolocation) {
+        locationPermissionDialog.value = true
+        return
+    }
 
-    if (isLocationCorrect) {
-        successDialog.value = true
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const userLat = position.coords.latitude
+            const userLon = position.coords.longitude
+            currentUserPosition.value = { lat: userLat, lon: userLon }
 
-        setTimeout(() => {
-            successDialog.value = false
-            if (currentLocationIndex.value < trail.value.locations.length - 1) {
-                currentLocationIndex.value++
-            } else {
-                // Challenge terminé
-                completeDialog.value = true
+            // Get target location from database
+            const targetLocation = trail.value.locations[currentLocationIndex.value]
+            const targetLat = targetLocation.latitude
+            const targetLon = targetLocation.longitude
+
+            // Calculate distance between user and target location
+            const distance = calculateDistance(userLat, userLon, targetLat, targetLon)
+
+            // Get score based on distance (includes "Hors zone" for > 10km)
+            const scoreData = getScoreFromDistance(distance)
+
+            // Store score and show success modal (even for 0 points)
+            currentScore.value = {
+                ...scoreData,
+                distance: formatDistance(distance),
+                distanceMeters: distance
             }
-        }, 2000)
+
+            // Store score for this location
+            locationScores.value.push({
+                locationIndex: currentLocationIndex.value,
+                points: scoreData.points,
+                distance: distance
+            })
+
+            // Show success dialog with points (0 points if Hors zone)
+            successDialog.value = true
+        },
+        (err) => {
+            console.error('Geolocation error:', err)
+            // Permission denied (code 1) or unavailable - show permission dialog
+            if (err.code === 1) {
+                locationPermissionDialog.value = true
+            } else {
+                // Other errors (timeout, position unavailable)
+                errorDialog.value = true
+            }
+        },
+        {
+            enableHighAccuracy: false,
+            maximumAge: 10000,
+            timeout: 15000
+        }
+    )
+}
+
+function continueToNext() {
+    successDialog.value = false
+    if (currentLocationIndex.value < trail.value.locations.length - 1) {
+        currentLocationIndex.value++
+        currentScore.value = null
     } else {
-        errorDialog.value = true
+        // Challenge terminé
+        completeDialog.value = true
     }
 }
 
@@ -268,14 +327,32 @@ function quitChallenge() {
 }
 
 function completeChallenge() {
-    // Rating is saved automatically via watch when user clicks stars
-    // TODO: Enregistrer la completion du challenge et la note
-    if (rating.value > 0) {
-        console.log('Note attribuée:', rating.value)
-        // Enregistrer le vote seulement si une note a été donnée
-    } else {
-        console.log('Aucune note attribuée')
+    // Save total score to database
+    const userId = getUserId()
+    const journeyId = route.params.id
+
+    if (userId && journeyId) {
+        fetch('/scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId,
+                journeyId,
+                score: totalScore.value
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.improved) {
+                    scoreImproved.value = true
+                    previousScore.value = data.previousScore || 0
+                }
+            })
+            .catch(err => {
+                console.error('Error saving score:', err)
+            })
     }
+
     completeDialog.value = false
     router.push('/')
 }
@@ -338,23 +415,37 @@ function goToLive() {
             Êtes-vous sûr de vouloir quitter ? Votre progression ne sera pas sauvegardée.
         </BaseModal>
 
-        <!-- Success Dialog -->
-        <BaseModal v-model="successDialog" title="Bravo !" :cancel-text="''" :confirm-text="''">
+        <!-- Location Permission Dialog -->
+        <BaseModal v-model="locationPermissionDialog" title="Accès à la localisation requis" confirm-text="Compris"
+            :cancel-text="''" confirm-color="indigo-darken-1" @confirm="locationPermissionDialog = false">
             <div class="text-center">
-                <img :src="successImage" alt="Success" style="width: 120px; height: auto; margin: 0 auto;" />
-                <h3 class="text-h6 font-weight-bold mt-4 mb-2">Félicitations !</h3>
-                <p class="text-body-2">Vous avez trouvé le lieu correct ! L'énigme a été résolue avec succès.</p>
+                <v-icon size="64" color="warning" class="mb-4">mdi-map-marker-alert</v-icon>
+                <p class="text-body-2">
+                    Pour jouer au challenge, vous devez autoriser l'accès à votre localisation dans les paramètres de
+                    votre
+                    navigateur.
+                </p>
             </div>
         </BaseModal>
 
-        <!-- Error Dialog -->
-        <BaseModal v-model="errorDialog" title="Oups !" confirm-text="Réessayer" :cancel-text="''"
-            confirm-color="indigo-darken-1" @confirm="errorDialog = false">
-            <div class="text-center">
-                <img :src="failImage" alt="Fail" style="width: 120px; height: auto; margin: 0 auto;" />
-                <h3 class="text-h6 font-weight-bold mt-4 mb-2">Localisation incorrecte</h3>
-                <p class="text-body-2">Vous n'êtes pas au bon endroit. Relisez l'énigme et déplacez-vous vers le lieu
-                    correct.</p>
+        <!-- Success Dialog -->
+        <BaseModal v-model="successDialog" title="" confirm-text="Continuer" :cancel-text="''"
+            confirm-color="indigo-darken-1" @confirm="continueToNext">
+            <div class="text-center" v-if="currentScore">
+                <!-- Niveau -->
+                <h3 class="text-h5 font-weight-bold mb-1">{{ currentScore.level }}</h3>
+                <p class="text-body-2 text-grey-darken-1 mb-4">{{ currentScore.description }}</p>
+
+                <!-- Points gagnés -->
+                <div class="my-4">
+                    <BaseScoreDisplay :score="currentScore.points" label="Points gagnés" size="medium"
+                        description="sur 100 points possibles" />
+                </div>
+
+                <!-- Distance -->
+                <p class="text-body-2 text-grey-darken-1">
+                    Distance : <span class="font-weight-bold">{{ currentScore.distance }}</span>
+                </p>
             </div>
         </BaseModal>
 
@@ -362,19 +453,25 @@ function goToLive() {
         <BaseModal v-model="completeDialog" title="Challenge terminé !" confirm-text="Terminer" :cancel-text="''"
             confirm-color="indigo-darken-1" @confirm="completeChallenge">
             <div class="text-center">
-                <img :src="victoryImage" alt="Victory" style="width: 120px; height: auto; margin: 0 auto;" />
-                <h3 class="text-h6 font-weight-bold mt-4 mb-3">Félicitations !</h3>
-                <p class="text-body-2 mb-4">Vous avez terminé le parcours avec succès ! Tous les lieux ont été
-                    découverts.
-                </p>
+                <!-- Score total -->
+                <div class="my-4">
+                    <BaseScoreDisplay :score="totalScore" label="Score total" size="medium" />
+                </div>
+
+                <!-- Message d'amélioration -->
+                <div v-if="scoreImproved" class="mb-4 pa-3 bg-green-lighten-5 rounded-lg">
+                    <v-icon color="green-darken-2" class="mb-1">mdi-trophy</v-icon>
+                    <p class="text-subtitle-2 font-weight-bold text-green-darken-2 mb-1">Nouveau record !</p>
+                    <p class="text-caption text-grey-darken-1">Précédent : {{ previousScore }} pts</p>
+                </div>
 
                 <!-- Rating -->
                 <div class="mt-6">
                     <p class="text-subtitle-2 font-weight-bold mb-3">Notez ce parcours :</p>
-                    <v-rating :model-value="rating" @update:model-value="onRatingChange" color="yellow-darken-2" active-color="yellow-darken-2" size="large" hover :disabled="ratingSaving" />
                     <div class="d-flex justify-center ga-1">
-                        <v-rating v-model="rating" color="yellow-darken-2" active-color="yellow-darken-2" size="large"
-                            hover density="compact" />
+                        <v-rating :model-value="rating" @update:model-value="onRatingChange" color="yellow-darken-2"
+                            active-color="yellow-darken-2" size="large" hover density="compact"
+                            :disabled="ratingSaving" />
                     </div>
                 </div>
             </div>

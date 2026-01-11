@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
+import BaseScoreDisplay from '@/components/BaseScoreDisplay.vue'
+import BaseLeaderboard from '@/components/BaseLeaderboard.vue'
 
 const props = defineProps({
     userId: { type: String, required: true }
@@ -15,9 +17,19 @@ const user = ref({
     bio: '',
     profilePicture: null
 })
+const totalPoints = ref(0)
+const leaderboard = ref({ top3: [], userPosition: null, friendPosition: null })
+const currentUserId = ref(null)
 
 async function loadUserData() {
     loading.value = true
+
+    // Get current user ID from localStorage
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+        const currentUser = JSON.parse(storedUser)
+        currentUserId.value = currentUser.id || currentUser._id
+    }
 
     try {
         const res = await fetch(`/users/${props.userId}`)
@@ -34,6 +46,35 @@ async function loadUserData() {
             email: data.email,
             bio: data.bio || '',
             profilePicture: data.profilePicture
+        }
+
+        // Fetch total points from database
+        try {
+            const scoresRes = await fetch(`/scores/totals?userId=${props.userId}`)
+            if (scoresRes.ok) {
+                const scoresData = await scoresRes.json()
+                totalPoints.value = scoresData.totals.score || 0
+            } else {
+                console.warn('Failed to fetch scores:', scoresRes.status)
+                totalPoints.value = 0
+            }
+        } catch (err) {
+            console.error('Error fetching total points:', err)
+            totalPoints.value = 0
+        }
+
+        // Fetch leaderboard with friend position
+        try {
+            const leaderboardRes = await fetch(`/scores/leaderboard/global?userId=${currentUserId.value}&friendId=${props.userId}`)
+            if (leaderboardRes.ok) {
+                const leaderboardData = await leaderboardRes.json()
+
+                leaderboard.value.top3 = leaderboardData.top3
+                leaderboard.value.userPosition = leaderboardData.userPosition
+                leaderboard.value.friendPosition = leaderboardData.friendPosition
+            }
+        } catch (err) {
+            console.error('Error fetching leaderboard:', err)
         }
     } catch (err) {
         console.error('Error loading user:', err)
@@ -75,6 +116,18 @@ onMounted(loadUserData)
                     <div v-else class="text-body-2 text-grey-lighten-1">Aucune bio</div>
                 </v-card-text>
             </v-card>
+
+            <!-- Total de points -->
+            <div class="mb-6">
+                <BaseScoreDisplay :score="totalPoints" />
+            </div>
+
+            <!-- Classement -->
+            <div class="mb-16">
+                <div class="text-subtitle-1 font-weight-bold mb-3">Classement</div>
+                <BaseLeaderboard :top3="leaderboard.top3" :currentUser="leaderboard.userPosition"
+                    :highlightedUser="leaderboard.friendPosition" />
+            </div>
         </v-card-text>
     </v-card>
 </template>

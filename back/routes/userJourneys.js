@@ -115,10 +115,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-/**
- * 4. PUT update user-journey
- * PUT /api/user-journeys/:id
- */
+/* 4. PUT update user-journey
+PUT /api/user-journeys/:id */
 router.put('/:id', async (req, res) => {
   try {
     const userJourney = await UserJourney.findByIdAndUpdate(req.params.id, req.body, {

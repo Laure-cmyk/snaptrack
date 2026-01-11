@@ -4,18 +4,24 @@ import { useFetchJson } from '@/composables/useFetchJson';
 
 const emit = defineEmits(['go-signup', 'login-success']);
 
-const email = ref('');
-const password = ref('');
-const errorMessage = ref('');
-const isLoading = ref(false);
+const emailOrUsername = ref('')
+const password = ref('')
+const showPassword = ref(false)
+const errorMessage = ref('')
+const isLoading = ref(false)
+
+const passwordField = ref(null)
+
+function focusPassword() {
+    passwordField.value?.focus()
+}
 
 async function login() {
   errorMessage.value = '';
 
-  // Validation
-  if (!email.value || !password.value) {
-    errorMessage.value = 'Veuillez remplir tous les champs.';
-    return;
+  if (!emailOrUsername.value || !password.value) {
+    errorMessage.value = 'Veuillez remplir tous les champs.'
+    return
   }
 
   isLoading.value = true;
@@ -26,7 +32,7 @@ async function login() {
       url: '/users/login',
       method: 'POST',
       data: {
-        email: email.value,
+        email: emailOrUsername.value,
         password: password.value
       },
       immediate: false
@@ -35,7 +41,7 @@ async function login() {
     await execute();
 
     if (error.value) {
-      errorMessage.value = error.value.data?.error || 'Email ou mot de passe incorrect.';
+      errorMessage.value = error.value.data?.error || 'Email/nom d\'utilisateur ou mot de passe incorrect.';
       return;
     }
 
@@ -43,7 +49,7 @@ async function login() {
     localStorage.setItem('jwt', data.value.token);
     localStorage.setItem('user', JSON.stringify(data.value.user));
 
-    emit('login-success', { email: email.value, user: data.value.user });
+    emit('login-success', { emailOrUsername: emailOrUsername.value, user: data.value.user });
   } catch (err) {
     errorMessage.value = err.data?.error || err.message || 'Email ou mot de passe incorrect.';
     console.error('Login error:', err);
@@ -68,25 +74,15 @@ async function login() {
             Se connecter
           </v-card-title>
 
-          <!-- Email Field -->
-          <v-text-field
-            label="Email"
-            v-model="email"
-            type="email"
-            variant="outlined"
-            class="mb-4"
-            density="comfortable"
-          />
+                    <!-- Email or Username Field -->
+                    <v-text-field label="Email ou nom d'utilisateur" v-model="emailOrUsername" type="text"
+                        variant="outlined" class="mb-4" density="comfortable" @keyup.enter="focusPassword" />
 
-          <!-- Password Field -->
-          <v-text-field
-            label="Mot de passe"
-            v-model="password"
-            type="password"
-            variant="outlined"
-            class="mb-4"
-            density="comfortable"
-          />
+                    <!-- Password Field -->
+                    <v-text-field ref="passwordField" label="Mot de passe" v-model="password"
+                        :type="showPassword ? 'text' : 'password'" variant="outlined" class="mb-4" density="comfortable"
+                        :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                        @click:append-inner="showPassword = !showPassword" @keyup.enter="login" />
 
           <!-- Error Alert -->
           <v-alert v-if="errorMessage" type="error" variant="tonal" class="mb-4 text-center">

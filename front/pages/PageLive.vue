@@ -101,6 +101,15 @@ onMounted(async () => {
       }
     });
 
+    // Listen if users left the room
+    room.value.onCmd('user-left', data => {
+      console.log('Left the room:', data.username);
+      const index = markers.value.findIndex(m => m.popup === data.username);
+      if(index >= 0) {
+        markers.value.splice(index, 1);
+      }
+    });
+
     //* Uncomment below if test data is needed
     /* 
     // Start fake participants simulation (moving every 1 seconds)

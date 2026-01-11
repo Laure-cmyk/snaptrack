@@ -15,23 +15,35 @@ const error = ref(null)
 async function fetchJourney() {
     loading.value = true
     error.value = null
-    
+
     try {
         const journeyId = route.params.id
-        
+
         // Fetch journey details
         const journeyRes = await fetch(`/journeys/${journeyId}`)
         if (!journeyRes.ok) {
             throw new Error(`Journey not found (${journeyRes.status})`)
         }
         const journeyData = await journeyRes.json()
-        
+
         // Fetch steps for this journey
         const stepsRes = await fetch(`/steps/journey/${journeyId}`)
         if (stepsRes.ok) {
             steps.value = await stepsRes.json()
         }
-        
+
+        // Fetch average rating for this journey
+        let averageRating = 0
+        try {
+            const ratingRes = await fetch(`/ratings/average/${journeyId}`)
+            if (ratingRes.ok) {
+                const ratingData = await ratingRes.json()
+                averageRating = ratingData.averageRating || 0
+            }
+        } catch (err) {
+            console.warn('Could not fetch rating:', err)
+        }
+
         // Map to our trail format
         trail.value = {
             id: journeyData._id,
@@ -39,7 +51,7 @@ async function fetchJourney() {
             description: journeyData.description,
             image: journeyData.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
             city: journeyData.town || '',
-            rating: journeyData.averageRating || 0,
+            rating: averageRating,
             locationsCount: steps.value.length
         }
     } catch (err) {
@@ -97,7 +109,8 @@ function startLive() {
             <!-- Informations du parcours -->
             <div>
                 <!-- Titre -->
-                <h1 class="text-h6 font-weight-bold mb-3">{{ trail.title }}</h1>
+                <h1 :class="trail.title.length > 30 ? 'text-subtitle-1' : 'text-h6'" class="font-weight-bold mb-3"
+                    style="word-break: break-word; overflow-wrap: break-word;">{{ trail.title }}</h1>
 
                 <!-- Ville et Note -->
                 <div class="d-flex align-center ga-4 mb-6">
@@ -121,12 +134,9 @@ function startLive() {
                 </div>
 
                 <!-- Nombre d'étapes -->
-                <div class="d-flex align-center ga-4 mb-6">
+                <div class="mb-6">
                     <div class="text-body-2">
                         <span class="font-weight-bold">Nombre d'étapes :</span> {{ trail.locationsCount }}
-                    </div>
-                    <div class="text-body-2">
-                        <span class="font-weight-bold">Personnes en live :</span> {{ trail.liveParticipants }}
                     </div>
                 </div>
 

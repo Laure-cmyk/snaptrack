@@ -2,6 +2,8 @@
 import { ref, onMounted, onActivated } from 'vue'
 import BaseHeader from '@/components/BaseHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
+import BaseScoreDisplay from '@/components/BaseScoreDisplay.vue'
+import BaseLeaderboard from '@/components/BaseLeaderboard.vue'
 
 // State
 const loading = ref(true)
@@ -12,6 +14,8 @@ const user = ref({
     bio: '',
     profilePicture: null
 })
+const totalPoints = ref(0)
+const leaderboard = ref({ top3: [], userPosition: null })
 
 const uploadingPhoto = ref(false)
 const editingBio = ref(false)
@@ -21,9 +25,9 @@ const savingBio = ref(false)
 const photoInput = ref(null)
 const expansionPanel = ref([])
 const passwordForm = ref({
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: ''
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
 });
 const passwordValid = ref(false);
 const passwordError = ref('');
@@ -79,6 +83,32 @@ async function loadUserData() {
             bio: data.bio || '',
             profilePicture: data.profilePicture
         }
+
+        // Fetch total points from database
+        try {
+            const scoresRes = await fetch(`/scores/totals?userId=${userId.value}`)
+            if (scoresRes.ok) {
+                const scoresData = await scoresRes.json()
+                totalPoints.value = scoresData.totals.score || 0
+            } else {
+                console.warn('Failed to fetch scores:', scoresRes.status)
+                totalPoints.value = 0
+            }
+        } catch (err) {
+            console.error('Error fetching total points:', err)
+            totalPoints.value = 0
+        }
+
+        // Fetch leaderboard
+        try {
+            const leaderboardRes = await fetch(`/scores/leaderboard/global?userId=${userId.value}`)
+            if (leaderboardRes.ok) {
+                const leaderboardData = await leaderboardRes.json()
+                leaderboard.value = leaderboardData
+            }
+        } catch (err) {
+            console.error('Error fetching leaderboard:', err)
+        }
     } catch (err) {
         console.error('Error loading user:', err)
     } finally {
@@ -92,15 +122,15 @@ onActivated(loadUserData)
 
 // Validation rules
 const passwordRules = {
-  required: value => !!value || 'Ce champ est requis',
-  minLength: value => value.length >= 8 || 'Au moins 8 caractères',
-  match: value =>
-    value === passwordForm.value.newPassword || 'Les mots de passe ne correspondent pas'
+    required: value => !!value || 'Ce champ est requis',
+    minLength: value => value.length >= 8 || 'Au moins 8 caractères',
+    match: value =>
+        value === passwordForm.value.newPassword || 'Les mots de passe ne correspondent pas'
 };
 
 // Photo functions
 function triggerPhotoUpload() {
-  photoInput.value.click();
+    photoInput.value.click();
 }
 
 // Bio functions
@@ -183,9 +213,9 @@ async function removePhoto() {
 
 // Password functions
 async function changePassword() {
-  passwordError.value = '';
-  passwordSuccess.value = '';
-  submittingPassword.value = true;
+    passwordError.value = '';
+    passwordSuccess.value = '';
+    submittingPassword.value = true;
 
     try {
         const res = await fetch(`/users/${userId.value}/password`, {
@@ -220,10 +250,10 @@ async function changePassword() {
 
 // Account actions
 function logout() {
-  localStorage.removeItem('jwt');
-  localStorage.removeItem('user');
-  logoutDialog.value = false;
-  window.location.href = '/authentification';
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('user');
+    logoutDialog.value = false;
+    window.location.href = '/authentification';
 }
 
 async function deleteAccount() {
@@ -244,26 +274,21 @@ async function deleteAccount() {
 </script>
 
 <template>
-  <v-main class="bg-grey-lighten-4">
-    <!-- Header -->
-    <BaseHeader title="Profil" :show-back="false" />
+    <v-main class="bg-grey-lighten-4">
+        <!-- Header -->
+        <BaseHeader title="Profil" :show-back="false" />
 
-    <!-- Loading State -->
-    <v-container v-if="loading" fluid class="d-flex justify-center align-center py-16">
-      <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
-    </v-container>
+        <!-- Loading State -->
+        <v-container v-if="loading" fluid class="d-flex justify-center align-center py-16">
+            <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+        </v-container>
 
-    <!-- Content -->
-    <v-container v-else fluid class="px-6 py-8 pb-24">
-      <!-- Photo de profil -->
-      <div class="text-center mb-8">
-        <input
-          ref="photoInput"
-          type="file"
-          accept="image/*"
-          style="display: none"
-          @change="handlePhotoUpload"
-        />
+        <!-- Content -->
+        <v-container v-else fluid class="px-6 py-8 pb-24">
+            <!-- Photo de profil -->
+            <div class="text-center mb-8">
+                <input ref="photoInput" type="file" accept="image/*" style="display: none"
+                    @change="handlePhotoUpload" />
 
                 <div class="position-relative d-inline-block">
                     <!-- Avatar -->
@@ -275,27 +300,31 @@ async function deleteAccount() {
                         <span v-else class="text-h3">{{ user.username?.charAt(0).toUpperCase() }}</span>
                     </v-avatar>
 
-          <!-- Edit button -->
-          <v-btn
-            icon
-            size="small"
-            color="indigo-darken-1"
-            class="position-absolute"
-            style="bottom: 16px; right: 0"
-            @click="triggerPhotoUpload"
-            :loading="uploadingPhoto"
-          >
-            <v-icon size="small">mdi-camera</v-icon>
-          </v-btn>
-        </div>
+                    <!-- Edit button -->
+                    <v-btn icon size="small" color="indigo-darken-1" class="position-absolute"
+                        style="bottom: 16px; right: 0" @click="triggerPhotoUpload" :loading="uploadingPhoto">
+                        <v-icon size="small">mdi-camera</v-icon>
+                    </v-btn>
+                </div>
 
-        <!-- Remove photo button -->
-        <div v-if="user.profilePicture" class="mt-2">
-          <v-btn size="small" variant="text" color="grey-darken-1" @click="removePhoto">
-            Supprimer la photo
-          </v-btn>
-        </div>
-      </div>
+                <!-- Remove photo button -->
+                <div v-if="user.profilePicture" class="mt-2">
+                    <v-btn size="small" variant="text" color="grey-darken-1" @click="removePhoto">
+                        Supprimer la photo
+                    </v-btn>
+                </div>
+            </div>
+
+            <!-- Total de points -->
+            <div class="mb-6">
+                <BaseScoreDisplay :score="totalPoints" />
+            </div>
+
+            <!-- Mini classement -->
+            <div class="mb-6">
+                <div class="text-subtitle-1 font-weight-bold mb-3">Classement</div>
+                <BaseLeaderboard :top3="leaderboard.top3" :currentUser="leaderboard.userPosition" />
+            </div>
 
             <!-- Informations personnelles -->
             <div class="text-subtitle-1 font-weight-bold mb-2">Informations personnelles</div>
@@ -347,127 +376,76 @@ async function deleteAccount() {
                 </v-card-text>
             </v-card>
 
-      <!-- Sécurité -->
-      <div class="text-subtitle-1 font-weight-bold mb-2">Sécurité</div>
-      <v-expansion-panels v-model="expansionPanel" class="mb-12">
-        <v-expansion-panel rounded="lg" elevation="0" class="password-panel">
-          <v-expansion-panel-title class="password-panel-title">
-            <span class="font-weight-medium">Modifier le mot de passe</span>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text class="password-panel-text">
-            <v-form v-model="passwordValid" class="mt-2">
-              <div class="text-subtitle-2 font-weight-bold mb-2">Mot de passe actuel</div>
-              <v-text-field
-                v-model="passwordForm.currentPassword"
-                type="password"
-                variant="outlined"
-                density="comfortable"
-                :rules="[passwordRules.required]"
-                class="mb-3"
-                bg-color="grey-lighten-4"
-              />
+            <!-- Sécurité -->
+            <div class="text-subtitle-1 font-weight-bold mb-2">Sécurité</div>
+            <v-expansion-panels v-model="expansionPanel" class="mb-12">
+                <v-expansion-panel rounded="lg" elevation="0" class="password-panel">
+                    <v-expansion-panel-title class="password-panel-title">
+                        <span class="font-weight-medium">Modifier le mot de passe</span>
+                    </v-expansion-panel-title>
+                    <v-expansion-panel-text class="password-panel-text">
+                        <v-form v-model="passwordValid" class="mt-2">
+                            <div class="text-subtitle-2 font-weight-bold mb-2">Mot de passe actuel</div>
+                            <v-text-field v-model="passwordForm.currentPassword" type="password" variant="outlined"
+                                density="comfortable" :rules="[passwordRules.required]" class="mb-3"
+                                bg-color="grey-lighten-4" />
 
-              <div class="text-subtitle-2 font-weight-bold mb-2">Nouveau mot de passe</div>
-              <v-text-field
-                v-model="passwordForm.newPassword"
-                type="password"
-                variant="outlined"
-                density="comfortable"
-                :rules="[passwordRules.required, passwordRules.minLength]"
-                class="mb-3"
-                bg-color="grey-lighten-4"
-              />
+                            <div class="text-subtitle-2 font-weight-bold mb-2">Nouveau mot de passe</div>
+                            <v-text-field v-model="passwordForm.newPassword" type="password" variant="outlined"
+                                density="comfortable" :rules="[passwordRules.required, passwordRules.minLength]"
+                                class="mb-3" bg-color="grey-lighten-4" />
 
-              <div class="text-subtitle-2 font-weight-bold mb-2">Confirmer le mot de passe</div>
-              <v-text-field
-                v-model="passwordForm.confirmPassword"
-                type="password"
-                variant="outlined"
-                density="comfortable"
-                :rules="[passwordRules.required, passwordRules.match]"
-                class="mb-3"
-                bg-color="grey-lighten-4"
-              />
+                            <div class="text-subtitle-2 font-weight-bold mb-2">Confirmer le mot de passe</div>
+                            <v-text-field v-model="passwordForm.confirmPassword" type="password" variant="outlined"
+                                density="comfortable" :rules="[passwordRules.required, passwordRules.match]"
+                                class="mb-3" bg-color="grey-lighten-4" />
 
-              <!-- Error Alert -->
-              <v-alert v-if="passwordError" type="error" variant="tonal" class="mb-3">
-                {{ passwordError }}
-              </v-alert>
+                            <!-- Error Alert -->
+                            <v-alert v-if="passwordError" type="error" variant="tonal" class="mb-3">
+                                {{ passwordError }}
+                            </v-alert>
 
-              <!-- Success Alert -->
-              <v-alert v-if="passwordSuccess" type="success" variant="tonal" class="mb-3">
-                {{ passwordSuccess }}
-              </v-alert>
+                            <!-- Success Alert -->
+                            <v-alert v-if="passwordSuccess" type="success" variant="tonal" class="mb-3">
+                                {{ passwordSuccess }}
+                            </v-alert>
 
-              <v-btn
-                block
-                color="indigo-darken-1"
-                size="large"
-                :disabled="!passwordValid"
-                :loading="submittingPassword"
-                @click="changePassword"
-              >
-                Modifier le mot de passe
-              </v-btn>
-            </v-form>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
+                            <v-btn block color="indigo-darken-1" size="large" :disabled="!passwordValid"
+                                :loading="submittingPassword" @click="changePassword">
+                                Modifier le mot de passe
+                            </v-btn>
+                        </v-form>
+                    </v-expansion-panel-text>
+                </v-expansion-panel>
+            </v-expansion-panels>
 
-      <!-- Actions -->
-      <div class="d-flex flex-column ga-3">
-        <v-btn
-          block
-          size="large"
-          variant="outlined"
-          color="grey-darken-1"
-          prepend-icon="mdi-logout"
-          rounded="lg"
-          @click="logoutDialog = true"
-        >
-          Se déconnecter
-        </v-btn>
+            <!-- Actions -->
+            <div class="d-flex flex-column ga-3">
+                <v-btn block size="large" variant="outlined" color="grey-darken-1" prepend-icon="mdi-logout"
+                    rounded="lg" @click="logoutDialog = true">
+                    Se déconnecter
+                </v-btn>
 
-        <v-btn
-          block
-          size="large"
-          variant="outlined"
-          color="red-darken-1"
-          prepend-icon="mdi-delete"
-          rounded="lg"
-          @click="deleteAccountDialog = true"
-        >
-          Supprimer le compte
-        </v-btn>
-      </div>
-    </v-container>
+                <v-btn block size="large" variant="outlined" color="red-darken-1" prepend-icon="mdi-delete" rounded="lg"
+                    @click="deleteAccountDialog = true">
+                    Supprimer le compte
+                </v-btn>
+            </div>
+        </v-container>
 
-    <!-- Logout Confirmation Dialog -->
-    <BaseModal
-      v-model="logoutDialog"
-      title="Se déconnecter ?"
-      confirm-text="Se déconnecter"
-      cancel-text="Annuler"
-      confirm-color="indigo-darken-1"
-      @confirm="logout"
-      @cancel="logoutDialog = false"
-    >
-      Êtes-vous sûr de vouloir vous déconnecter ?
-    </BaseModal>
+        <!-- Logout Confirmation Dialog -->
+        <BaseModal v-model="logoutDialog" title="Se déconnecter ?" confirm-text="Se déconnecter" cancel-text="Annuler"
+            confirm-color="indigo-darken-1" @confirm="logout" @cancel="logoutDialog = false">
+            Êtes-vous sûr de vouloir vous déconnecter ?
+        </BaseModal>
 
-    <!-- Delete Account Confirmation Dialog -->
-    <BaseModal
-      v-model="deleteAccountDialog"
-      title="Supprimer le compte ?"
-      confirm-text="Supprimer"
-      cancel-text="Annuler"
-      confirm-color="red-darken-1"
-      @confirm="deleteAccount"
-      @cancel="deleteAccountDialog = false"
-    >
-      Cette action est irréversible. Toutes vos données seront définitivement supprimées.
-    </BaseModal>
-  </v-main>
+        <!-- Delete Account Confirmation Dialog -->
+        <BaseModal v-model="deleteAccountDialog" title="Supprimer le compte ?" confirm-text="Supprimer"
+            cancel-text="Annuler" confirm-color="red-darken-1" @confirm="deleteAccount"
+            @cancel="deleteAccountDialog = false">
+            Cette action est irréversible. Toutes vos données seront définitivement supprimées.
+        </BaseModal>
+    </v-main>
 </template>
 
 <style scoped>

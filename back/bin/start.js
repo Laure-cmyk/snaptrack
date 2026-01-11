@@ -39,6 +39,12 @@ const wsServer = new WSServerRoomManager({
       // Return null to prevent default message broadcast
       return null;
     }
+
+    onLeave(clientMeta, client) {
+      this.broadcastCmd('user-left', {
+        username: clientMeta.username
+      })
+    }
   },
   usersCanCreateRoom: true
 });
