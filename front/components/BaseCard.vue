@@ -43,13 +43,7 @@ function handleClick() {
 </script>
 
 <template>
-  <v-card
-    rounded="lg"
-    elevation="2"
-    class="base-card"
-    :class="{ 'cursor-pointer': clickable }"
-    @click="handleClick"
-  >
+  <v-card rounded="lg" elevation="2" class="base-card" :class="{ 'cursor-pointer': clickable }" @click="handleClick">
     <!-- Image -->
     <v-img :src="image" height="180" cover class="bg-grey-lighten-2">
       <div v-if="!image" class="d-flex align-center justify-center fill-height">
@@ -58,14 +52,15 @@ function handleClick() {
     </v-img>
 
     <!-- Content -->
-    <v-card-text class="pa-4 position-relative">
+    <v-card-text class="pa-4 pt-6 position-relative">
       <!-- Title & Rating -->
-      <div class="d-flex justify-space-between align-start mb-2">
-        <div class="text-h6 font-weight-bold flex-grow-1">
+      <div class="d-flex justify-space-between mb-2">
+        <div :class="title.length > 30 ? 'text-subtitle-1' : 'text-h6'" class="font-weight-bold flex-grow-1"
+          style="word-break: break-word; overflow-wrap: break-word; line-height: 1.5;">
           {{ title }}
         </div>
 
-        <div v-if="showRating" class="d-flex align-center ml-2">
+        <div v-if="showRating" class="d-flex align-center ml-2" style="height: fit-content; margin-top: 2px;">
           <v-icon color="yellow-darken-2" size="small" class="mr-1">mdi-star</v-icon>
           <span class="text-body-2 font-weight-bold">{{ rating.toFixed(1) }}</span>
         </div>
@@ -83,14 +78,7 @@ function handleClick() {
       </div>
 
       <!-- Delete Button -->
-      <v-btn
-        v-if="showDelete"
-        icon
-        size="small"
-        variant="text"
-        class="delete-btn"
-        @click.stop="$emit('delete')"
-      >
+      <v-btn v-if="showDelete" icon size="small" variant="text" class="delete-btn" @click.stop="$emit('delete')">
         <v-icon color="black">mdi-delete</v-icon>
       </v-btn>
     </v-card-text>

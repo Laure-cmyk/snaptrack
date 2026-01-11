@@ -43,9 +43,9 @@ async function fetchUserRating() {
     try {
         const userId = getUserId()
         const journeyId = route.params.id
-        
+
         if (!userId || !journeyId) return
-        
+
         const response = await fetch(`/ratings?journeyId=${journeyId}&userId=${userId}`)
         if (response.ok) {
             const ratings = await response.json()
@@ -67,7 +67,7 @@ async function saveRating(newRating) {
         try {
             const userId = getUserId()
             const journeyId = route.params.id
-            
+
             const response = await fetch('/ratings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -77,7 +77,7 @@ async function saveRating(newRating) {
                     rating: Number(newRating)
                 })
             })
-            
+
             if (!response.ok) {
                 throw new Error('Failed to save rating')
             }
@@ -163,19 +163,19 @@ async function connectWebSocket() {
     try {
         const journeyId = route.params.id
         const username = getUsername()
-        
+
         // WebSocket URL - auto-detect based on current hostname
         const isProduction = window.location.hostname !== 'localhost'
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const wsUrl = isProduction 
+        const wsUrl = isProduction
             ? `${wsProtocol}//${window.location.host}`
             : (import.meta.env.VITE_WS_URL || 'ws://localhost:3000')
-        
+
         const ws = new WSClientRoom(wsUrl)
         await ws.connect()
-        
+
         wsRoom.value = await ws.roomCreateOrJoin(`journey-${journeyId}`, { username })
-        
+
         // Start watching and emitting location
         startLocationSharing()
     } catch (err) {
@@ -189,9 +189,9 @@ function startLocationSharing() {
         console.warn('Geolocation not supported')
         return
     }
-    
+
     const username = getUsername()
-    
+
     locationWatchId = navigator.geolocation.watchPosition(
         (position) => {
             if (wsRoom.value) {
@@ -371,10 +371,10 @@ function goToLive() {
                 <!-- Rating -->
                 <div class="mt-6">
                     <p class="text-subtitle-2 font-weight-bold mb-3">Notez ce parcours :</p>
-                    <v-rating :model-value="rating" @update:model-value="onRatingChange" color="yellow-darken-2" active-color="yellow-darken-2" size="large" hover :disabled="ratingSaving" />
                     <div class="d-flex justify-center ga-1">
-                        <v-rating v-model="rating" color="yellow-darken-2" active-color="yellow-darken-2" size="large"
-                            hover density="compact" />
+                        <v-rating :model-value="rating" @update:model-value="onRatingChange" color="yellow-darken-2"
+                            active-color="yellow-darken-2" size="large" hover density="compact"
+                            :disabled="ratingSaving" />
                     </div>
                 </div>
             </div>
