@@ -6,8 +6,8 @@ import logger from 'morgan';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
 import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,68 +27,42 @@ import participationsRouter from '../back/routes/participations.js';
 import scoresRouter from '../back/routes/scores.js';
 import { authenticateToken, optionalAuth } from './middleware/auth.js';
 
-// Load and merge OpenAPI documentation
-const docsPath = path.join(__dirname, 'docs');
-const openapiFiles = fs.readdirSync(docsPath).filter(file => file.startsWith('openapi-') && file.endsWith('.json'));
-
-// Base OpenAPI document
-const swaggerDocument = {
-  openapi: '3.0.3',
-  info: {
-    title: 'SnapTrack API',
-    description: 'Complete API documentation for SnapTrack application.',
-    version: '1.0.0',
-    contact: {
-      name: 'SnapTrack Team'
+// Swagger configuration using JSDoc comments from route files
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.3',
+    info: {
+      title: 'SnapTrack API',
+      description: 'Complete API documentation for SnapTrack application.',
+      version: '1.0.0',
+      contact: {
+        name: 'SnapTrack Team'
+      }
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Development server'
+      },
+      {
+        url: 'https://snaptrack-nd9h.onrender.com',
+        description: 'Production server'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
     }
   },
-  servers: [
-    {
-      url: 'http://localhost:3000',
-      description: 'Development server'
-    },
-    {
-      url: 'https://snaptrack-nd9h.onrender.com',
-      description: 'Production server'
-    }
-  ],
-  tags: [],
-  paths: {},
-  components: {
-    schemas: {},
-    responses: {},
-    securitySchemes: {}
-  }
+  apis: [path.join(__dirname, 'routes', '*.js')]
 };
 
-// Merge all OpenAPI files
-for (const file of openapiFiles) {
-  const filePath = path.join(docsPath, file);
-  const doc = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-  
-  // Merge tags
-  if (doc.tags) {
-    swaggerDocument.tags.push(...doc.tags);
-  }
-  
-  // Merge paths
-  if (doc.paths) {
-    Object.assign(swaggerDocument.paths, doc.paths);
-  }
-  
-  // Merge components
-  if (doc.components) {
-    if (doc.components.schemas) {
-      Object.assign(swaggerDocument.components.schemas, doc.components.schemas);
-    }
-    if (doc.components.responses) {
-      Object.assign(swaggerDocument.components.responses, doc.components.responses);
-    }
-    if (doc.components.securitySchemes) {
-      Object.assign(swaggerDocument.components.securitySchemes, doc.components.securitySchemes);
-    }
-  }
-}
+const swaggerDocument = swaggerJsdoc(swaggerOptions);
 
 const app = express();
 
