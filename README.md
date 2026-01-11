@@ -5,7 +5,7 @@
 - [Build & déployement](#build--déployement)
 - [Troubleshooting](#troubleshooting)
 
-🔗 [Lien vers l'application](https://snaptrack-nd9h.onrender.com/)
+🔗 [Lien vers l'application](https://snaptrack-nd9h.onrender.com/)  
 🔗 [Lien vers la doc de l'API](https://snaptrack-nd9h.onrender.com/api-docs/)
 
 ## Installation
