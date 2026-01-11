@@ -40,14 +40,14 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:3000', // Assurez-vous que c'est le bon port
+        url: 'http://localhost:3000',
         description: 'Serveur local'
       }
     ]
   },
-  // IMPORTANT : Le chemin doit correspondre à la structure de vos dossiers.
-  // Vu vos imports, vos routes semblent être dans "../back/routes/"
-  apis: ['../back/routes/friends.js']
+  // ICI : On utilise path.join pour être sûr à 100% de trouver le fichier
+  // Cela reprend la même logique que votre import : '../back/routes/friends.js'
+  apis: [path.join(__dirname, '../back/routes/*.js')]
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
