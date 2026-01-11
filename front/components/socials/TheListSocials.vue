@@ -193,7 +193,7 @@ function getButtonState(item, index) {
     </v-card-text>
 
     <!-- Sent Pending Requests when search is not active -->
-    <v-card-text v-if="!showSearchResults && sentPendingRequests.length > 0">
+    <v-card-text v-if="!showSearchResults && sentPendingRequests.length > 0" style="max-height: 60vh; overflow-y: auto;">
       <div class="text-subtitle-2 text-grey-darken-1 mb-2 mt-4">
         Invitations envoyées (en attente)
       </div>
