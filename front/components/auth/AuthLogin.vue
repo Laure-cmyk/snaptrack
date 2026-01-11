@@ -8,6 +8,7 @@ const emailOrUsername = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const errorMessage = ref('')
+const isLoading = ref(false)
 
 const passwordField = ref(null)
 
@@ -18,15 +19,12 @@ function focusPassword() {
 async function login() {
   errorMessage.value = '';
 
-    // Simuler appel API
-    if (!emailOrUsername.value || !password.value) {
-        errorMessage.value = 'Veuillez remplir tous les champs.'
-        return
-    }
+  if (!emailOrUsername.value || !password.value) {
+    errorMessage.value = 'Veuillez remplir tous les champs.'
+    return
+  }
 
-    try {
-        // Ici tu peux appeler ton backend avec useFetchJson
-        // Exemple : await useFetchJson({ url: '/api/login', method: 'POST', data: { email, password } })
+  isLoading.value = true;
 
   try {
     // Call actual backend login endpoint
@@ -34,23 +32,24 @@ async function login() {
       url: '/users/login',
       method: 'POST',
       data: {
-        email: email.value,
+        email: emailOrUsername.value,
         password: password.value
       },
       immediate: false
     });
 
     await execute();
-        emit('login-success', { emailOrUsername: emailOrUsername.value })
-    } catch (err) {
-        errorMessage.value = 'Email/nom d\'utilisateur ou mot de passe incorrect.'
+
+    if (error.value) {
+      errorMessage.value = error.value.data?.error || 'Email/nom d\'utilisateur ou mot de passe incorrect.';
+      return;
     }
 
     // Save the JWT token
     localStorage.setItem('jwt', data.value.token);
     localStorage.setItem('user', JSON.stringify(data.value.user));
 
-    emit('login-success', { email: email.value, user: data.value.user });
+    emit('login-success', { emailOrUsername: emailOrUsername.value, user: data.value.user });
   } catch (err) {
     errorMessage.value = err.data?.error || err.message || 'Email ou mot de passe incorrect.';
     console.error('Login error:', err);

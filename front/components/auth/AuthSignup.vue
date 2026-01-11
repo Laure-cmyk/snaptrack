@@ -107,17 +107,6 @@ async function signup() {
     if (error.value) {
       errorMessage.value = error.value.data?.error || 'Erreur lors de la création du compte.';
       return;
-        // Simulation réussite
-        emit('signup-success', { username: username.value, email: email.value })
-    } catch (err) {
-        // Vérifier si l'erreur est due à un nom d'utilisateur existant
-        if (err.status === 409 || err.message?.includes('username') || err.message?.includes('existe')) {
-            usernameExistsError.value = 'Ce nom d\'utilisateur est déjà utilisé.'
-        } else if (err.status === 400 || err.message?.includes('email')) {
-            errorMessage.value = 'Cet email est déjà utilisé.'
-        } else {
-            errorMessage.value = 'Erreur lors de la création du compte.'
-        }
     }
 
     // Save the user info and redirect to login
