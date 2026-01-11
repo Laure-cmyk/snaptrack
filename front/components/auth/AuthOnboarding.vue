@@ -16,18 +16,21 @@ function openModal() {
 async function requestLocationPermission() {
   locationError.value = '';
 
-  try {
-    await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject);
-    });
+    try {
+        await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            })
+        })
 
-    showLocationDialog.value = false;
-    showCameraDialog.value = true;
-  } catch (err) {
-    console.error(err);
-    locationError.value =
-      "Impossible d'accéder à la localisation. Veuillez autoriser l'accès dans les paramètres de votre navigateur.";
-  }
+        showLocationDialog.value = false
+        showCameraDialog.value = true
+    } catch (err) {
+        console.error(err)
+        locationError.value = "error"
+    }
 }
 
 function declineLocation() {
@@ -96,36 +99,31 @@ function declineCamera() {
       </v-card>
     </div>
 
-    <!-- Modal Localisation -->
-    <BaseModal
-      v-model="showLocationDialog"
-      title="Autoriser l'accès à la localisation"
-      confirm-text="Autoriser"
-      cancel-text="Décliner"
-      @confirm="requestLocationPermission"
-      @cancel="declineLocation"
-    >
-      Vous devez autoriser l'accès à la localisation pour pouvoir utiliser l'application.
-      <v-alert v-if="locationError" type="error" variant="tonal" class="mt-4 text-center">
-        {{ locationError }}
-      </v-alert>
-    </BaseModal>
+        <!-- Modal Localisation -->
+        <BaseModal v-model="showLocationDialog" title="Autoriser l'accès à la localisation" confirm-text="Autoriser"
+            cancel-text="Décliner" @confirm="requestLocationPermission" @cancel="declineLocation">
+            <p class="text-body-1 mb-4">
+                SnapTrack utilise ta position pour vérifier que tu es au bon endroit lors de la découverte des lieux.
+            </p>
 
-    <!-- Modal Caméra -->
-    <BaseModal
-      v-model="showCameraDialog"
-      title="Autoriser l'accès à la caméra"
-      confirm-text="Autoriser"
-      cancel-text="Décliner"
-      @confirm="requestCameraPermission"
-      @cancel="declineCamera"
-    >
-      Vous devez autoriser l'accès à la caméra pour pouvoir utiliser l'application.
-      <v-alert v-if="cameraError" type="error" variant="tonal" class="mt-4 text-center">
-        {{ cameraError }}
-      </v-alert>
-    </BaseModal>
-  </v-container>
+            <!-- Message d'erreur -->
+            <v-alert v-if="locationError" type="error" variant="tonal" class="mb-4 text-left">
+                <div class="text-body-2">
+                    La localisation n'est pas activée sur votre appareil. Veuillez l'activer dans les paramètres puis
+                    réessayer.
+                </div>
+            </v-alert>
+        </BaseModal>
+
+        <!-- Modal Caméra -->
+        <BaseModal v-model="showCameraDialog" title="Autoriser l'accès à la caméra" confirm-text="Autoriser"
+            cancel-text="Décliner" @confirm="requestCameraPermission" @cancel="declineCamera">
+            Vous devez autoriser l'accès à la caméra pour pouvoir utiliser l'application.
+            <v-alert v-if="cameraError" type="error" variant="tonal" class="mt-4 text-left">
+                {{ cameraError }}
+            </v-alert>
+        </BaseModal>
+    </v-container>
 </template>
 
 <style scoped>
