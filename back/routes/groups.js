@@ -45,7 +45,7 @@ function toObjectId(id) {
  * "required": ["name"],
  * "properties": {
  * "name": { "type": "string", "example": "Team Bleu" },
- * "ownerId": { "type": "string", "description": "ID de l'utilisateur créateur (optionnel)", "example": "64b5f8..." }
+ * "size": { "type": "string", "description": "ID de l'utilisateur créateur (optionnel)", "example": "5" }
  * }
  * },
  * "GroupMember": {
@@ -95,7 +95,13 @@ function toObjectId(id) {
  * "required": true,
  * "content": {
  * "application/json": {
- * "schema": { "$ref": "#/components/schemas/GroupInput" }
+ * "schema": {
+ * "$ref": "#/components/schemas/GroupInput",
+ * "example": {
+ * "name": "Explorateurs",
+ * "ownerId": "695e75de8f7bb279fd390dde"
+ * }
+ * }
  * }
  * }
  * },
@@ -141,6 +147,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
+    // On récupère "ownerId" (l'ID de l'utilisateur) au lieu de "size"
     const { name, ownerId } = req.body;
 
     if (!name) {
@@ -149,8 +156,9 @@ router.post('/', async (req, res) => {
 
     const groupData = { name };
 
+    // Si un ownerId est fourni, on l'assigne à createdBy
     if (ownerId) {
-      groupData.createdBy = ownerId; // mapping ownerId -> createdBy
+      groupData.createdBy = ownerId;
     }
 
     const group = await Group.create(groupData);
@@ -182,7 +190,10 @@ router.post('/', async (req, res) => {
  * "in": "path",
  * "name": "userId",
  * "required": true,
- * "schema": { "type": "string" },
+ * "schema": {
+ * "type": "string",
+ * "example": "695e76888f7bb279fd390e18"
+ * },
  * "description": "ID de l'utilisateur"
  * }
  * ],
@@ -252,7 +263,10 @@ router.get('/user/:userId', async (req, res) => {
  * "in": "path",
  * "name": "groupId",
  * "required": true,
- * "schema": { "type": "string" },
+ * "schema": {
+ * "type": "string",
+ * "example": "695e42d15d4ecaf8cf4a1f6d"
+ * },
  * "description": "ID du groupe"
  * }
  * ],
@@ -331,7 +345,10 @@ router.get('/:groupId/members', async (req, res) => {
  * "in": "path",
  * "name": "groupId",
  * "required": true,
- * "schema": { "type": "string" }
+ * "schema": {
+ * "type": "string",
+ * "example": "695e42d15d4ecaf8cf4a1f6d"
+ * }
  * }
  * ],
  * "requestBody": {
@@ -375,7 +392,10 @@ router.get('/:groupId/members', async (req, res) => {
  * "in": "path",
  * "name": "groupId",
  * "required": true,
- * "schema": { "type": "string" }
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d6f42f536195f29c9e"
+ * }
  * }
  * ],
  * "responses": {
@@ -462,14 +482,20 @@ router.delete('/:groupId', async (req, res) => {
  * "in": "path",
  * "name": "groupId",
  * "required": true,
- * "schema": { "type": "string" },
+ * "schema": {
+ * "type": "string",
+ * "example": "69623940bee8d98d13b55864"
+ * },
  * "description": "ID du groupe"
  * },
  * {
  * "in": "path",
  * "name": "userId",
  * "required": true,
- * "schema": { "type": "string" },
+ * "schema": {
+ * "type": "string",
+ * "example": "695e76888f7bb279fd390e18"
+ * },
  * "description": "ID de l'utilisateur à retirer"
  * }
  * ],
@@ -532,7 +558,10 @@ router.delete('/:groupId/members/:userId', async (req, res) => {
  * "in": "path",
  * "name": "id",
  * "required": true,
- * "schema": { "type": "string" }
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d6f42f536195f29c9c"
+ * }
  * }
  * ],
  * "responses": {

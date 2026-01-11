@@ -3,14 +3,164 @@ import { Participation, User, Journey } from '../models/index.js';
 
 const router = express.Router();
 
+// ==========================================
+// DÉFINITION DES SCHÉMAS SWAGGER (COMPONENTS)
+// ==========================================
+
 /**
- * 0. GET /participations
- * -> liste de toutes les participations
- * Option : ?journeyId=... pour filtrer sur une journey précise
- *
- * Exemple :
- *   GET /api/participations
- *   GET /api/participations?journeyId=6820a1b0f1...
+ * @swagger
+ * {
+ * "components": {
+ * "schemas": {
+ * "Participation": {
+ * "type": "object",
+ * "properties": {
+ * "_id": { "type": "string", "description": "ID unique de la participation" },
+ * "userId": {
+ * "type": "object",
+ * "properties": {
+ * "_id": { "type": "string" },
+ * "username": { "type": "string" },
+ * "email": { "type": "string" }
+ * }
+ * },
+ * "journeyId": {
+ * "type": "object",
+ * "properties": {
+ * "_id": { "type": "string" },
+ * "title": { "type": "string" }
+ * }
+ * },
+ * "createdAt": { "type": "string", "format": "date-time" },
+ * "updatedAt": { "type": "string", "format": "date-time" }
+ * }
+ * },
+ * "ParticipationInput": {
+ * "type": "object",
+ * "required": ["userId", "journeyId"],
+ * "properties": {
+ * "userId": { "type": "string", "description": "ID de l'utilisateur", "example": "695e41d5f42f536195f29c7e" },
+ * "journeyId": { "type": "string", "description": "ID du parcours", "example": "695e41d6f42f536195f29cb0" }
+ * }
+ * },
+ * "SimplifiedParticipant": {
+ * "type": "object",
+ * "properties": {
+ * "userId": { "type": "string" },
+ * "username": { "type": "string" },
+ * "journeyId": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ */
+
+// ==========================================
+// ROUTES
+// ==========================================
+
+/**
+ * @swagger
+ * {
+ * "paths": {
+ * "/participations": {
+ * "get": {
+ * "summary": "Lister toutes les participations",
+ * "description": "Récupère la liste globale des participations. Peut être filtrée par journeyId.",
+ * "tags": ["Participations"],
+ * "parameters": [
+ * {
+ * "in": "query",
+ * "name": "journeyId",
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cb0" },
+ * "description": "Filtrer par ID de parcours (optionnel)"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Liste récupérée avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/Participation" }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "post": {
+ * "summary": "Ajouter un participant à un parcours",
+ * "tags": ["Participations"],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/ParticipationInput" }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "201": {
+ * "description": "Participation créée",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/Participation" }
+ * }
+ * }
+ * },
+ * "400": { "description": "Données manquantes (userId ou journeyId)" },
+ * "409": { "description": "L'utilisateur participe déjà à ce parcours" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "delete": {
+ * "summary": "Retirer un participant (via Query Params)",
+ * "description": "Supprime une participation en spécifiant l'utilisateur et le parcours dans l'URL.",
+ * "tags": ["Participations"],
+ * "parameters": [
+ * {
+ * "in": "query",
+ * "name": "userId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d5f42f536195f29c7e" },
+ * "description": "ID de l'utilisateur à retirer"
+ * },
+ * {
+ * "in": "query",
+ * "name": "journeyId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cb0" },
+ * "description": "ID du parcours concerné"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Participant retiré avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "userId": { "type": "string" },
+ * "journeyId": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "400": { "description": "Paramètres manquants" },
+ * "404": { "description": "Participation introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/', async (req, res) => {
   try {
@@ -31,48 +181,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-/**
- * 1. List participant (participants d’une journey)
- *
- * GET /participations/journey/:journeyId
- *
- * Objectif : retourner une liste simplifiée :
- * [
- *   { "userId": 1, "username": "Alice", "journeyId": 3 },
- *   ...
- * ]
- */
-router.get('/journey/:journeyId', async (req, res) => {
-  try {
-    const { journeyId } = req.params;
-
-    const participations = await Participation.find({ journeyId })
-      .populate('userId', 'username')
-      .populate('journeyId', '_id'); // juste pour vérifier
-
-    const result = participations.map(p => ({
-      userId: p.userId._id,
-      username: p.userId.username,
-      journeyId: p.journeyId._id
-    }));
-
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * 2. Add participant
- *
- * POST /participations
- *
- * Body :
- * {
- *   "userId": "...",
- *   "journeyId": "..."
- * }
- */
 router.post('/', async (req, res) => {
   try {
     const { userId, journeyId } = req.body;
@@ -104,13 +212,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-/**
- * 3. Remove participant (par userId + journeyId)
- *
- * DELETE /participations?userId=...&journeyId=...
- *
- * Objectif : retirer un utilisateur d’une journey.
- */
 router.delete('/', async (req, res) => {
   try {
     const { userId, journeyId } = req.query;
@@ -136,8 +237,158 @@ router.delete('/', async (req, res) => {
 });
 
 /**
- * 4. GET participation by ID (détail brut)
- * GET /participations/:id
+ * @swagger
+ * {
+ * "paths": {
+ * "/participations/journey/{journeyId}": {
+ * "get": {
+ * "summary": "Lister les participants d'un parcours spécifique",
+ * "tags": ["Participations"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "journeyId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d5f42f536195f29c8f" },
+ * "description": "ID du parcours"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Liste simplifiée des participants",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/SimplifiedParticipant" }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ */
+router.get('/journey/:journeyId', async (req, res) => {
+  try {
+    const { journeyId } = req.params;
+
+    const participations = await Participation.find({ journeyId })
+      .populate('userId', 'username')
+      .populate('journeyId', '_id'); // juste pour vérifier
+
+    const result = participations.map(p => ({
+      userId: p.userId._id,
+      username: p.userId.username,
+      journeyId: p.journeyId._id
+    }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * {
+ * "paths": {
+ * "/participations/{id}": {
+ * "get": {
+ * "summary": "Récupérer une participation par ID",
+ * "tags": ["Participations"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d7f42f536195f29cea" },
+ * "description": "ID de la participation"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Détails de la participation",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/Participation" }
+ * }
+ * }
+ * },
+ * "404": { "description": "Participation introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "put": {
+ * "summary": "Mettre à jour une participation",
+ * "tags": ["Participations"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d7f42f536195f29cea" }
+ * }
+ * ],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "description": "Champs à mettre à jour (partiel)"
+ * }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "200": {
+ * "description": "Participation mise à jour",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/Participation" }
+ * }
+ * }
+ * },
+ * "404": { "description": "Participation introuvable" },
+ * "400": { "description": "Erreur de validation" }
+ * }
+ * },
+ * "delete": {
+ * "summary": "Supprimer une participation par ID",
+ * "tags": ["Participations"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d7f42f536195f29cea" }
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Participation supprimée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string", "example": "Participation deleted successfully" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Participation introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -153,10 +404,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/**
- * 5. PUT update participation (si tu en as besoin)
- * PUT /participations/:id
- */
 router.put('/:id', async (req, res) => {
   try {
     const participation = await Participation.findByIdAndUpdate(req.params.id, req.body, {
@@ -172,10 +419,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-/**
- * 6. DELETE participation par ID
- * DELETE /participations/:id
- */
 router.delete('/:id', async (req, res) => {
   try {
     const participation = await Participation.findByIdAndDelete(req.params.id);

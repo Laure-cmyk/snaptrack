@@ -1,15 +1,157 @@
 import express from 'express';
 import { Journey, Step, Rating } from '../models/index.js';
-import { upload, uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } from '../config/cloudinary.js';
+import {
+  upload,
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  getPublicIdFromUrl
+} from '../config/cloudinary.js';
 
 const router = express.Router();
 
+// ==========================================
+// DÉFINITION DES SCHÉMAS (COMPONENTS)
+// ==========================================
+
 /**
- * ============================================================
- *  LIST JOURNEYS
- *  GET /api/journeys
- *  Avec filtres : search, limit, offset, sort
- * ============================================================
+ * @swagger
+ * {
+ * "components": {
+ * "schemas": {
+ * "Journey": {
+ * "type": "object",
+ * "properties": {
+ * "_id": { "type": "string", "description": "ID unique du parcours" },
+ * "name": { "type": "string", "description": "Nom du parcours" },
+ * "description": { "type": "string" },
+ * "time": { "type": "number", "description": "Durée estimée en minutes" },
+ * "town": { "type": "string" },
+ * "image": { "type": "string", "description": "URL de l'image de couverture" },
+ * "averageRating": { "type": "number", "description": "Note moyenne calculée" },
+ * "createdAt": { "type": "string", "format": "date-time" },
+ * "updatedAt": { "type": "string", "format": "date-time" }
+ * }
+ * },
+ * "JourneyInput": {
+ * "type": "object",
+ * "required": ["name", "description", "time", "town"],
+ * "properties": {
+ * "name": { "type": "string", "example": "Balade en forêt" },
+ * "description": { "type": "string", "example": "Une belle promenade..." },
+ * "time": { "type": "number", "example": 120 },
+ * "town": { "type": "string", "example": "Lausanne" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ */
+
+// ==========================================
+// ROUTES
+// ==========================================
+
+/**
+ * @swagger
+ * {
+ * "paths": {
+ * "/participations": {
+ * "get": {
+ * "summary": "Lister toutes les participations",
+ * "description": "Récupère la liste globale des participations. Peut être filtrée par journeyId.",
+ * "tags": ["Participations"],
+ * "parameters": [
+ * {
+ * "in": "query",
+ * "name": "journeyId",
+ * "schema": { "type": "string", "example": "695e41d5f42f536195f29c8f" },
+ * "description": "Filtrer par ID de parcours (optionnel)"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Liste récupérée avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/Participation" }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "post": {
+ * "summary": "Ajouter un participant à un parcours",
+ * "tags": ["Participations"],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/ParticipationInput" }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "201": {
+ * "description": "Participation créée",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/Participation" }
+ * }
+ * }
+ * },
+ * "400": { "description": "Données manquantes (userId ou journeyId)" },
+ * "409": { "description": "L'utilisateur participe déjà à ce parcours" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "delete": {
+ * "summary": "Retirer un participant (via Query Params)",
+ * "description": "Supprime une participation en spécifiant l'utilisateur et le parcours dans l'URL.",
+ * "tags": ["Participations"],
+ * "parameters": [
+ * {
+ * "in": "query",
+ * "name": "userId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e75de8f7bb279fd390dde" },
+ * "description": "ID de l'utilisateur à retirer"
+ * },
+ * {
+ * "in": "query",
+ * "name": "journeyId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cb2" },
+ * "description": "ID du parcours concerné"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Participant retiré avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "userId": { "type": "string" },
+ * "journeyId": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "400": { "description": "Paramètres manquants" },
+ * "404": { "description": "Participation introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/', async (req, res) => {
   try {
@@ -68,10 +210,109 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.post('/', async (req, res) => {
+  try {
+    const journey = await Journey.create(req.body);
+    res.status(201).json(journey);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 /**
- * ============================================================
- *  GET JOURNEY BY ID
- * ============================================================
+ * @swagger
+ * {
+ * "paths": {
+ * "/journeys/{id}": {
+ * "get": {
+ * "summary": "Récupérer un parcours par son ID",
+ * "tags": ["Journeys"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cb1" },
+ * "description": "ID du parcours"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Détails du parcours",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/Journey" }
+ * }
+ * }
+ * },
+ * "404": { "description": "Parcours introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "put": {
+ * "summary": "Mettre à jour un parcours",
+ * "tags": ["Journeys"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cb1" }
+ * }
+ * ],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/JourneyInput" }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "200": {
+ * "description": "Parcours mis à jour",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/Journey" }
+ * }
+ * }
+ * },
+ * "404": { "description": "Parcours introuvable" },
+ * "400": { "description": "Données invalides" }
+ * }
+ * },
+ * "delete": {
+ * "summary": "Supprimer un parcours",
+ * "tags": ["Journeys"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cb2" }
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Parcours supprimé",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Parcours introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -85,25 +326,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/**
- * ============================================================
- *  CREATE JOURNEY
- * ============================================================
- */
-router.post('/', async (req, res) => {
-  try {
-    const journey = await Journey.create(req.body);
-    res.status(201).json(journey);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-/**
- * ============================================================
- *  UPDATE JOURNEY
- * ============================================================
- */
 router.put('/:id', async (req, res) => {
   try {
     const journey = await Journey.findByIdAndUpdate(req.params.id, req.body, {
@@ -119,11 +341,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-/**
- * ============================================================
- *  DELETE JOURNEY
- * ============================================================
- */
 router.delete('/:id', async (req, res) => {
   try {
     const journey = await Journey.findByIdAndDelete(req.params.id);
@@ -144,10 +361,62 @@ router.delete('/:id', async (req, res) => {
 });
 
 /**
- * ============================================================
- *  UPLOAD JOURNEY IMAGE
- *  POST /api/journeys/:id/upload-image
- * ============================================================
+ * @swagger
+ * {
+ * "paths": {
+ * "/journeys/{id}/upload-image": {
+ * "post": {
+ * "summary": "Uploader une image pour un parcours",
+ * "tags": ["Journeys"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e762e8f7bb279fd390dec" },
+ * "description": "ID du parcours"
+ * }
+ * ],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "multipart/form-data": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "image": {
+ * "type": "string",
+ * "format": "binary",
+ * "description": "Fichier image à uploader"
+ * }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "200": {
+ * "description": "Image uploadée avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "image": { "type": "string", "description": "URL de l'image" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "400": { "description": "Aucun fichier fourni" },
+ * "404": { "description": "Parcours introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
   try {
@@ -177,7 +446,7 @@ router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
 
     res.json({
       message: 'Journey image uploaded successfully',
-      image: result.url,
+      image: result.url
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -185,10 +454,42 @@ router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
 });
 
 /**
- * ============================================================
- *  DELETE JOURNEY IMAGE
- *  DELETE /api/journeys/:id/image
- * ============================================================
+ * @swagger
+ * {
+ * "paths": {
+ * "/journeys/{id}/image": {
+ * "delete": {
+ * "summary": "Supprimer l'image d'un parcours",
+ * "tags": ["Journeys"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cb0" }
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Image supprimée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Parcours introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.delete('/:id/image', async (req, res) => {
   try {
@@ -214,10 +515,45 @@ router.delete('/:id/image', async (req, res) => {
 });
 
 /**
- * ============================================================
- *  COUNT STEPS OF JOURNEY
- *  GET /api/journeys/:journeyId/steps/count
- * ============================================================
+ * @swagger
+ * {
+ * "paths": {
+ * "/journeys/{journeyId}/steps/count": {
+ * "get": {
+ * "summary": "Compter les étapes d'un parcours",
+ * "tags": ["Journeys"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "journeyId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cb3" },
+ * "description": "ID du parcours"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Nombre d'étapes récupéré",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "journeyId": { "type": "string" },
+ * "totalSteps": { "type": "integer" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Parcours introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/:journeyId/steps/count', async (req, res) => {
   try {
@@ -243,10 +579,46 @@ router.get('/:journeyId/steps/count', async (req, res) => {
 });
 
 /**
- * ============================================================
- *  GET RATING OF A JOURNEY
- *  GET /api/journeys/:journeyId/rating
- * ============================================================
+ * @swagger
+ * {
+ * "paths": {
+ * "/journeys/{journeyId}/rating": {
+ * "get": {
+ * "summary": "Obtenir la note moyenne d'un parcours",
+ * "tags": ["Journeys"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "journeyId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cb3" },
+ * "description": "ID du parcours"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Note moyenne calculée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "journeyId": { "type": "string" },
+ * "averageRating": { "type": "number", "nullable": true },
+ * "totalRatings": { "type": "integer" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Parcours introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/:journeyId/rating', async (req, res) => {
   try {

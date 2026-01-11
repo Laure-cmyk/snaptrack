@@ -1,15 +1,108 @@
 import express from 'express';
 import { Step } from '../models/index.js';
-import { upload, uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } from '../config/cloudinary.js';
+import {
+  upload,
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  getPublicIdFromUrl
+} from '../config/cloudinary.js';
 
 const router = express.Router();
 
+// ==========================================
+// DÉFINITION DES SCHÉMAS SWAGGER (COMPONENTS)
+// ==========================================
+
 /**
- * 1. List Steps (tous les steps d’un journey)
- * GET /api/steps/journey/:journeyId
- *
- * Objectif : retourner tous les steps associés à une journey donnée,
- * éventuellement triés par "order".
+ * @swagger
+ * {
+ * "components": {
+ * "schemas": {
+ * "Step": {
+ * "type": "object",
+ * "properties": {
+ * "id": { "type": "string", "description": "ID unique de l'étape" },
+ * "journeyId": { "type": "string", "description": "ID du parcours associé" },
+ * "riddle": { "type": "string", "description": "Énigme (utilisé à la création)" },
+ * "title": { "type": "string", "description": "Titre (utilisé à la lecture/update)" },
+ * "description": { "type": "string", "description": "Description (utilisé à la lecture/update)" },
+ * "image": { "type": "string", "description": "URL de l'image" },
+ * "latitude": { "type": "number" },
+ * "longitude": { "type": "number" },
+ * "accuracy": { "type": "number" },
+ * "altitude": { "type": "number" },
+ * "speed": { "type": "number" },
+ * "order": { "type": "integer" }
+ * }
+ * },
+ * "StepInput": {
+ * "type": "object",
+ * "required": ["journeyId"],
+ * "properties": {
+ * "journeyId": { "type": "string", "example": "695e41d5f42f536195f29c8f" },
+ * "riddle": { "type": "string", "example": "Trouvez la statue cachée" },
+ * "latitude": { "type": "number", "example": 46.123 },
+ * "longitude": { "type": "number", "example": 6.123 },
+ * "accuracy": { "type": "number" },
+ * "altitude": { "type": "number" },
+ * "speed": { "type": "number" },
+ * "note": { "type": "string" },
+ * "image": { "type": "string", "description": "URL directe (si pas d'upload)" }
+ * }
+ * },
+ * "StepUpdateInput": {
+ * "type": "object",
+ * "properties": {
+ * "title": { "type": "string" },
+ * "description": { "type": "string" },
+ * "order": { "type": "integer" },
+ * "journeyId": { "type": "string", "example": "695e41d5f42f536195f29c8f" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ */
+
+// ==========================================
+// ROUTES
+// ==========================================
+
+/**
+ * @swagger
+ * {
+ * "paths": {
+ * "/steps/journey/{journeyId}": {
+ * "get": {
+ * "summary": "Lister les étapes d'un parcours",
+ * "tags": ["Steps"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "journeyId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d5f42f536195f29c8f" },
+ * "description": "ID du parcours"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Liste des étapes récupérée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/Step" }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/journey/:journeyId', async (req, res) => {
   try {
@@ -36,8 +129,60 @@ router.get('/journey/:journeyId', async (req, res) => {
 });
 
 /**
- * (Optionnel) GET all steps (pour admin/debug)
- * GET /api/steps
+ * @swagger
+ * {
+ * "paths": {
+ * "/steps": {
+ * "get": {
+ * "summary": "Lister toutes les étapes (Admin/Debug)",
+ * "tags": ["Steps"],
+ * "responses": {
+ * "200": {
+ * "description": "Liste complète des étapes",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/Step" }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "post": {
+ * "summary": "Créer une nouvelle étape",
+ * "tags": ["Steps"],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/StepInput" }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "201": {
+ * "description": "Étape créée avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "step": { "$ref": "#/components/schemas/Step" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "400": { "description": "journeyId manquant ou erreur de validation" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/', async (req, res) => {
   try {
@@ -48,56 +193,23 @@ router.get('/', async (req, res) => {
   }
 });
 
-/**
- * 2. Get Step (détail d’un step)
- * GET /api/steps/:id
- */
-router.get('/:id', async (req, res) => {
-  try {
-    const step = await Step.findById(req.params.id);
-    if (!step) {
-      return res.status(404).json({ error: 'Step not found' });
-    }
-
-    res.json({
-      id: step._id,
-      journeyId: step.journeyId,
-      title: step.title,
-      description: step.description,
-      order: step.order
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * 3. Create Step
- * POST /api/steps
- *
- * Body JSON :
- * {
- *   "journeyId": "...",
- *   "riddle": "Find the hidden statue",
- *   "latitude": 46.123456,
- *   "longitude": 6.123456
- * }
- */
 router.post('/', async (req, res) => {
   try {
-    const { journeyId, riddle, latitude, longitude, image, note, accuracy, altitude, speed } = req.body;
+    const { journeyId, riddle, latitude, longitude, image, note, accuracy, altitude, speed } =
+      req.body;
 
     if (!journeyId) {
-      return res
-        .status(400)
-        .json({ error: 'journeyId is required' });
+      return res.status(400).json({ error: 'journeyId is required' });
     }
 
     // Build location GeoJSON from lat/lng if provided
-    const location = (latitude != null && longitude != null) ? {
-      type: 'Point',
-      coordinates: [longitude, latitude]
-    } : { type: 'Point', coordinates: [0, 0] };
+    const location =
+      latitude != null && longitude != null
+        ? {
+            type: 'Point',
+            coordinates: [longitude, latitude]
+          }
+        : { type: 'Point', coordinates: [0, 0] };
 
     const step = await Step.create({
       journeyId,
@@ -123,7 +235,7 @@ router.post('/', async (req, res) => {
         accuracy: step.accuracy,
         altitude: step.altitude,
         speed: step.speed
-      },
+      }
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -131,9 +243,125 @@ router.post('/', async (req, res) => {
 });
 
 /**
- * 4. Update Step
- * PUT /api/steps/:id
+ * @swagger
+ * {
+ * "paths": {
+ * "/steps/{id}": {
+ * "get": {
+ * "summary": "Récupérer une étape par ID",
+ * "tags": ["Steps"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cbb" }
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Détails de l'étape",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/Step" }
+ * }
+ * }
+ * },
+ * "404": { "description": "Étape introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "put": {
+ * "summary": "Mettre à jour une étape",
+ * "tags": ["Steps"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cbb" }
+ * }
+ * ],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/StepUpdateInput" }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "200": {
+ * "description": "Étape mise à jour",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "step": { "$ref": "#/components/schemas/Step" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Étape introuvable" },
+ * "400": { "description": "Données invalides" }
+ * }
+ * },
+ * "delete": {
+ * "summary": "Supprimer une étape",
+ * "tags": ["Steps"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cbb" }
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Étape supprimée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "id": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Étape introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
+router.get('/:id', async (req, res) => {
+  try {
+    const step = await Step.findById(req.params.id);
+    if (!step) {
+      return res.status(404).json({ error: 'Step not found' });
+    }
+
+    res.json({
+      id: step._id,
+      journeyId: step.journeyId,
+      title: step.title,
+      description: step.description,
+      order: step.order
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.put('/:id', async (req, res) => {
   try {
     const { title, description, order, journeyId } = req.body;
@@ -163,10 +391,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-/**
- * 5. Delete Step
- * DELETE /api/steps/:id
- */
 router.delete('/:id', async (req, res) => {
   try {
     const step = await Step.findByIdAndDelete(req.params.id);
@@ -190,8 +414,61 @@ router.delete('/:id', async (req, res) => {
 });
 
 /**
- * 6. Upload Step Image
- * POST /steps/:id/upload-image
+ * @swagger
+ * {
+ * "paths": {
+ * "/steps/{id}/upload-image": {
+ * "post": {
+ * "summary": "Uploader une image pour une étape",
+ * "tags": ["Steps"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cbb" }
+ * }
+ * ],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "multipart/form-data": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "image": {
+ * "type": "string",
+ * "format": "binary",
+ * "description": "Fichier image à uploader"
+ * }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "200": {
+ * "description": "Image uploadée avec succès",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "image": { "type": "string", "description": "URL de l'image" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "400": { "description": "Aucun fichier fourni" },
+ * "404": { "description": "Étape introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
   try {
@@ -221,7 +498,7 @@ router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
 
     res.json({
       message: 'Step image uploaded successfully',
-      image: result.url,
+      image: result.url
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -229,8 +506,42 @@ router.post('/:id/upload-image', upload.single('image'), async (req, res) => {
 });
 
 /**
- * 7. Delete Step Image
- * DELETE /api/steps/:id/image
+ * @swagger
+ * {
+ * "paths": {
+ * "/steps/{id}/image": {
+ * "delete": {
+ * "summary": "Supprimer l'image d'une étape",
+ * "tags": ["Steps"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29cbb" }
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Image supprimée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Étape introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.delete('/:id/image', async (req, res) => {
   try {

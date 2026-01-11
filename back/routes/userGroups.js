@@ -14,9 +14,123 @@ function toObjectId(id) {
   return null;
 }
 
+// ==========================================
+// DÉFINITION DES SCHÉMAS SWAGGER (COMPONENTS)
+// ==========================================
+
 /**
- * 0. GET /user-groups
- * -> liste brute de toutes les relations user–group (pour admin/debug)
+ * @swagger
+ * {
+ * "components": {
+ * "schemas": {
+ * "UserGroup": {
+ * "type": "object",
+ * "properties": {
+ * "_id": { "type": "string", "description": "ID unique de la relation" },
+ * "userId": { "type": "string", "description": "ID de l'utilisateur" },
+ * "groupId": { "type": "string", "description": "ID du groupe" },
+ * "status": { "type": "string", "enum": ["pending", "member", "admin"], "description": "Statut dans le groupe" },
+ * "createdAt": { "type": "string", "format": "date-time" },
+ * "updatedAt": { "type": "string", "format": "date-time" }
+ * }
+ * },
+ * "UserGroupInput": {
+ * "type": "object",
+ * "required": ["userId", "groupId"],
+ * "properties": {
+ * "userId": { "type": "string", "example": "695e75de8f7bb279fd390dde" },
+ * "groupId": { "type": "string", "example": "695e41d6f42f536195f29c9e" },
+ * "status": { "type": "string", "enum": ["pending", "member", "admin"], "default": "member" }
+ * }
+ * },
+ * "GroupMemberResponse": {
+ * "type": "object",
+ * "properties": {
+ * "groupId": { "type": "string" },
+ * "groupName": { "type": "string" },
+ * "members": {
+ * "type": "array",
+ * "items": {
+ * "type": "object",
+ * "properties": {
+ * "userId": { "type": "string" },
+ * "username": { "type": "string" },
+ * "status": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "PendingInviteResponse": {
+ * "type": "object",
+ * "properties": {
+ * "id": { "type": "string", "description": "ID de l'invitation (UserGroup ID)" },
+ * "name": { "type": "string", "description": "Nom du groupe" },
+ * "groupId": { "type": "string" },
+ * "type": { "type": "string", "example": "invite" },
+ * "category": { "type": "string", "example": "group" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ */
+
+// ==========================================
+// ROUTES
+// ==========================================
+
+/**
+ * @swagger
+ * {
+ * "paths": {
+ * "/user-groups": {
+ * "get": {
+ * "summary": "Lister toutes les relations utilisateurs-groupes",
+ * "description": "Route brute pour debug/admin.",
+ * "tags": ["UserGroups"],
+ * "responses": {
+ * "200": {
+ * "description": "Liste complète récupérée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/UserGroup" }
+ * }
+ * }
+ * }
+ * },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "post": {
+ * "summary": "Créer une relation (Ajouter un utilisateur à un groupe)",
+ * "tags": ["UserGroups"],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/UserGroupInput" }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "201": {
+ * "description": "Relation créée",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/UserGroup" }
+ * }
+ * }
+ * },
+ * "400": { "description": "Erreur de validation" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/', async (req, res) => {
   try {
@@ -30,23 +144,38 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * 1. List Group Members (avec statut)
- * GET /user-groups/members/:groupId
- *
- * Objectif : renvoyer le groupe + la liste des membres + leur statut
- *
- * Réponse :
+ * @swagger
  * {
- *   "groupId": "...",
- *   "groupName": "Team Bleu",
- *   "members": [
- *     { "userId": "...", "username": "Alice", "status": "admin" },
- *     ...
- *   ]
+ * "paths": {
+ * "/user-groups/members/{groupId}": {
+ * "get": {
+ * "summary": "Lister les membres d'un groupe",
+ * "tags": ["UserGroups"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "groupId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d6f42f536195f29c9e" },
+ * "description": "ID du groupe"
  * }
- *
- * ⚠️ IMPORTANT : cette route doit être DÉCLARÉE
- * AVANT le `router.get('/:id')` sinon `/members/...` sera pris comme un :id.
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Détails du groupe et liste des membres",
+ * "content": {
+ * "application/json": {
+ * "schema": { "$ref": "#/components/schemas/GroupMemberResponse" }
+ * }
+ * }
+ * },
+ * "404": { "description": "Groupe introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/members/:groupId', async (req, res) => {
   try {
@@ -57,8 +186,7 @@ router.get('/members/:groupId', async (req, res) => {
       .populate('userId', 'username email')
       .populate('groupId', 'name');
 
-    // 2. Si aucun UserGroup mais que le groupe existe quand même,
-    // on va chercher le groupe pour renvoyer un groupName + liste vide.
+    // 2. Si aucun UserGroup mais que le groupe existe quand même
     let group = null;
 
     if (userGroups.length > 0) {
@@ -89,10 +217,41 @@ router.get('/members/:groupId', async (req, res) => {
 });
 
 /**
- * 1b. List pending group invitations for a user
- * GET /user-groups/pending/:userId
- *
- * Returns all pending group invitations for a user
+ * @swagger
+ * {
+ * "paths": {
+ * "/user-groups/pending/{userId}": {
+ * "get": {
+ * "summary": "Lister les invitations en attente pour un utilisateur",
+ * "tags": ["UserGroups"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "userId",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e75de8f7bb279fd390dde" },
+ * "description": "ID de l'utilisateur"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Liste des invitations",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": { "$ref": "#/components/schemas/PendingInviteResponse" }
+ * }
+ * }
+ * }
+ * },
+ * "400": { "description": "Format d'ID invalide" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/pending/:userId', async (req, res) => {
   try {
@@ -106,17 +265,17 @@ router.get('/pending/:userId', async (req, res) => {
 
     const pendingInvites = await UserGroup.find({
       userId: userObjId,
-      status: 'pending',
+      status: 'pending'
     }).populate('groupId', 'name');
 
     const result = pendingInvites
-      .filter((ug) => ug.groupId)
-      .map((ug) => ({
+      .filter(ug => ug.groupId)
+      .map(ug => ({
         id: ug._id,
         name: ug.groupId.name,
         groupId: ug.groupId._id,
         type: 'invite',
-        category: 'group',
+        category: 'group'
       }));
 
     res.json(result);
@@ -126,8 +285,44 @@ router.get('/pending/:userId', async (req, res) => {
 });
 
 /**
- * 1c. Accept group invitation
- * POST /user-groups/:id/accept
+ * @swagger
+ * {
+ * "paths": {
+ * "/user-groups/{id}/accept": {
+ * "post": {
+ * "summary": "Accepter une invitation de groupe",
+ * "tags": ["UserGroups"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d7f42f536195f29ce2" },
+ * "description": "ID de l'invitation (UserGroup ID)"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Invitation acceptée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" },
+ * "userGroup": { "$ref": "#/components/schemas/UserGroup" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Invitation introuvable" },
+ * "400": { "description": "Erreur de validation" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.post('/:id/accept', async (req, res) => {
   try {
@@ -143,7 +338,7 @@ router.post('/:id/accept', async (req, res) => {
 
     res.json({
       message: 'Group invitation accepted',
-      userGroup,
+      userGroup
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -151,8 +346,43 @@ router.post('/:id/accept', async (req, res) => {
 });
 
 /**
- * 1d. Decline group invitation
- * POST /user-groups/:id/decline
+ * @swagger
+ * {
+ * "paths": {
+ * "/user-groups/{id}/decline": {
+ * "post": {
+ * "summary": "Refuser (supprimer) une invitation de groupe",
+ * "tags": ["UserGroups"],
+ * "parameters": [
+ * {
+ * "in": "path",
+ * "name": "id",
+ * "required": true,
+ * "schema": { "type": "string", "example": "695e41d7f42f536195f29ce2" },
+ * "description": "ID de l'invitation (UserGroup ID)"
+ * }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Invitation refusée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Invitation introuvable" },
+ * "400": { "description": "Erreur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.post('/:id/decline', async (req, res) => {
   try {
@@ -163,7 +393,7 @@ router.post('/:id/decline', async (req, res) => {
     }
 
     res.json({
-      message: 'Group invitation declined',
+      message: 'Group invitation declined'
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -171,8 +401,75 @@ router.post('/:id/decline', async (req, res) => {
 });
 
 /**
- * 2. GET user-group by ID
- * GET /user-groups/:id
+ * @swagger
+ * {
+ * "paths": {
+ * "/user-groups/{id}": {
+ * "get": {
+ * "summary": "Récupérer une relation par ID",
+ * "tags": ["UserGroups"],
+ * "parameters": [
+ * { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "example": "695e41d7f42f536195f29ce2" } }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Détails de la relation",
+ * "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserGroup" } } }
+ * },
+ * "404": { "description": "Relation introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * },
+ * "put": {
+ * "summary": "Mettre à jour une relation (ex: changer le statut)",
+ * "tags": ["UserGroups"],
+ * "parameters": [
+ * { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "example": "695e41d7f42f536195f29ce2" } }
+ * ],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": { "type": "object", "description": "Champs à mettre à jour" }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "200": {
+ * "description": "Relation mise à jour",
+ * "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserGroup" } } }
+ * },
+ * "404": { "description": "Relation introuvable" },
+ * "400": { "description": "Erreur de validation" }
+ * }
+ * },
+ * "delete": {
+ * "summary": "Supprimer une relation",
+ * "tags": ["UserGroups"],
+ * "parameters": [
+ * { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "example": "695e41d7f42f536195f29ce2" } }
+ * ],
+ * "responses": {
+ * "200": {
+ * "description": "Relation supprimée",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "message": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "404": { "description": "Relation introuvable" },
+ * "500": { "description": "Erreur serveur" }
+ * }
+ * }
+ * }
+ * }
+ * }
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -188,16 +485,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/**
- * 3. POST create new user-group relationship
- * POST /user-groups
- * Body :
- * {
- *   "userId": "...",
- *   "groupId": "...",
- *   "status": "member" // ou "admin", "pending", etc.
- * }
- */
 router.post('/', async (req, res) => {
   try {
     const userGroup = await UserGroup.create(req.body);
@@ -207,10 +494,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-/**
- * 4. PUT update user-group relationship
- * PUT /user-groups/:id
- */
 router.put('/:id', async (req, res) => {
   try {
     const userGroup = await UserGroup.findByIdAndUpdate(req.params.id, req.body, {
@@ -226,10 +509,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-/**
- * 5. DELETE user-group relationship
- * DELETE /user-groups/:id
- */
 router.delete('/:id', async (req, res) => {
   try {
     const userGroup = await UserGroup.findByIdAndDelete(req.params.id);

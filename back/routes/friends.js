@@ -107,13 +107,13 @@ router.get('/', async (req, res) => {
     const friends = await Friends.find();
 
     const result = await Promise.all(
-      friends.map(async (f) => {
+      friends.map(async f => {
         const userObjId = toObjectId(f.userId);
         const friendObjId = toObjectId(f.friendId);
 
         const [user, friend] = await Promise.all([
           userObjId ? User.findById(userObjId).select('username email') : null,
-          friendObjId ? User.findById(friendObjId).select('username email') : null,
+          friendObjId ? User.findById(friendObjId).select('username email') : null
         ]);
 
         return {
@@ -124,7 +124,7 @@ router.get('/', async (req, res) => {
           requestedAt: f.requestedAt,
           acceptedAt: f.acceptedAt,
           createdAt: f.createdAt,
-          updatedAt: f.updatedAt,
+          updatedAt: f.updatedAt
         };
       })
     );
@@ -221,7 +221,10 @@ router.post('/requests', async (req, res) => {
  * "in": "path",
  * "name": "id",
  * "required": true,
- * "schema": { "type": "string" },
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d5f42f536195f29c91"
+ * },
  * "description": "L'ID de la relation"
  * }
  * ],
@@ -272,7 +275,10 @@ router.post('/requests/:id/accept', async (req, res) => {
  * "in": "path",
  * "name": "id",
  * "required": true,
- * "schema": { "type": "string" },
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d5f42f536195f29c8e"
+ * },
  * "description": "L'ID de la relation"
  * }
  * ],
@@ -323,11 +329,33 @@ router.post('/requests/:id/refuse', async (req, res) => {
  * "in": "path",
  * "name": "userId",
  * "required": true,
- * "schema": { "type": "string" }
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d5f42f536195f29c7e"
+ * }
  * }
  * ],
  * "responses": {
- * "200": { "description": "Liste des invitations reçues" },
+ * "200": {
+ * "description": "Liste des invitations reçues",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": {
+ * "type": "object",
+ * "properties": {
+ * "id": { "type": "string" },
+ * "name": { "type": "string" },
+ * "senderId": { "type": "string" },
+ * "type": { "type": "string" },
+ * "category": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * },
  * "400": { "description": "Format d'ID invalide" },
  * "500": { "description": "Erreur serveur" }
  * }
@@ -344,11 +372,11 @@ router.get('/requests/pending/:userId', async (req, res) => {
 
     const pendingRequests = await Friends.find({
       friendId: userObjId,
-      status: 'pending',
+      status: 'pending'
     });
 
     const result = await Promise.all(
-      pendingRequests.map(async (f) => {
+      pendingRequests.map(async f => {
         const senderObjId = toObjectId(f.userId);
         const sender = senderObjId ? await User.findById(senderObjId).select('username') : null;
 
@@ -357,7 +385,7 @@ router.get('/requests/pending/:userId', async (req, res) => {
           name: sender?.username || 'Unknown',
           senderId: f.userId,
           type: 'invite',
-          category: 'friend',
+          category: 'friend'
         };
       })
     );
@@ -372,20 +400,42 @@ router.get('/requests/pending/:userId', async (req, res) => {
  * @swagger
  * {
  * "paths": {
- * "/friends/requests/sent/{userId}": {
+ * "/friends/requests/pending/{userId}": {
  * "get": {
- * "summary": "Voir les demandes envoyées (En attente)",
+ * "summary": "Voir les demandes reçues (Invitation entrante)",
  * "tags": ["Friends"],
  * "parameters": [
  * {
  * "in": "path",
  * "name": "userId",
  * "required": true,
- * "schema": { "type": "string" }
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d5f42f536195f29c7e"
+ * }
  * }
  * ],
  * "responses": {
- * "200": { "description": "Liste des demandes envoyées" },
+ * "200": {
+ * "description": "Liste des invitations reçues",
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "array",
+ * "items": {
+ * "type": "object",
+ * "properties": {
+ * "id": { "type": "string" },
+ * "name": { "type": "string" },
+ * "senderId": { "type": "string" },
+ * "type": { "type": "string" },
+ * "category": { "type": "string" }
+ * }
+ * }
+ * }
+ * }
+ * }
+ * },
  * "400": { "description": "Format d'ID invalide" },
  * "500": { "description": "Erreur serveur" }
  * }
@@ -402,20 +452,22 @@ router.get('/requests/sent/:userId', async (req, res) => {
 
     const sentRequests = await Friends.find({
       userId: userObjId,
-      status: 'pending',
+      status: 'pending'
     });
 
     const result = await Promise.all(
-      sentRequests.map(async (f) => {
+      sentRequests.map(async f => {
         const recipientObjId = toObjectId(f.friendId);
-        const recipient = recipientObjId ? await User.findById(recipientObjId).select('username profilePicture') : null;
+        const recipient = recipientObjId
+          ? await User.findById(recipientObjId).select('username profilePicture')
+          : null;
 
         return {
           id: f._id,
           name: recipient?.username || 'Unknown',
           recipientId: f.friendId,
           profilePicture: recipient?.profilePicture,
-          type: 'pending-sent',
+          type: 'pending-sent'
         };
       })
     );
@@ -439,7 +491,10 @@ router.get('/requests/sent/:userId', async (req, res) => {
  * "in": "path",
  * "name": "userId",
  * "required": true,
- * "schema": { "type": "string" }
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d5f42f536195f29c7e"
+ * }
  * }
  * ],
  * "responses": {
@@ -496,7 +551,10 @@ router.get('/unfriends/:userId', async (req, res) => {
  * "in": "path",
  * "name": "userId",
  * "required": true,
- * "schema": { "type": "string" }
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d5f42f536195f29c7e"
+ * }
  * }
  * ],
  * "responses": {
@@ -544,7 +602,10 @@ router.get('/:userId/pending', async (req, res) => {
  * "in": "path",
  * "name": "userId",
  * "required": true,
- * "schema": { "type": "string" }
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d5f42f536195f29c7d"
+ * }
  * }
  * ],
  * "responses": {
@@ -566,11 +627,11 @@ router.get('/list/:userId', async (req, res) => {
 
     const friendships = await Friends.find({
       status: 'accepted',
-      $or: [{ userId: userObjId }, { friendId: userObjId }],
+      $or: [{ userId: userObjId }, { friendId: userObjId }]
     });
 
     const result = await Promise.all(
-      friendships.map(async (f) => {
+      friendships.map(async f => {
         const friendUserIdStr = f.userId?.toString() || f.userId;
         const friendIdStr = f.friendId?.toString() || f.friendId;
 
@@ -578,14 +639,16 @@ router.get('/list/:userId', async (req, res) => {
         const otherUserId = isUserSender ? friendIdStr : friendUserIdStr;
 
         const otherUserObjId = toObjectId(otherUserId);
-        const otherUser = otherUserObjId ? await User.findById(otherUserObjId).select('username profilePicture') : null;
+        const otherUser = otherUserObjId
+          ? await User.findById(otherUserObjId).select('username profilePicture')
+          : null;
 
         return {
           friendshipId: f._id,
           friendId: otherUserId,
           friendName: otherUser?.username || 'Unknown',
           profilePicture: otherUser?.profilePicture,
-          status: f.status,
+          status: f.status
         };
       })
     );
@@ -610,7 +673,10 @@ router.get('/list/:userId', async (req, res) => {
  * "in": "path",
  * "name": "id",
  * "required": true,
- * "schema": { "type": "string" }
+ * "schema": {
+ * "type": "string",
+ * "example": "695e41d5f42f536195f29c8f"
+ * }
  * }
  * ],
  * "responses": {
