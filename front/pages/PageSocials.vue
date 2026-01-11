@@ -410,7 +410,6 @@ async function sendFriendInvite(user) {
           />
 
           <!-- Friend Invites and Friends List -->
-          <v-card-text>
             <div v-if="friendInvite.length > 0" class="text-subtitle-2 text-grey-darken-1 mb-2">Invitations reçues</div>
             <TheListSocials v-if="friendInvite.length > 0" :items="friendInvite" @action="onAction" />
 
@@ -423,7 +422,6 @@ async function sendFriendInvite(user) {
               class="text-center text-grey py-4">
               Aucun ami pour le moment
             </div>
-          </v-card-text>
         </v-card>
       </v-tabs-window-item>
 
