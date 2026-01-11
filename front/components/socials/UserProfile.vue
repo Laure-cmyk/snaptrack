@@ -68,7 +68,7 @@ async function loadUserData() {
             const leaderboardRes = await fetch(`/scores/leaderboard/global?userId=${currentUserId.value}&friendId=${props.userId}`)
             if (leaderboardRes.ok) {
                 const leaderboardData = await leaderboardRes.json()
-                
+
                 leaderboard.value.top3 = leaderboardData.top3
                 leaderboard.value.userPosition = leaderboardData.userPosition
                 leaderboard.value.friendPosition = leaderboardData.friendPosition
