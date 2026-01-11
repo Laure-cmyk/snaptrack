@@ -123,7 +123,7 @@ onActivated(loadUserData)
 // Validation rules
 const passwordRules = {
     required: value => !!value || 'Ce champ est requis',
-    minLength: value => value.length >= 8 || 'Au moins 8 caractères',
+    minLength: value => value.length >= 6 || 'Au moins 6 caractères',
     match: value =>
         value === passwordForm.value.newPassword || 'Les mots de passe ne correspondent pas'
 };

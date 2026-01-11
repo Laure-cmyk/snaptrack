@@ -7,31 +7,42 @@ import BaseModal from '@/components/BaseModal.vue'
 import BaseScoreDisplay from '@/components/BaseScoreDisplay.vue'
 import ChallengeLocationCard from '@/components/challenge/ChallengeLocationCard.vue'
 import { calculateDistance, getScoreFromDistance, formatDistance } from '@/utils/scoring.js'
-import successImage from '@/assets/success.png'
-import failImage from '@/assets/fail.png'
-import victoryImage from '@/assets/victory.png'
 
 const router = useRouter()
 const route = useRoute()
 
-// État
-const currentLocationIndex = ref(0)
+// États des dialogues
 const quitDialog = ref(false)
 const successDialog = ref(false)
-const errorDialog = ref(false)
 const locationPermissionDialog = ref(false)
 const completeDialog = ref(false)
-const scoreImproved = ref(false)
-const previousScore = ref(0)
-const rating = ref(0)
-const ratingSaving = ref(false)
-const existingRatingLoaded = ref(false)
+
+// Progression du challenge
+const currentLocationIndex = ref(0)
+const loading = ref(true)
+const error = ref(null)
 
 // Scoring
 const locationScores = ref([])
 const currentScore = ref(null)
 const totalScore = computed(() => locationScores.value.reduce((sum, score) => sum + score.points, 0))
-const currentUserPosition = ref(null)
+const scoreImproved = ref(false)
+const previousScore = ref(0)
+
+// Rating
+const rating = ref(0)
+const ratingSaving = ref(false)
+
+// Trail data from API
+const trail = ref({
+    id: null,
+    title: '',
+    locations: []
+})
+
+// WebSocket for live location sharing
+const wsRoom = ref(null)
+let locationWatchId = null
 
 // Get userId from stored user object
 function getUserId() {
@@ -54,7 +65,6 @@ async function fetchUserRating() {
     try {
         const userId = getUserId()
         const journeyId = route.params.id
-
         if (!userId || !journeyId) return
 
         const response = await fetch(`/ratings?journeyId=${journeyId}&userId=${userId}`)
@@ -64,10 +74,8 @@ async function fetchUserRating() {
                 rating.value = ratings[0].rating
             }
         }
-        existingRatingLoaded.value = true
     } catch (err) {
         console.error('Failed to fetch existing rating:', err)
-        existingRatingLoaded.value = true
     }
 }
 
@@ -79,7 +87,7 @@ async function saveRating(newRating) {
             const userId = getUserId()
             const journeyId = route.params.id
 
-            const response = await fetch('/ratings', {
+            await fetch('/ratings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -88,43 +96,21 @@ async function saveRating(newRating) {
                     value: Number(newRating)
                 })
             })
-
-            if (!response.ok) {
-                throw new Error('Failed to save rating')
-            }
         } catch (err) {
-            // Rating save failed silently
+            console.error('Failed to save rating:', err)
         } finally {
             ratingSaving.value = false
         }
     }
 }
 
-// Handle rating click - directly save when user clicks stars
+// Handle rating click
 function onRatingChange(newRating) {
     rating.value = newRating
     if (newRating > 0) {
         saveRating(newRating)
     }
 }
-
-const loading = ref(true)
-const error = ref(null)
-
-// WebSocket for live location sharing
-const wsRoom = ref(null)
-let locationWatchId = null
-
-// Trail data from API
-const trail = ref({
-    id: null,
-    title: '',
-    locations: []
-})
-
-// Websocket 
-const room = ref(null)
-let locationInterval = null
 
 // Fetch journey and steps from API
 async function fetchChallengeData() {
@@ -133,22 +119,14 @@ async function fetchChallengeData() {
 
     try {
         const journeyId = route.params.id
-
-        // Fetch journey details
         const journeyRes = await fetch(`/journeys/${journeyId}`)
-        if (!journeyRes.ok) {
-            throw new Error(`Journey not found (${journeyRes.status})`)
-        }
+        if (!journeyRes.ok) throw new Error(`Journey not found`)
         const journeyData = await journeyRes.json()
 
-        // Fetch steps for this journey
         const stepsRes = await fetch(`/steps/journey/${journeyId}`)
-        if (!stepsRes.ok) {
-            throw new Error(`Steps not found (${stepsRes.status})`)
-        }
+        if (!stepsRes.ok) throw new Error(`Steps not found`)
         const stepsData = await stepsRes.json()
 
-        // Map to our trail format
         trail.value = {
             id: journeyData._id,
             title: journeyData.name,
@@ -162,7 +140,6 @@ async function fetchChallengeData() {
             }))
         }
     } catch (err) {
-        console.error('Error fetching challenge data:', err)
         error.value = err.message
     } finally {
         loading.value = false
@@ -175,7 +152,6 @@ async function connectWebSocket() {
         const journeyId = route.params.id
         const username = getUsername()
 
-        // WebSocket URL - auto-detect based on current hostname
         const isProduction = window.location.hostname !== 'localhost'
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
         const wsUrl = isProduction
@@ -186,20 +162,15 @@ async function connectWebSocket() {
         await ws.connect()
 
         wsRoom.value = await ws.roomCreateOrJoin(`journey-${journeyId}`, { username })
-
-        // Start watching and emitting location
         startLocationSharing()
     } catch (err) {
         console.error('WebSocket connection failed:', err)
     }
 }
 
-// Watch GPS and emit location to live viewers
+// Watch GPS and emit location
 function startLocationSharing() {
-    if (!navigator.geolocation) {
-        console.warn('Geolocation not supported')
-        return
-    }
+    if (!navigator.geolocation) return
 
     const username = getUsername()
 
@@ -213,27 +184,9 @@ function startLocationSharing() {
                 })
             }
         },
-        (err) => {
-            console.warn('Geolocation error:', err.message)
-        },
-        {
-            enableHighAccuracy: false,
-            maximumAge: 30000,
-            timeout: 15000
-        }
+        (err) => console.warn('Geolocation error:', err.message),
+        { enableHighAccuracy: false, maximumAge: 30000, timeout: 15000 }
     )
-}
-
-// Stop location sharing
-function stopLocationSharing() {
-    if (locationWatchId !== null) {
-        navigator.geolocation.clearWatch(locationWatchId)
-        locationWatchId = null
-    }
-    if (wsRoom.value) {
-        wsRoom.value.leave()
-        wsRoom.value = null
-    }
 }
 
 onMounted(() => {
@@ -243,16 +196,19 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-    stopLocationSharing()
+    if (locationWatchId !== null) {
+        navigator.geolocation.clearWatch(locationWatchId)
+    }
+    if (wsRoom.value) {
+        wsRoom.value.leave()
+    }
 })
 
-// Fonctions
 function goBack() {
     quitDialog.value = true
 }
 
 function addLocation() {
-    // Check if geolocation is supported
     if (!navigator.geolocation) {
         locationPermissionDialog.value = true
         return
@@ -262,51 +218,32 @@ function addLocation() {
         (position) => {
             const userLat = position.coords.latitude
             const userLon = position.coords.longitude
-            currentUserPosition.value = { lat: userLat, lon: userLon }
 
-            // Get target location from database
             const targetLocation = trail.value.locations[currentLocationIndex.value]
-            const targetLat = targetLocation.latitude
-            const targetLon = targetLocation.longitude
+            const distance = calculateDistance(userLat, userLon, targetLocation.latitude, targetLocation.longitude)
 
-            // Calculate distance between user and target location
-            const distance = calculateDistance(userLat, userLon, targetLat, targetLon)
-
-            // Get score based on distance (includes "Hors zone" for > 10km)
             const scoreData = getScoreFromDistance(distance)
 
-            // Store score and show success modal (even for 0 points)
             currentScore.value = {
                 ...scoreData,
                 distance: formatDistance(distance),
                 distanceMeters: distance
             }
 
-            // Store score for this location
             locationScores.value.push({
                 locationIndex: currentLocationIndex.value,
                 points: scoreData.points,
                 distance: distance
             })
 
-            // Show success dialog with points (0 points if Hors zone)
             successDialog.value = true
         },
         (err) => {
-            console.error('Geolocation error:', err)
-            // Permission denied (code 1) or unavailable - show permission dialog
             if (err.code === 1) {
                 locationPermissionDialog.value = true
-            } else {
-                // Other errors (timeout, position unavailable)
-                errorDialog.value = true
             }
         },
-        {
-            enableHighAccuracy: false,
-            maximumAge: 10000,
-            timeout: 15000
-        }
+        { enableHighAccuracy: false, maximumAge: 10000, timeout: 15000 }
     )
 }
 
@@ -314,46 +251,40 @@ function continueToNext() {
     successDialog.value = false
     if (currentLocationIndex.value < trail.value.locations.length - 1) {
         currentLocationIndex.value++
-        currentScore.value = null
     } else {
-        // Challenge terminé
         completeDialog.value = true
     }
 }
 
 function quitChallenge() {
-    quitDialog.value = false
     router.back()
 }
 
-function completeChallenge() {
-    // Save total score to database
+async function completeChallenge() {
     const userId = getUserId()
     const journeyId = route.params.id
 
     if (userId && journeyId) {
-        fetch('/scores', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId,
-                journeyId,
-                score: totalScore.value
+        try {
+            const res = await fetch('/scores', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId,
+                    journeyId,
+                    score: totalScore.value
+                })
             })
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.improved) {
-                    scoreImproved.value = true
-                    previousScore.value = data.previousScore || 0
-                }
-            })
-            .catch(err => {
-                console.error('Error saving score:', err)
-            })
+            const data = await res.json()
+            if (data.improved) {
+                scoreImproved.value = true
+                previousScore.value = data.previousScore || 0
+            }
+        } catch (err) {
+            console.error('Error saving score:', err)
+        }
     }
 
-    completeDialog.value = false
     router.push('/')
 }
 
@@ -432,17 +363,14 @@ function goToLive() {
         <BaseModal v-model="successDialog" title="" confirm-text="Continuer" :cancel-text="''"
             confirm-color="indigo-darken-1" @confirm="continueToNext">
             <div class="text-center" v-if="currentScore">
-                <!-- Niveau -->
                 <h3 class="text-h5 font-weight-bold mb-1">{{ currentScore.level }}</h3>
                 <p class="text-body-2 text-grey-darken-1 mb-4">{{ currentScore.description }}</p>
 
-                <!-- Points gagnés -->
                 <div class="my-4">
                     <BaseScoreDisplay :score="currentScore.points" label="Points gagnés" size="medium"
                         description="sur 100 points possibles" />
                 </div>
 
-                <!-- Distance -->
                 <p class="text-body-2 text-grey-darken-1">
                     Distance : <span class="font-weight-bold">{{ currentScore.distance }}</span>
                 </p>
@@ -453,19 +381,16 @@ function goToLive() {
         <BaseModal v-model="completeDialog" title="Challenge terminé !" confirm-text="Terminer" :cancel-text="''"
             confirm-color="indigo-darken-1" @confirm="completeChallenge">
             <div class="text-center">
-                <!-- Score total -->
                 <div class="my-4">
                     <BaseScoreDisplay :score="totalScore" label="Score total" size="medium" />
                 </div>
 
-                <!-- Message d'amélioration -->
                 <div v-if="scoreImproved" class="mb-4 pa-3 bg-green-lighten-5 rounded-lg">
                     <v-icon color="green-darken-2" class="mb-1">mdi-trophy</v-icon>
                     <p class="text-subtitle-2 font-weight-bold text-green-darken-2 mb-1">Nouveau record !</p>
                     <p class="text-caption text-grey-darken-1">Précédent : {{ previousScore }} pts</p>
                 </div>
 
-                <!-- Rating -->
                 <div class="mt-6">
                     <p class="text-subtitle-2 font-weight-bold mb-3">Notez ce parcours :</p>
                     <div class="d-flex justify-center ga-1">
@@ -478,5 +403,3 @@ function goToLive() {
         </BaseModal>
     </v-main>
 </template>
-
-<style scoped></style>
