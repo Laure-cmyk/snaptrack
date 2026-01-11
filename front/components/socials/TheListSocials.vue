@@ -213,8 +213,8 @@ function getButtonState(item, index) {
     </v-card-text>
 
     <!-- Friendlist -->
-  <v-card-text v-if="!showSearchResults && items.length > 0" class="pa-0">
-    <v-list lines="two" style="max-height: 60vh; overflow-y: auto;">
+  <v-card-text v-if="!showSearchResults && items.length > 0" style="max-height: 60vh; overflow-y: auto;">
+    <v-list lines="two">
       <v-list-item v-for="(item, index) in items" :key="item?.id ?? index" @click="() => handleClick(item)"
         :title="item?.name ?? item?.title ?? 'User ' + (index + 1)">
         <template v-slot:prepend>
