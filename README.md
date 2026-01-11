@@ -40,16 +40,12 @@ Arrêter MongoDB
 brew services stop mongodb-community@8.0
 ```
 
-## Build & déployement
+## Build & déploiement
 Pour le build local, lancez :
 ```
 npm run build
 ```
-Une branche dédiée à la production a été créée pour Render :
-```
-git checkout test-Prod
-git push
-```
+Une branche dédiée à la production se fait automatiquement déployée sur Render.
 
 ## Troubleshooting
 
